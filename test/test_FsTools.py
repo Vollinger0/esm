@@ -299,12 +299,12 @@ class test_FsTools(unittest.TestCase):
         userentries = [
             "d:/egs/empyrion/esm/requirements.txt",
             "d:/egs/empyrion/b*.txt",
-            "esm/esm-config.*",
+            "esm/esm-base-config.*",
             "esm/*.toml"
             ]
         expected = [
             "d:/egs/empyrion/buildnumber.txt",
-            "d:/egs/empyrion/esm/esm-config.yaml",
+            "d:/egs/empyrion/esm/esm-base-config.yaml",
             "d:/egs/empyrion/esm/pyproject.toml",
             "d:/egs/empyrion/esm/requirements.txt"
             ]

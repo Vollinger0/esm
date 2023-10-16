@@ -1,0 +1,35 @@
+paths:
+  install: 'D:\EGS\Empyrion\'
+  osfmount: 'C:\Users\Nutzer\Programme\OSFMount\osfmount.com'
+  peazip: 'C:\Program Files\PeaZip\res\bin\7z\7z.exe'
+  epmremoteclient: 'D:\EGS\Empyrion\EmpyrionPrime.RemoteClient.Console.exe'
+  eah: 'D:\EGS\Empyrion\DedicatedServer\EmpyrionAdminHelper'
+  steamcmd: 'D:\EGS\steamcmd.exe'
+
+server:
+  dedicatedYaml: 'esm-dedicated.yaml'
+  savegame: 'EsmDediGame'
+
+backups:
+  additionalBackupPaths: 
+    # list of full paths to source files or directories to backup additionally. Those will all end up in the folder "Additional" in the backup.
+    - 'D:\EGS\Empyrion\esm\esm-config.yaml' # our own configuration
+    - 'D:\EGS\Empyrion\Content\Mods\EncryptoidModPack' # the whole modpack
+
+updates: 
+  additional:
+    # additional stuff to copy when doing an esm-update action. 
+    # If a path is relative, it will be assumed to be relative to the installation path.
+    # if dst is not a directory, a directory with that name will be created and used as target for the source.
+    # if src is a directory, it will be copied recursively into the target folder.
+    # existing files/directories in the target will be overwritten!
+    - {src: 'D:\EGS\Empyrion\test.txt', dst: 'esm'}
+    #- {src: 'D:\EGS\Empyrion\test.txt', dst: 'content\configuration'}
+    #- {src: 'D:\EGS\Empyrion\test.txt', dst: 'D:\temp'}
+
+deletes:
+  additionalDeletes:
+    # add paths to files/directories that shall be deleted additionally to the savegame, like mod data, etc.. This accepts filesystem globbing (wildcards) like *.dat or similar.
+    # if a path is relative, it will be assumed to be relative to the installation path.
+    - 'test.txt'
+    # - 'Content\Mods\EncryptoidModPack\Mods\AdminTetherport\Database'
