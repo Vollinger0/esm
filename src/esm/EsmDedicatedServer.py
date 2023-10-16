@@ -1,10 +1,10 @@
-import os, sys, time
+import os, time
 import logging
-import subprocess
 import psutil
 import re
 from pathlib import Path
 from datetime import datetime
+from esm import isDebugMode
 
 log = logging.getLogger(__name__)
 
@@ -25,25 +25,42 @@ class EsmDedicatedServer:
     GFXMODE_OFF = [False, "graphics overlay disabled, you probably want this if you're using EAH. You'll need to stop the server via EAH or other means."]
     GFXMODES = [GFXMODE_ON, GFXMODE_OFF]
 
-    def __init__(self, config):
+    def __init__(self, config, installDir=None, dedicatedYaml=None, startMode=None, gfxMode=None):
         self.config = config
+        self.installDir = installDir
+        self.dedicatedYaml = dedicatedYaml
+        self.startMode = startMode
+        self.gfxMode = gfxMode        
+        log.debug(f"{__name__} initialized with installDir {installDir}, dedicatedYaml {dedicatedYaml}, startmode {startMode}, gfxMode {gfxMode}")
+
+    @classmethod
+    def withConfig(cls, config):
         installDir = config.paths.install
         dedicatedYaml = config.server.dedicatedYaml
         gfxMode = config.server.gfxMode
         startMode = config.server.startMode
-        log.debug(f"{__name__} initialized with installDir {installDir}, dedicatedYaml {dedicatedYaml}, startmode {startMode}, gfxMode {gfxMode}")
+        return cls(config, installDir, dedicatedYaml, startMode, gfxMode)
+
+    @classmethod    
+    def withGfxMode(cls, config, gfxMode):
+        installDir = config.paths.install
+        dedicatedYaml = config.server.dedicatedYaml
+        startMode = config.server.startMode
+        return cls(config, installDir, dedicatedYaml, startMode, gfxMode)
 
     def startServer(self):
         """
         Start the server with the configured mode.
         The called methods will wait until the respective process is started
+
+        If the server started successfully, the psutil process is returned.
         """
         if (self.getConfiguredStartMode() == self.STARTMODE_DIRECT):
             log.debug(f"startMode is {self.STARTMODE_DIRECT}")
-            self.startServerDirectMode()
+            return self.startServerDirectMode()
         else:
             log.debug(f"startMode is {self.STARTMODE_LAUNCHER}")
-            self.startServerLauncherMode()
+            return self.startServerLauncherMode()
         
     def startServerDirectMode(self):
         """
@@ -53,7 +70,7 @@ class EsmDedicatedServer:
         Method returns as soon as the process is started and its process info is returned.
         """
         arguments = [os.path.abspath(f"{self.config.paths.install}/{self.config.foldernames.dedicatedServer}/{self.config.filenames.dedicatedExe}")]
-        if (self.getConfiguredGfxMode() == self.GFXMODE_OFF):
+        if self.getConfiguredGfxMode() == self.GFXMODE_OFF:
             log.debug(f"gfxMode is {self.GFXMODE_OFF}")
             arguments.append("-batchmode")
             arguments.append("-nographics")
@@ -64,7 +81,7 @@ class EsmDedicatedServer:
         arguments.append("-logFile")
         arguments.append(self.createLogFileName())
         log.info(f"Starting server with: {arguments} in directory {self.config.paths.install}")
-        if not self.debugMode():
+        if not isDebugMode(self.config):
             process = psutil.Popen(args=arguments)
         else:
             log.debug(f"debug mode enabled!")
@@ -72,9 +89,6 @@ class EsmDedicatedServer:
         self.process = process
         return self.process
     
-    def debugMode(self):
-        return self.config.general.debugMode
-
     def startServerLauncherMode(self):
         """
         Start the game using the default empyrion launcher, returns the psutil process of the dedicated exe if successful
@@ -91,7 +105,7 @@ class EsmDedicatedServer:
             startDedi = "-startDedi"
         arguments = [pathToExecutable, startDedi, "-dedicated", self.config.server.dedicatedYaml]
         log.info(f"Starting server with: {arguments} in directory {self.config.paths.install}")
-        if not self.debugMode():
+        if not isDebugMode(self.config):
             process = psutil.Popen(args=arguments, cwd=self.config.paths.install)
         else:
             log.debug(f"debug mode enabled!")
@@ -184,7 +198,7 @@ class EsmDedicatedServer:
         return self.GFXMODE_ON
     
     def getConfiguredGfxMode(self):
-        return self.getGfxModeByString(self.config.server.gfxMode)
+        return self.getGfxModeByString(self.gfxMode)
 
     def getStartModeByString(self, string):
         for mode in self.STARTMODES:
@@ -194,22 +208,32 @@ class EsmDedicatedServer:
         return self.STARTMODE_LAUNCHER
     
     def getConfiguredStartMode(self):
-            return self.getStartModeByString(self.config.server.startMode)
+        return self.getStartModeByString(self.startMode)
     
-    def stop(self):
+    def kill(self):
         if self.process:
             log.info(f"Will send the server process {self.process.pid} the kill signal")
+            # on windows there's only the possibility to kill :/
             self.process.terminate()
         else:
-            raise Exception("no process info does not exist, did you forget to start the server?")
+            raise Exception("process info does not exist, did you forget to start the server?")
         
-    def stopAndWait(self, timeout=15):
-        self.stop()
-        # wait for a few seconds. if the timeout is reached there will be a timeoutexpired exception thrown.
-        self.process.wait(timeout=timeout)
-
+    def killAndWait(self, timeout=15):
+        if self.process:
+            self.process.kill()
+            # wait for a few seconds. if the timeout is reached there will be a timeoutexpired exception thrown.
+            self.process.wait(timeout=timeout)
+        else:
+            raise Exception("process info does not exist, did you forget to start the server?")
 
     def isRunning(self):
         if self.process:
             return self.process.is_running()
-        return False
+        else:
+            return False
+        
+    def waitForStop(self, timeout=60):
+        if self.process:
+            return self.process.wait(timeout=timeout)
+        else:
+            raise Exception("process info does not exist, did you forget to start the server?")

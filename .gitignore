@@ -1,2 +1,10 @@
 esm-main.log
 __pycache__/
+test/__pycache__/test_EsmDedicatedServer.cpython-311-pytest-7.4.2.pyc
+test/__pycache__/test_EsmConfig.cpython-311-pytest-7.4.2.pyc
+src/esm/__pycache__/EsmMain.cpython-311.pyc
+src/esm/__pycache__/EsmLogger.cpython-311.pyc
+src/esm/__pycache__/EsmDedicatedServer.cpython-311.pyc
+src/esm/__pycache__/EsmConfig.cpython-311.pyc
+src/esm/__pycache__/__init__.cpython-311.pyc
+esm-main_robocopy.log
