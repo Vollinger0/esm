@@ -87,5 +87,5 @@ class test_EsmRamdiskManager(unittest.TestCase):
 
     def createFile(self, fileName, content):
         filePath = Path(f"{self.config.paths.install}/{fileName}").absolute()
-        FsTools.createFile(filePath, content=content)
+        FsTools.createFileWithContent(filePath, content=content)
 

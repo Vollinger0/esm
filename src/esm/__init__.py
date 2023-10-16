@@ -35,3 +35,6 @@ class UserAbortedException(Exception):
 
 class ServiceNotFoundError(Exception):
     pass
+
+class ServerNeedsToBeStopped(Exception):
+    pass

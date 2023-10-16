@@ -7,27 +7,32 @@ general:
 
 ramdisk:
   drive: "T"
-  size: "5G"
+  size: "5G" # ramdisk size to use, e.g. '5G' or '32G', etc. If you change this, the ramdisk needs to be re-mounted, and the setup needs to run again.
   synchronizeramtohddinterval: 60 # interval in seconds at which to do a ram2hdd sync for the savegame. if interval=0 the sync will be disabled! Recommended to leave at 3600 (1h)
 
 server:
   dedicatedYaml: 'esm-dedicated.yaml'
   savegame: 'EsmTestDediGame'
   #startMode: 'direct'
-  startMode: 'launcher'
-  gfxMode: True
+  startMode: 'launcher' # use 'direct' if you want to bypass the launcher, e.g. if you want to run multiple instances of the server on the same machine.
+  gfxMode: True  # enables the blue graphics overlay of the server, probably not needed when you use EAH or something else to manage the server
   startUpSleepTime: 15 # min amount of time in seconds to wait for a server start up before we try doing anything with it
   launcher:
-    maxStartupTimeout: 15
+    maxStartupTimeout: 15 # max amount of time in seconds to find the dedicated exe after calling the launcher.
 
 backups:
-  amount: 4
+  amount: 4 # amount of rolling mirror backups to keep
+  marker: 'esm_this_is_the_latest_backup' # filename used for the marker that marks as backup as being the latest.
+  additionalBackupPaths: # add a list of full paths to source files or directories to backup additionally. Those will all end up in the folder "Additional" in the backup.
+    - 'D:\EGS\Empyrion\esm\esm-config.yaml' # our own configuration
+    - 'D:\EGS\Empyrion\Content\Mods\EncryptoidModPack' # the modpacks database
 
 paths:
   install: 'D:\EGS\Empyrion\esm\test\empyrion'
   osfmount: 'C:\Users\Nutzer\Programme\OSFMount\osfmount.com'
   peazip: 'C:\Program Files\PeaZip\res\bin\7z\7z.exe'
-  epmremoteclient: ''
+  epmremoteclient: 'D:\EGS\Empyrion\EmpyrionPrime.RemoteClient.Console.exe'
+  eah: 'D:\EGS\Empyrion\DedicatedServer\EmpyrionAdminHelper'
 
 foldernames:
   saves: 'Saves'
@@ -45,7 +50,7 @@ foldernames:
 filenames:
   globaldb: 'global.db'
   buildNumber: 'BuildNumber.txt'
-  chatlines: 'hamster_sync_lines.txt'
+  #chatlines: 'hamster_sync_lines.txt'
   dedicatedExe: 'EmpyrionDedicated.exe'
   launcherExe: 'EmpyrionLauncher.exe'
 

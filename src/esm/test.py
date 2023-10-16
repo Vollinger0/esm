@@ -1,10 +1,13 @@
-from enum import Enum
+import logging
+from pathlib import Path
 
-class Enumtest(Enum):
-    FOO = 1
-    BAR = 2
+from EsmLogger import EsmLogger
 
-print(f"Enumtest(1) {Enumtest(1)}")
-print(f"Enumtest(2) {Enumtest(2)}")
-#print(f"Enumtest(3) {Enumtest(3)}")
-    
+EsmLogger.setUpLogging("x")
+log = logging.getLogger(__name__)
+
+directory = Path(".")
+log.info(directory.glob("*"))
+for entry in directory.glob("*"):
+    if entry.is_dir():
+        log.debug(f"entry: {entry}")

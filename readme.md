@@ -10,18 +10,19 @@
 [x] use pathlib instead of os.path wherever possible
 [x] implement regular ram2mirror sync
 [x] usecase: stop gameserver properly
+[x] implement DI
+[x] usecase: create incremental backup
 
 ### WIP
 [+] debugmode
+[ ] usecase: create manual static backup
 
 ### later
-[ ] usecase: create incremental backup
-[+] usecase: delete savegame
+[ ] usecase: update gameserver
+[ ] usecase: delete savegame, including tool data, potential mod data too?
 [+] when useRamdisk is enabled, enable checks for its file structure, when its not, do not start use the synchronizer (of course)
 [ ] use the click library to extend the scripts with command line tools
 [ ] offer some kind of better interactive mode for different stuff
-[ ] usecase: create manual static backup
-[ ] usecase: update gameserver
 [ ] implement allowMultpleServerInstances switch. Once enabled, do not check for running instances of the game before starting, do not start if startmode is set to direct, etc.
 [ ] implement server-callback with epmremoteclient
 [ ] implement warning/talkback via tickets
