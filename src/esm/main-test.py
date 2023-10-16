@@ -2,6 +2,7 @@ from threading import Thread
 import time
 import logging
 from esm.EsmMain import EsmMain
+from esm.Tools import getElapsedTime, getTimer
 
 log = logging.getLogger(__name__)
 
@@ -64,7 +65,7 @@ def testStartServerWithSynchronizer():
     
     if esm.dedicatedServer.isRunning():
         log.debug("stopping server")
-        esm.stopServer()
+        esm.onShutdown()
     log.debug("server stopped")
 
 def testBackup():
@@ -81,6 +82,11 @@ def testUpdateGame():
 
 def testDeleteAll():
     esm.deleteAll()
+
+def testStartAndWait():
+    start = getTimer()
+    esm.startServerAndWait()
+    log.info(f"Server shut down after {getElapsedTime(start)}")
 
 
 ######################################################
@@ -101,6 +107,7 @@ log.debug(f"Logging to: {esm.logFile}")
 #testStartStopServerNoTry()
 #testStartStopServer()
 #testStartServerWithSynchronizer()
+testStartAndWait()
 #testUpdateGame()
 #testBackup()
 #testStaticBackup()

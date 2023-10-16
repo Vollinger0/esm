@@ -256,14 +256,14 @@ class EsmRamdiskManager:
         starts a separate thread for the synchronizer, that will call syncram2mirror every $syncInterval
         """
         if not self.config.general.useRamdisk:
-            log.warn("useRamdisk is set to False, there is no much sense in using the synchronizer. Please check that the code is being used properly.")
+            log.warning("useRamdisk is set to False, there is no much sense in using the synchronizer. Please check that the code is being used properly.")
         if syncInterval==0:
             log.debug(f"synchronizer is disabled, syncInterval was {syncInterval}")
             return False
         self.synchronizerShutdownEvent = Event()
         self.synchronizerThread = Thread(target=self.syncTask, args=(self.synchronizerShutdownEvent, syncInterval), daemon=True)
         self.synchronizerThread.start()
-        log.info(f"ram to mirror synchronizer started with an interval of {syncInterval}")
+        log.debug(f"ram to mirror synchronizer started with an interval of {syncInterval}")
     
     def syncTask(self, event, syncInterval):
         timePassed = 0
@@ -274,14 +274,14 @@ class EsmRamdiskManager:
                 log.info(f"Synchronizing from ram to mirror")
                 with Timer() as timer:
                     self.syncRamToMirror()
-                log.info(f"Sync done. Time needed {timer.elapsedTime}")
+                log.info(f"Sync done, will wait for {syncInterval} seconds. Time needed {timer.elapsedTime}")
             if event.is_set():
                 break
         log.debug("synchronizer shut down")
 
     def stopSynchronizer(self):
         if not self.synchronizerShutdownEvent:
-            log.warn("Can not stop synchronizer since there is probably no synchronizer running.")
+            log.warn("Can not stop synchronizer thread since there is probably no synchronizer thread running.")
             return
         
         # set the shared boolean, which will make the synchronizer stop
@@ -289,7 +289,7 @@ class EsmRamdiskManager:
         # wait for the thread to join the main thread
         log.debug("waiting for synchronizer thread to finish")
         self.synchronizerThread.join()
-        log.info(f"ram to mirror synchronizer stopped")
+        log.debug(f"ram to mirror synchronizer stopped")
 
     def unmountRamdisk(self, driveLetter):
         """

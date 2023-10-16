@@ -2,6 +2,7 @@ import logging
 import click
 from esm.ServiceRegistry import ServiceRegistry
 from esm.EsmMain import EsmMain
+from esm.Tools import getElapsedTime, getTimer, isDebugMode
 
 log = logging.getLogger(__name__)
 
@@ -15,19 +16,23 @@ class LogContext:
     def __exit__(self, exc_type, exc_value, traceback):
         log.info(f"Script finished. Check the logfile ({self.esm.logFile}) if you missed something. Bye!")
 
-@click.group()
 #@click.option('--config', default="esm-config.yaml", short_help='configuration file to use', show_default=True)
 #@click.option('--log', default="esm", short_help='logfile name, .log will be appended', show_default=True)
-def cli():
+@click.group(epilog='Brought to you by hamster, coffee and pancake symphatisants')
+@click.option('-v', '--verbose', is_flag=True, help='set loglevel on console to DEBUG')
+def cli(verbose):
     """ 
-    ESM, the Empyrion Server Manager - will help you set up a ramdisk, run the server, do rolling backups and other things efficiently.
+    ESM, the Empyrion Server Manager - will help you set up an optional ramdisk, run the server, do rolling backups and other things efficiently.
     Optimized for speed to be used for busy servers with huge savegames.
     """
-    pass
+    if verbose:
+        init(streamLogLevel=logging.DEBUG)
+    else:
+        init(streamLogLevel=logging.INFO)
 
 @cli.command(name="ramdisk-prepare", short_help="prepares the file system for ramdisk setup")
 def ramdiskPrepare():
-    """Prepares the file structure to be used with a ramdisk by moving the savegame to the gamesmirror folder. This will also help you create a new savegame if non exists."""
+    """Prepares the file structure to be used with a ramdisk by moving the savegame to the gamesmirror folder. This will also help you create a new savegame if none exists."""
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)
         try:
@@ -37,7 +42,7 @@ def ramdiskPrepare():
 
 @cli.command(name="ramdisk-setup", short_help="sets up the ramdisk")
 def ramdiskSetup():
-    """Sets up the ramdisk - this will actually mount it and copy the hdd mirror to it. Use this after a server reboot before starting the server.
+    """Sets up the ramdisk - this will actually mount it and copy the savegame mirror to it. Use this after a server reboot before starting the server.
     This might need admin privileges, so prepare to confirm the elevated privileges prompt from windows.
     """
     with LogContext():
@@ -57,22 +62,26 @@ def ramdiskUninstall(force):
         except Exception as ex:
             log.error(f"Error trying to uninstall: {ex}")
 
-@cli.command(name="server-start", short_help="starts the server")
+@cli.command(name="server-start", short_help="starts the server, returns when the server shuts down.")
 def startServer():
-    """Starts up the server, if ramdisk usage is enabled, this will automatically start the ram2mirror synchronizer task."""
+    """Starts up the server, if ramdisk usage is enabled, this will automatically start the ram2mirror synchronizer thread too. The script will return when the server shut down.
+    This will *NOT* shut down the server. If you want to do that do that either via other means or use the server-stop command in a new console.
+    """
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)
-        esm.startServer()
+        start = getTimer()
+        esm.startServerAndWait()
+        log.info(f"Server shut down after {getElapsedTime(start)}")
 
-@cli.command(name="server-stop", short_help="stops the server")
+@cli.command(name="server-stop", short_help="shuts down a running server")
 def stopServer():
-    """Stops the server, this action will wait for it to end or until a timeout is reached before it returns"""
+    """Actively shuts down the server by sending a "saveandexit" command. This action will wait for it to end or until a timeout is reached before it returns"""
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)
         try:
-            esm.stopServer()
+            esm.sendSaveAndExit()
         except TimeoutError as ex:
-            log.error(f"Could not stop server, it is probably not running at all. {ex}")
+            log.error(f"Could not stop server. Is it running at all? {ex}")
 
 @cli.command(name="backup-create", short_help="creates a blazing fast rolling backup")
 def createBackup():
@@ -111,9 +120,9 @@ def deleteAll():
         esm = ServiceRegistry.get(EsmMain)
         esm.deleteAll()
 
-@cli.command(short_help="just a test!")
+@cli.command(short_help="for development purposes")
 def test():
-    """long help text """
+    """used for development purposes"""
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)
         log.info(f"Hi! {esm}")
@@ -123,8 +132,12 @@ def getEsm():
 
 # main cli entry point
 def start():
+    cli()
+
+def init(fileLogLevel=logging.DEBUG, streamLogLevel=logging.INFO):
     esm = EsmMain(caller="esm",
-                configFileName="esm-config.yaml"
+                configFileName="esm-config.yaml",
+                fileLogLevel=fileLogLevel,
+                streamLogLevel=streamLogLevel
                 )
     ServiceRegistry.register(esm)
-    cli()

@@ -44,13 +44,13 @@ class EsmMain:
     def deleteService(self) -> EsmDeleteService:
         return ServiceRegistry.get(EsmDeleteService)
 
-    def __init__(self, configFileName, caller=__name__):
+    def __init__(self, configFileName, caller=__name__, fileLogLevel=logging.DEBUG, streamLogLevel=logging.DEBUG):
         self.configFilename = configFileName
         self.caller = caller
 
         # set up logging
         self.logFile = Path(caller).stem + ".log"
-        EsmLogger.setUpLogging(self.logFile)
+        EsmLogger.setUpLogging(self.logFile, fileLogLevel=fileLogLevel, streamLogLevel=streamLogLevel)
 
         # set up config
         self.configFilePath = Path(configFileName).absolute()
@@ -111,28 +111,55 @@ class EsmMain:
     
     def waitForEnd(self, checkInterval=5):
         """
-        will wait for the server to end, checking every $checkInterval seconds, then it will do the shutdown tasks and return.
+        will wait for the server to end, checking every $checkInterval seconds
         """
         while self.dedicatedServer.isRunning():
             time.sleep(checkInterval)
-        return self.stopServer()
-
-    def stopServer(self):
+    
+    def onShutdown(self):
         """
         Will stop the synchronizer, then stop the server and do a last sync from ram 2 mirror
         """
         if self.config.general.useRamdisk:
             # stop synchronizer
+            log.info(f"Stopping synchronizer thread")
             self.ramdiskManager.stopSynchronizer()
+            log.info(f"Synchronizer thread stopped")
 
+        # this should not be necessary, but just in case.
         if self.dedicatedServer.isRunning():
             # stop server
+            log.info(f"Sending server the saveandexit command.")
             self.dedicatedServer.sendExitRetryAndWait(interval=self.config.server.sendExitInterval, additionalTimeout=self.config.server.sendExitTimeout)
+            log.info(f"Server shut down")
 
         if self.config.general.useRamdisk:
             # sync ram to mirror
             log.info("Starting final ram to mirror sync after shutdown")
             self.ramdiskManager.syncRamToMirror()
+        log.info("Server shutdown complete")
+
+    def startServerAndWait(self):
+        """
+        Start the server and wait for it to end. This will not return until the server is shutdown via other means!
+        """
+        log.info(f"Starting server")
+        self.startServer()
+        log.info(f"Server started. Waiting for it to shut down.")
+        self.waitForEnd()
+        log.info(f"Server shut down. Executing shutdown tasks.")
+        self.onShutdown()
+
+    def sendSaveAndExit(self):
+        """
+        Just saven the saveandexit signal. Since this is probably called from another instance of the script that probably does not have
+        the correct instances of the server and process, we don't check for anything nor execute other actions.
+        """
+        # stop server
+        log.info(f"Trying to stop the server by sending the saveandexit command.")
+        success = self.dedicatedServer.sendExitRetryAndWait(interval=self.config.server.sendExitInterval, additionalTimeout=self.config.server.sendExitTimeout)
+        if success:
+            log.info(f"Server shut down")
 
     def createBackup(self):
         """

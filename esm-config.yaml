@@ -17,8 +17,8 @@ server:
   #startMode: 'direct'  # use 'direct' if you want to bypass the launcher, e.g. if you want to run multiple instances of the server on the same machine.
   startMode: 'launcher' # use 'launcher' if you want to start the game the usual way. The launcher itself will then start the dedicated server.
   gfxMode: False # if True, enables the blue graphics overlay of the server, probably not needed when you use EAH or something else to manage the server
-  startUpSleepTime: 15 # min amount of time in seconds to wait for a server start up before we try doing anything else with it
   minDiskSpaceForStartup: 500M # if disk space on the drive with the savegame (or ramdisk) is below this, do NOT start the server to avoid savegame corruption. gnu notation
+  startUpSleepTime: 20 # min amount of time in seconds to wait for the server to start up when creating a new savegame
   launcher:
     maxStartupTimeout: 15 # max amount of time in seconds to find the dedicated exe after calling the launcher.
   sendExitTimeout: 60 # amount of seconds to wait until we give up stopping the server and throw an error
