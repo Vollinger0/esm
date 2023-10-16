@@ -296,20 +296,20 @@ class test_FsTools(unittest.TestCase):
         self.assertFalse(FsTools.isGlobPattern("D:/some/path/foo.txt"))
 
     def test_resolveGlobbedPatternsAndExtendWithAbsolute(self):
+        parentDir = Path(".").resolve()
+
         userentries = [
-            "d:/egs/empyrion/esm/requirements.txt",
-            "d:/egs/empyrion/b*.txt",
-            "esm/esm-base-config.*",
-            "esm/*.toml"
+            f"{parentDir}/requirements.txt",
+            f"{parentDir}/h*.csv",
+            "../esm/esm-base-config.*",
+            "../**/*.toml"
             ]
         expected = [
-            "d:/egs/empyrion/buildnumber.txt",
-            "d:/egs/empyrion/esm/esm-base-config.yaml",
-            "d:/egs/empyrion/esm/pyproject.toml",
-            "d:/egs/empyrion/esm/requirements.txt"
+            f"{parentDir}\\esm-base-config.yaml",
+            f"{parentDir}\\hamster_sync_lines.csv",
+            f"{parentDir}\\pyproject.toml",
+            f"{parentDir}\\requirements.txt"
             ]
-        
-        parentDir = Path("D:/EGS/Empyrion").absolute()
 
         absoluteEntries = FsTools.toAbsolutePaths(userentries, parentDir)
         for entry in absoluteEntries:
@@ -319,7 +319,8 @@ class test_FsTools(unittest.TestCase):
         deglobbedEntries = FsTools.resolveGlobs(absoluteEntries)
         result = []
         for entry in deglobbedEntries:
-            result.append(str(entry).lower())
+            log.debug(f"deglobbed: {entry}")
+            result.append(str(entry))
         self.assertListEqual(sorted(expected), sorted(result))
 
     def test_pathContainsSubPath(self):
