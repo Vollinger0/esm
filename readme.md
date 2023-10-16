@@ -25,13 +25,16 @@
 [x] usecase: delete savegame, including tool data, potential mod data too, add extensions like for the backup
 [x] change delete functions so that the path has to be at least 3 levels deep before deleting anything?
 [x] change delete functions so that it maintains a list and the user is asked at the end.
+[x] usecase: deinstall ramdisk
+
 
 ### WIP
 [+] debugmode
-[ ] add proper cli - use the click library to extend the scripts with command line tools
+[+] add proper cli - use the click library to extend the scripts with command line tools
+
 
 ### later
-[ ] split the config in a "basic" config, an export config, and add support for more (config for the wipe-tool e.g.)
+[ ] split the config in a "basic" config, an expert config, and add support for more (config for the wipe-tool e.g.)
 [+] when useRamdisk is enabled, enable checks for its file structure, when its not, do not start use the synchronizer (of course)
 [ ] offer some kind of better interactive mode for different stuff
 [ ] implement allowMultpleServerInstances switch. Once enabled, do not check for running instances of the game before starting, do not start if startmode is set to direct, etc.
@@ -40,9 +43,9 @@
 [ ] implement warning/talkback to server chat for syncs, backups probably even random stuff with funny hamster sentences.
 [ ] integrity check: checks if things fit together (e.g. dedicated.yaml config), our own config when running multiple instances, etc.
 
+
 ### optional
 [ ] usecase: create configuration?
-[ ] usecase: deinstall ramdisk
 [ ] usecase: wipe galaxy
 [ ] usecase: purge galaxy, 
 [ ] create separate windows-gui thingy that resides in the taskbar or similar and provides a shortcut to the cli tool.
