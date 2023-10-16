@@ -1,4 +1,5 @@
 general:
+  debugMode: False
   allowMultpleServerInstances: True
 
 server:
