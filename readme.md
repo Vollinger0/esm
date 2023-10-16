@@ -33,11 +33,13 @@
 [x] custom dblocation may not be given in conjunction with nodrymode.
 [x] print out wipetypep descriptions on help too.
 [x] re-mount option for when ramdisk size has to be updated or ramdisk is down for some reason.
+[x] implement server-callback with epmremoteclient
 
 ### WIP
-[+] implement server-callback with epmremoteclient
+
 
 ### later
+[ ] add more epmclient functions, especially the sync event announcements. needs more work from notoats.
 [ ] make sure the script only runs one? probably by opening up a port, that way there's no need for cleanups.
 [ ] interactive mode for wipe galaxy tool
 [+] when useRamdisk is enabled, enable checks for its file structure, when its not, do not start use the synchronizer (of course)
