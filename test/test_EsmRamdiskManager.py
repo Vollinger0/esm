@@ -83,9 +83,23 @@ class test_EsmRamdiskManager(unittest.TestCase):
 
     def createDir(self, dir):
         dirPath = self.fs.getAbsolutePathTo(dir)
-        FsTools.createDir(dirPath)
+        FsTools.createDirs([dirPath])
 
     def createFile(self, fileName, content):
         filePath = Path(f"{self.config.paths.install}/{fileName}").absolute()
         FsTools.createFileWithContent(filePath, content=content)
 
+    @unittest.skip("only execute this manually, since it requires admin privileges and will pop up that window for the user.")
+    def test_mountAndUnmountRamdisk(self):
+        ServiceRegistry.register(EsmMain)
+        self.config = EsmConfigService(configFilePath="test/esm-test-config.yaml")
+        self.fs = EsmFileSystem(self.config)
+        self.ds = EsmDedicatedServer(self.config)
+        self.rdm = EsmRamdiskManager(config=self.config, dedicatedServer=self.ds, fileSystem=self.fs)
+
+        driveLetter = self.config.ramdisk.drive
+        driveSize = self.config.ramdisk.size
+        self.rdm.mountRamdrive(driveLetter=driveLetter, driveSize=driveSize)
+        self.assertTrue(self.rdm.checkRamdrive(driveLetter=driveLetter))
+        self.rdm.unmountRamdisk(driveLetter=driveLetter)
+        self.assertFalse(self.rdm.checkRamdrive(driveLetter=driveLetter))

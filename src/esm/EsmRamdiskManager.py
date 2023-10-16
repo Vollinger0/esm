@@ -4,7 +4,7 @@ import subprocess
 import time
 from pathlib import Path
 from threading import Event, Thread
-from esm import NoSaveGameFoundException, NoSaveGameMirrorFoundException, RequirementsNotFulfilledError, SaveGameMirrorExistsException
+from esm import AdminRequiredException, NoSaveGameFoundException, NoSaveGameMirrorFoundException, RequirementsNotFulfilledError, SaveGameMirrorExistsException
 from esm.EsmConfigService import EsmConfigService
 from esm.EsmDedicatedServer import EsmDedicatedServer
 from esm.EsmFileSystem import EsmFileSystem
@@ -158,7 +158,8 @@ class EsmRamdiskManager:
         """
         osfMount = self.checkAndGetOsfMountPath()
         cmd = [osfMount]
-        args = f"-a -t vm -m {driveLetter} -o format:ntfs:'Ramdisk',logical -s {driveSize}"
+        #-a -t vm -m T -o format:ntfs:'Ramdisk',logical -s 2G
+        args = f"-a -t vm -m {driveLetter}: -o format:ntfs:'Ramdisk',logical -s {driveSize}"
         cmd.extend(args.split(" "))
         log.info(f"Executing {cmd}. This will require admin privileges")
         process = subprocess.run(cmd, capture_output=True, shell=True)
@@ -245,3 +246,20 @@ class EsmRamdiskManager:
         log.debug("waiting for synchronizer thread to finish")
         self.synchronizerThread.join()
         log.info(f"ram to mirror synchronizer stopped")
+
+    def unmountRamdisk(self, driveLetter):
+        """
+        dismount ramdisk, deleting all its content in the process.
+        """
+        osfMount = self.checkAndGetOsfMountPath()
+        cmd = [osfMount, "-d", "-m", str(driveLetter)+":"]
+        log.info(f"Executing {cmd}. This could require admin privileges")
+        try:
+            process = subprocess.run(cmd, capture_output=True, shell=True, check=True)
+            if process.check_returncode():
+                log.info(f"Ramdisk {driveLetter} unmounted!")
+                return True
+        except subprocess.CalledProcessError:
+            log.debug(f"No osf mounted ramdrive found as {driveLetter} or some other error happened.")
+            raise AdminRequiredException(f"could not unmount ramdrive at {driveLetter}. Please check the logs")
+

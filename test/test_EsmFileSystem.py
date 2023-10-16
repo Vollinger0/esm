@@ -64,3 +64,28 @@ class test_EsmFileSystem(unittest.TestCase):
                 link.unlink(missing_ok=True)
         if target.exists(): 
             target.rmdir()
+
+    def test_deleteByPattern(self):
+        esmConfig = EsmConfigService(configFilePath="esm-config.yaml")
+        esmfs = EsmFileSystem(config=esmConfig)
+        FsTools.quickDelete("pattern_test")
+
+        dir1 = Path("pattern_test/foo/bar")
+        file1 = Path("pattern_test/foo/baz.txt")
+        file2 = Path("pattern_test/foo/moo.txt")
+        file3 = Path("pattern_test/foo/moep.dat")
+        FsTools.createDirs([dir1])
+        for file in [file1, file2, file3]:
+            file.write_text("blubb")
+
+        for entry in [dir1, file1, file2, file3]:
+            self.assertTrue(entry.exists())
+
+        esmfs.deleteByPattern("pattern_test/", "foo/*.txt")
+
+        for entry in [dir1, file3]:
+            self.assertTrue(entry.exists())
+        self.assertFalse(file1.exists())
+        self.assertFalse(file2.exists())
+
+        FsTools.quickDelete("pattern_test")        

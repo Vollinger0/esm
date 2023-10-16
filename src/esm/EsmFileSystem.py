@@ -1,4 +1,5 @@
 import logging
+import os
 import dotsi
 from functools import cached_property
 from pathlib import Path
@@ -47,9 +48,6 @@ class EsmFileSystem:
             },
             "dedicatedserver": {
                 "_parent": config.foldernames.dedicatedserver
-            },
-            "logs" : {
-                "_parent": config.foldernames.logs
             },
             "saves": {
                 "_parent": config.foldernames.saves, 
@@ -156,10 +154,38 @@ class EsmFileSystem:
         log.info(f"Creating link from {linkPath} -> {linkTargetPath}")
         FsTools.createLink(linkPath, linkTargetPath)
 
-    def delete(self, targetPath):
+    def delete(self, targetPath, native=False):
         """
-        quickly delete a folder and all its content
+        delete a file, folder or hardlink and all its content
         """
-        log.debug(f"deleting {targetPath} with shutil.rmtree")
-        FsTools.quickDelete(targetPath)
+        if isinstance(targetPath, Path):
+            path = targetPath.absolute()
+        else:
+            path = Path(targetPath).absolute()
+          
+        if not path.exists():
+            return
+        
+        if FsTools.isHardLink(path):
+            log.debug(f"deleting link at {path}")
+            FsTools.deleteLink(path)
+        else:
+            # for some reason, Path.is_dir() somtimes returns true on files. What a crappy quirk is that!
+            # This forces us to check twice with two different implementations...
+            if path.is_dir() and os.path.isdir(path):
+                log.debug(f"deleting dir at {targetPath}")
+                if native:
+                    FsTools.quickDeleteNative(path)
+                else:
+                    FsTools.quickDelete(path)
+            else:
+                log.debug(f"deleting file {targetPath}")
+                FsTools.deleteFile(path)
         log.debug(f"done deleting")
+
+    def deleteByPattern(self, parentDir: Path, pattern: Path):
+        """
+        deletes files and directories below the parent that match the given pattern. allows complex globbing, see Path.glob for infos.
+        """
+        for entry in Path(parentDir).glob(pattern=pattern):
+            self.delete(entry)

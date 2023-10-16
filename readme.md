@@ -25,9 +25,9 @@
 
 ### WIP
 [+] debugmode
+[+] usecase: delete savegame, including tool data, potential mod data too, add extensions like for the backup
 
 ### later
-[ ] usecase: delete savegame, including tool data, potential mod data too, add extensions like for the backup
 [+] when useRamdisk is enabled, enable checks for its file structure, when its not, do not start use the synchronizer (of course)
 [ ] use the click library to extend the scripts with command line tools
 [ ] offer some kind of better interactive mode for different stuff

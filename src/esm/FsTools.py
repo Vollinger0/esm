@@ -1,5 +1,7 @@
+from glob import glob
 import math
 import os
+import re
 import shutil
 import subprocess
 import logging
@@ -50,16 +52,21 @@ class FsTools:
         for entry in directory.iterdir():
             if FsTools.isHardLink(entry):
                 # check if the link points to our target
-                linkInfo = entry.readlink()
-                fixedLinkInfo = Path(linkInfo.as_posix()[4:]).resolve()
+                linkTarget = FsTools.getLinkTarget(entry)
                 target = targetFolder.resolve()
-                #log.debug(f"entry: '{entry}', fixedLinkInfo: '{fixedLinkInfo}', targetFolder: '{targetFolder}', target '{target}'")
-                if fixedLinkInfo.exists():
-                    #log.debug(f"fixedLinkInfo: '{fixedLinkInfo}' exists")
-                    if fixedLinkInfo.samefile(target):
-                        #log.debug(f"fixedLinkInfo: '{fixedLinkInfo}' and '{target}' are the same file")
+                if linkTarget.exists():
+                    if linkTarget.samefile(target):
                         links.append(entry)
         return links
+
+    @staticmethod
+    def getLinkTarget(link):
+        """
+        returns the link target path of a given link
+        """
+        linkInfo = link.readlink()
+        linkTarget = Path(linkInfo.as_posix()[4:]).resolve()
+        return linkTarget
 
     # @staticmethod
     # def isHardLink(link):
@@ -69,9 +76,28 @@ class FsTools:
     @staticmethod
     def quickDelete(targetPath):
         """
-        quickly delete a folder and all its content
+        quickly delete a folder and all its content. May be slow. use #quickDeleteNative for the fastest but native method.
         """
         shutil.rmtree(ignore_errors=True, path=targetPath)
+
+    @staticmethod
+    def quickDeleteNative(targetPath: Path):
+        """
+        quickly delete a folder and all its content, using the del /f/q/s and rmdir /s/q shell commands 
+        """
+        cmd = ["del", "/f", "/q", "/s", targetPath]
+        log.debug(f"executing {cmd}")
+        process = subprocess.run(cmd, shell=True)
+        log.debug(f"process returned: {process}")
+        cmd = ["rmdir", "/s", "/q", targetPath]
+        log.debug(f"executing {cmd}")
+        process = subprocess.run(cmd, shell=True)
+        log.debug(f"process returned: {process}")
+
+    @staticmethod
+    def createDirs(dirPaths: [Path]):
+        for dirPath in dirPaths:
+            FsTools.createDir(dirPath)
 
     @staticmethod
     def createDir(dirPath: Path):
@@ -132,9 +158,43 @@ class FsTools:
         minimumSpace = FsTools.humanToRealFileSize(minimumSpaceHuman)
         freeSpace = shutil.disk_usage(path=driveToCheck).free
         freeSpaceHuman = FsTools.realToHumanFileSize(freeSpace)
-        log.debug(f"Free space on drive {driveToCheck} is {freeSpaceHuman}. Configured minimum for start up is {minimumSpaceHuman}")
+        log.debug(f"Free space on drive {driveToCheck} is {freeSpaceHuman}. Configured minimum is {minimumSpaceHuman}")
         if freeSpace < minimumSpace:
             return False
         else:
             return True
 
+    @staticmethod        
+    def isGlobPattern(path):
+        # Define a regex pattern to match any glob metacharacters
+        glob_patterns = r"[*?[\]{}!]"
+        return bool(re.search(glob_patterns, str(path)))        
+    
+    @staticmethod
+    def toAbsolutePaths(paths: [Path], parent: Path):
+        """
+        returns the list of paths given, but all relative links will be joined with the given parent path.
+        """
+        absolutePaths = []
+        for path in paths:
+            if Path(path).is_absolute():
+                absolutePaths.append(Path(path))
+            else:
+                absolutePaths.append(Path(parent).joinpath(path).absolute())
+        return absolutePaths
+
+    @staticmethod    
+    def resolveGlobs(paths: [Path]):
+        """
+        will resolve any glob pattern given in the list of paths and add them to the resulting list. Any non-pattern path will be added as is.
+        """
+        resolvedPaths = []
+        for path in paths:
+            if FsTools.isGlobPattern(path):
+                globResult = glob(pathname=Path(path).as_posix(), recursive=True)
+                for entry in globResult:
+                    resolvedPaths.append(Path(entry).absolute().as_posix())
+                
+            else:
+                resolvedPaths.append(Path(path).absolute().as_posix())
+        return resolvedPaths
