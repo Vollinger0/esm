@@ -1,0 +1,26 @@
+server:
+  dedicatedYaml: 'esm-dedicated.yaml'
+  startMode: 'launcher'
+  gfxMode: True
+
+paths:
+  install: 'D:/EGS/Empyrion/'
+  osfmount: ''
+  peazip: ''
+  epmremoteclient: ''
+
+foldernames:
+  saves: 'Saves'
+  games: 'Games'
+  backups: 'Backup'
+  logs: 'Logs'
+  dedicatedServer: 'DedicatedServer'
+  gamesmirror: 'GamesMirror'
+  savegame: 'EsmDediGame'
+
+filenames:
+  globaldb: 'global.db'
+  buildNumber: 'BuildNumber.txt'
+  chatlines: 'hamster_sync_lines.txt'
+  dedicatedExe: 'EmpyrionDedicated.exe'
+  launcherExe: 'EmpyrionLauncher.exe'

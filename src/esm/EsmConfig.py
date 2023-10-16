@@ -1,22 +1,27 @@
+import dotsi
 import yaml
 import logging
 
+log = logging.getLogger(__name__)
+
 """
-contains all the relevant config for esm, backed by a yaml file.
+Contains all the relevant config for esm, backed by a yaml file. Extended to be a dotsi dictionary that can be accessed directly with the dot-notation.
 """
 class EsmConfig:
-    
-    logger = logging.getLogger(__name__)
 
-    def __init__(self, configPath):
-        with open(configPath) as file:
-            self.config = yaml.safe_load(file)
+    def __init__(self, config):
+        self.config = dotsi.Dict(config)
     
-    def __getattr__(self, name):
-        try:
-            return EsmConfig(self.config[name])
-        except KeyError:
-            raise AttributeError(f"'{name}' not found in configuration")
+    @classmethod
+    def fromConfig(cls, config):
+        return cls(config)
+    
+    @classmethod
+    def fromConfigFile(cls, configFilePath):
+        with open(configFilePath, "r") as configFile:
+            configurationDict = yaml.safe_load(configFile)
+        return cls(configurationDict)
 
-    def __str__(self):
-        return str(self.config)
+    def __getattr__(self, attr):
+        return self.config.get(attr)
+    

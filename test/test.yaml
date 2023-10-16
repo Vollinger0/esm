@@ -7,3 +7,16 @@ database:
 app:
   name: My App
   debug: true
+  sub_config:
+    value1: abc
+    value2: def
+
+numbers:
+  integers:
+    - 1
+    - 2
+    - 3
+  floats:
+    - 1.1
+    - 2.2
+    - 3.3
