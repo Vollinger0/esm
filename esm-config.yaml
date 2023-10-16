@@ -2,6 +2,7 @@ general:
   debugMode: False
   #allowMultpleServerInstances: True
   externalizeTemplates: True
+  useRamdisk: True
 
 ramdisk:
   drive: "R"

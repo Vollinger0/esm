@@ -70,17 +70,16 @@ class EsmMain:
             newEsm = EsmDedicatedServer.withGfxMode(self.config, EsmDedicatedServer.GFXMODE_ON)
             try:
                 newEsm.startServer()
+                # give the server some time to start and create the new savegame before we try stopping it again
+                time.sleep(self.config.server.startUpSleepTime)
+                try:
+                    # use the epmclient to check when the server is up and send a saveandexit from there.
+                    newEsm.sendExitRetryAndWait()
+                except TimeoutError as ex:
+                    log.error(f"could not stop server while trying to create a new savegame. Something's wrong")
+                    raise AdminRequiredException("could not stop server while trying to create a new savegame.")
             except Exception as ex:
                 log.info(f"Server didn't start: {ex}")
-
-            # give the server some time to start and create the new savegame before we try stopping it again
-            time.sleep(self.config.server.startUpSleepTime)
-            try:
-                # use the epmclient to check when the server is up and send a saveandexit from there.
-                newEsm.sendExitRetryAndWait()
-            except TimeoutError as ex:
-                log.error(f"could not stop server while trying to create a new savegame. Something's wrong")
-                raise AdminRequiredException("could not stop server while trying to create a new savegame.")
         else:
             log.info("Create a new savegame yourself then, you can always start this installation again.")
 
@@ -107,6 +106,14 @@ class EsmMain:
         # start the server
         log.info(f"Starting the dedicated server")
         return self.dedicatedServer.startServer()
+    
+    def waitForEnd(self, checkInterval=5):
+        """
+        will wait for the server to end, checking every $checkInterval seconds, then it will do the shutdown tasks and return.
+        """
+        while self.dedicatedServer.isRunning():
+            time.sleep(checkInterval)
+        return self.stopServer()
 
     def stopServer(self):
         """
@@ -115,9 +122,11 @@ class EsmMain:
         # stop synchronizer
         self.ramdiskManager.stopSynchronizer()
 
-        # stop server
-        self.dedicatedServer.sendExitRetryAndWait()
+        if self.dedicatedServer.isRunning():
+            # stop server
+            self.dedicatedServer.sendExitRetryAndWait()
 
         # sync ram to mirror
+        log.info("Starting final ram to mirror sync after shutdown")
         self.ramdiskManager.syncRamToMirror()
 

@@ -17,7 +17,7 @@ class EsmRamdiskManager:
     def __init__(self, config, dedicatedServer) -> None:
         self.config = config
         self.dedicatedServer = dedicatedServer
-        self.synchronizerEvent = None
+        self.synchronizerShutdownEvent = None
         self.synchronizerThread = None
         self.fs = EsmFileStructure(config)
 
@@ -194,8 +194,8 @@ class EsmRamdiskManager:
         if syncInterval==0:
             log.debug(f"synchronizer is disabled, syncInterval was {syncInterval}")
             return False
-        self.synchronizerEvent = Event()
-        self.synchronizerThread = Thread(target=self.syncTask, args=(self.synchronizerEvent, syncInterval))
+        self.synchronizerShutdownEvent = Event()
+        self.synchronizerThread = Thread(target=self.syncTask, args=(self.synchronizerShutdownEvent, syncInterval), daemon=True)
         self.synchronizerThread.start()
         log.info(f"ram2mirror synchronizer started with an interval of {syncInterval}")
     
@@ -205,14 +205,17 @@ class EsmRamdiskManager:
             time.sleep(1)
             timePassed = timePassed + 1
             if timePassed % syncInterval == 0:
+                log.info(f"Synchronizing from ram to mirror")
                 self.syncRamToMirror()
+                log.info(f"Sync done")
             if event.is_set():
                 break
         log.debug("synchronizer shut down")
 
     def stopSynchronizer(self):
         # set the shared boolean, which will make the synchronizer
-        self.synchronizerEvent.set()
+        self.synchronizerShutdownEvent.set()
         # wait for the thread to join the main thread
+        log.debug("waiting for synchronizer thread to finish")
         self.synchronizerThread.join()
-        log.info(f"ram2mirror synchronizer stopped")
+        log.info(f"ram to mirror synchronizer stopped")
