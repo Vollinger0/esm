@@ -7,7 +7,7 @@ from esm import robocopy
 from esm.EsmConfigService import EsmConfigService
 from esm.FsTools import FsTools
 from esm.ServiceRegistry import Service, ServiceRegistry
-from esm.Tools import askUser, isDebugMode
+from esm.Tools import askUser, getElapsedTime, getTimer, isDebugMode
 
 log = logging.getLogger(__name__)
 
@@ -155,7 +155,7 @@ class EsmFileSystem:
         log.info(f"Creating link from {linkPath} -> {linkTargetPath}")
         FsTools.createLink(linkPath, linkTargetPath)
 
-    def delete(self, targetPath, native=False):
+    def markForDelete(self, targetPath, native=False):
         """
         mark a file, folder or hardlink and all its content for deletion, use #commitDelete to actually delete the stuff
         """
@@ -166,7 +166,7 @@ class EsmFileSystem:
           
         if not path.exists():
             return
-        
+        # add path to the list of paths to delete
         self.pendingDeletePaths.append((path, targetPath, native))
 
     def getPendingDeletePaths(self):
@@ -181,15 +181,21 @@ class EsmFileSystem:
     def commitDelete(self, override=None):
         """
         actually deletes the list of paths that we are saving in the listOfPathstoDelete
+        returns bool, elapsedTime - bool containing True if the deletion was comitted and the time taken to delete.
         """
+        if len(self.pendingDeletePaths) <= 0:
+            log.info("There is nothing to delete")
+            return False, None
+        
         print(f"List of files marked for deletion:")
         for path, targetPath, native in self.pendingDeletePaths:
             print(f"   {path}")
 
         if not askUser("Proceed? [yes/no] ", "yes", override=override):
             log.info("Will not delete the listed files.")
-            return False
+            return False, None
 
+        start = getTimer()
         for path, targetPath, native in self.pendingDeletePaths:
             if FsTools.isHardLink(path):
                 log.debug(f"deleting link at {path}")
@@ -206,7 +212,8 @@ class EsmFileSystem:
                 else:
                     log.debug(f"deleting file {targetPath}")
                     FsTools.deleteFile(path)
-            log.debug(f"done deleting")
+        log.debug(f"done deleting")
+        elapsedTime = getElapsedTime(start)
         # empty list of pending deletes
         self.clearPendingDeletePaths()
-        return True
+        return True, elapsedTime

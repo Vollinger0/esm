@@ -99,7 +99,7 @@ class EsmMain:
         """
         savegameMirrorPath = self.fileSystem.getAbsolutePathTo("saves.gamesmirror.savegamemirror")
         if askUser(f"Delete old savegame mirror at {savegameMirrorPath}? [yes/no] ", "yes"):
-            self.fileSystem.delete(savegameMirrorPath)
+            self.fileSystem.markForDelete(savegameMirrorPath)
             self.fileSystem.commitDelete()
             return True
         return False
@@ -228,8 +228,8 @@ class EsmMain:
 
     def deleteAll(self):
         """
-        Offers the user to create a static backup first, then backs up the logs and stuff, and then starts deleting stuff.
-        Deletes everything that belongs to a savegame, including:
+        Offers the user to create a static backup first, then backs up the logs and stuff, and then starts marking stuff for deletion
+        Marks everything that belongs to a savegame, including:
         - the savegame (or the ramdisk, if enabled)
         - the backups (not the static ones)
         - the mirrors
@@ -237,7 +237,7 @@ class EsmMain:
         - the logs from the game, tool and esm
         - any additional paths that were configured
 
-        This will ask the user before executing the deletes though.
+        After all that, the user will be shown the list of files that are marked and asked a last time before deletion.
         """
         # ask user if he's sure he wants to completely delete the whole game and data
         log.debug("asking user if he's sure")
@@ -251,53 +251,54 @@ class EsmMain:
 
         if self.config.general.useRamdisk:
             # just unmount the ramdisk, if it exists.
-            driveLetter = self.config.ramdisk.drive
-            if Path(f"{driveLetter}:").exists():
-                log.info(f"Unmounting ramdisk at {driveLetter}.")
+            ramdiskDriveLetter = self.config.ramdisk.drive
+            if Path(f"{ramdiskDriveLetter}:").exists():
+                log.info(f"Unmounting ramdisk at {ramdiskDriveLetter}.")
                 try:
-                    self.ramdiskManager.unmountRamdisk(driveLetter=driveLetter)
+                    self.ramdiskManager.unmountRamdisk(driveLetter=ramdiskDriveLetter)
                 except AdminRequiredException as ex:
                     log.error(f"exception trying to unmount. Will check if its mounted at all")
-                    if self.ramdiskManager.checkRamdrive(driveLetter=driveLetter):
+                    if self.ramdiskManager.checkRamdrive(driveLetter=ramdiskDriveLetter):
                         raise AdminRequiredException(f"Ramdisk is still mounted, can't recuperate from the error here. Exception: {ex}")
                     else:
-                        log.info(f"There is no more ramdisk mounted as {driveLetter}, will continue.")
-                log.info(f"Ramdisk at {driveLetter} unmounted")
+                        log.info(f"There is no more ramdisk mounted as {ramdiskDriveLetter}, will continue.")
+                log.info(f"Ramdisk at {ramdiskDriveLetter} unmounted")
         else:
             savegamePath = self.fileSystem.getAbsolutePathTo("saves.games.savegame")
-            log.info(f"Deleting savegame at {savegamePath}. Depending on savegame size this might take a while!")
-            self.fileSystem.delete(savegamePath, native=True)
+            log.info(f"Marking for deletion: savegame at {savegamePath}")
+            self.fileSystem.markForDelete(savegamePath, native=True)
 
         # delete backups
         backups = self.fileSystem.getAbsolutePathTo("backup")
         backupMirrors = self.fileSystem.getAbsolutePathTo("backup.backupmirrors")
         # delete all hardlinks to the backupmirrors first
-        log.debug(F"deleting all links to the rolling backups")
+        log.debug(F"Marking for deletion: all links to the rolling backups")
         for entry in backups.iterdir():
             if FsTools.isHardLink(entry):
                 rollingBackup = FsTools.getLinkTarget(entry)
                 if self.config.foldernames.backupmirrorprefix in rollingBackup.name:
                     # the link points to a rolling backup, delete it
-                    FsTools.deleteLink(entry)
-        log.info(f"Deleting all rolling backups at {backupMirrors}. Depending on savegame size this might take quite a while!")
-        self.fileSystem.delete(backupMirrors, native=True)
+                    self.fileSystem.markForDelete(entry)
+        log.info(f"Marking for deletion: all rolling backups at {backupMirrors}")
+        self.fileSystem.markForDelete(backupMirrors, native=True)
 
         # delete game mirrors
         gamesmirrors = self.fileSystem.getAbsolutePathTo("saves.gamesmirror")
-        log.info(f"Deleting all hdd mirrors at {gamesmirrors}. Depending on savegame size this might take a while!")
-        self.fileSystem.delete(gamesmirrors, native=True)
+        log.info(f"Marking for deletion: all hdd mirrors at {gamesmirrors}")
+        self.fileSystem.markForDelete(gamesmirrors, native=True)
 
         # delete the cache
         cache = self.fileSystem.getAbsolutePathTo("saves.cache")
         cacheSavegame = f"{cache}/{self.config.server.savegame}"
-        log.info(f"Deleting the cache at {cacheSavegame}")
-        self.fileSystem.delete(cacheSavegame)
+        log.info(f"Marking for deletion: the cache at {cacheSavegame}")
+        self.fileSystem.markForDelete(cacheSavegame)
         
         #delete eah tool data
         eahToolDataPattern = Path(f"{self.config.paths.eah}/Config/").absolute().joinpath("*.dat")
         deglobbedPaths = FsTools.resolveGlobs([eahToolDataPattern])
         for entry in deglobbedPaths:
-            self.fileSystem.delete(entry)
+            log.info(f"Marking for deletion: eah tool data at {entry}")
+            self.fileSystem.markForDelete(entry)
 
         # delete additionally configured stuff
         additionalDeletes = self.config.deletes.additionalDeletes
@@ -305,18 +306,19 @@ class EsmMain:
             absolutePaths = FsTools.toAbsolutePaths(additionalDeletes, parent=self.config.paths.install)
             deglobbedPaths = FsTools.resolveGlobs(absolutePaths)
             for path in deglobbedPaths:
-                self.fileSystem.delete(path)
+                log.info(f"Marking for deletion: configured additional path at {path}")
+                self.fileSystem.markForDelete(path)
         
         # backupAllLogs
         self.backupAllLogs()
 
-        log.info(f"Will start deletion tasks now")
-        with Timer() as timer:
-            if self.fileSystem.commitDelete():
-                log.info(f"Deleting all that took {timer.elapsedTime}. You can now start a fresh game.")
-            else:
-                self.fileSystem.clearPendingDeletePaths()
-                log.warning("Deletion cancelled")
+        log.info(f"Will start deletion tasks now. Depending on savegame size and amount of backup mirrors, this might take a while!")
+        comitted, elapsedTime = self.fileSystem.commitDelete()
+        if comitted:
+            log.info(f"Deleting all took {elapsedTime}. You can now start a fresh game.")
+        else:
+            self.fileSystem.clearPendingDeletePaths()
+            log.warning("Deletion cancelled")
 
     def backupAllLogs(self):
         backupDir = self.fileSystem.getAbsolutePathTo("backup")
@@ -336,7 +338,8 @@ class EsmMain:
         # zip the target folder and remove it afterwards
         zipFileName = self.getLogsBackupFileName()
         self.backupService.createZip(source=logBackupFolder, backupDirectory=backupDir, zipFileName=zipFileName)
-        self.fileSystem.delete(logBackupFolder)
+        # we can delete this folder directly at this point, since we backed them up and to not confuse the user later
+        FsTools.deleteDir(logBackupFolder, recursive=True)
         log.info(f"All logs backed up and zipped as {zipFileName}")
 
     def backupLogs(self, sourcePath, backupFolderPath, folderName):
