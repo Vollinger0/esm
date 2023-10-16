@@ -35,7 +35,8 @@ class EsmDedicatedServer:
 
     def startServer(self):
         """
-        start the server
+        Start the server with the configured mode.
+        The called methods will wait until the respective process is started
         """
         if (self.getConfiguredStartMode() == self.STARTMODE_DIRECT):
             log.debug(f"startMode is {self.STARTMODE_DIRECT}")
@@ -48,6 +49,8 @@ class EsmDedicatedServer:
         """
         Starts the server using the dedicated exe, bypassing the launcher. This enables us to be able to identify the process id directly
         This, in turn, allows that there can be multiple instances of the dedicated exe running on the same machine
+
+        Method returns as soon as the process is started and its process info is returned.
         """
         arguments = [os.path.abspath(f"{self.config.paths.install}/{self.config.foldernames.dedicatedServer}/{self.config.filenames.dedicatedExe}")]
         if (self.getConfiguredGfxMode() == self.GFXMODE_OFF):
@@ -61,11 +64,46 @@ class EsmDedicatedServer:
         arguments.append("-logFile")
         arguments.append(self.createLogFileName())
         log.info(f"Starting server with: {arguments} in directory {self.config.paths.install}")
-        process = psutil.Popen(args=arguments)
+        if not self.debugMode():
+            process = psutil.Popen(args=arguments)
+        else:
+            log.debug(f"debug mode enabled!")
         log.debug(f"Process returned: {process}")
         self.process = process
         return self.process
+    
+    def debugMode(self):
+        return self.config.general.debugMode
 
+    def startServerLauncherMode(self):
+        """
+        Start the game using the default empyrion launcher, returns the psutil process of the dedicated exe if successful
+
+        Method returns as soon as the process of the dedicated server was found and its process info is returned, otherwise exceptions are passed.
+        """
+        launcherExeFileName = self.config.filenames.launcherExe
+        pathToExecutable = os.path.abspath(f"{self.config.paths.install}/{launcherExeFileName}")
+        if (self.getConfiguredGfxMode()==self.GFXMODE_ON):
+            log.debug(f"gfxMode is {self.GFXMODE_ON}")
+            startDedi = "-startDediWithGfx"
+        else:
+            log.debug(f"gfxMode is {self.GFXMODE_OFF}")
+            startDedi = "-startDedi"
+        arguments = [pathToExecutable, startDedi, "-dedicated", self.config.server.dedicatedYaml]
+        log.info(f"Starting server with: {arguments} in directory {self.config.paths.install}")
+        if not self.debugMode():
+            process = psutil.Popen(args=arguments, cwd=self.config.paths.install)
+        else:
+            log.debug(f"debug mode enabled!")
+        # give the launcher a few seconds to start the dedicated exe
+        time.sleep(3)
+        log.debug(f"launcher returned: {process}")
+        
+        # find the dedicated process and remember its process info
+        self.process = self.findProcessByNameWithTimeout(self.config.filenames.dedicatedExe, self.config.server.launcher.maxStartupTimeout)
+        log.debug(f"found process of dedicated server: {self.process}")
+        return self.process
+    
     def createLogFileName(self):
         """ 
         reproduce a logfile name like ../Logs/$buildNumber/Dedicated_YYMMDD-HHMMSS-xx.log. 
@@ -92,30 +130,6 @@ class EsmDedicatedServer:
         formattedDate = date.strftime("%y%m%d-%H%M%S")
         return formattedDate
 
-    def startServerLauncherMode(self):
-        """
-        start the game using the default empyrion launcher, returns the psutil process of the dedicated exe if successful
-        """
-        launcherExeFileName = self.config.filenames.launcherExe
-        pathToExecutable = os.path.abspath(f"{self.config.paths.install}/{launcherExeFileName}")
-        if (self.getConfiguredGfxMode()==self.GFXMODE_ON):
-            log.debug(f"gfxMode is {self.GFXMODE_ON}")
-            startDedi = "-startDediWithGfx"
-        else:
-            log.debug(f"gfxMode is {self.GFXMODE_OFF}")
-            startDedi = "-startDedi"
-        arguments = [pathToExecutable, startDedi, "-dedicated", self.config.server.dedicatedYaml]
-        log.info(f"Starting server with: {arguments} in directory {self.config.paths.install}")
-        process = psutil.Popen(args=arguments, cwd=self.config.paths.install)
-        # give the launcher a few seconds to start the dedicated exe
-        time.sleep(3)
-        log.debug(f"launcher returned: {process}")
-        
-        # find the dedicated process and remember its process info
-        self.process = self.findProcessByNameWithTimeout(self.config.filenames.dedicatedExe, self.config.server.launcher.maxStartupTimeout)
-        log.debug(f"found process of dedicated server: {self.process}")
-        return self.process
-    
     def findProcessByNameWithTimeout(self, processName, maxStartupTimeout):
         """
         will search for a process that contains or is like the provided processName
@@ -184,11 +198,16 @@ class EsmDedicatedServer:
     
     def stop(self):
         if self.process:
-            log.info(f"Will send the server the shutdown signal now")
+            log.info(f"Will send the server process {self.process.pid} the kill signal")
             self.process.terminate()
-            # self.process.kill()
         else:
             raise Exception("no process info does not exist, did you forget to start the server?")
+        
+    def stopAndWait(self, timeout=15):
+        self.stop()
+        # wait for a few seconds. if the timeout is reached there will be a timeoutexpired exception thrown.
+        self.process.wait(timeout=timeout)
+
 
     def isRunning(self):
         if self.process:
