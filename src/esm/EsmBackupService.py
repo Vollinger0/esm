@@ -1,9 +1,11 @@
 import logging
-from datetime import datetime
+import subprocess
+from datetime import datetime, timedelta
 from functools import cached_property
 from pathlib import Path
-from esm import ServerNeedsToBeStopped
-
+from timeit import default_timer as timer
+from hurry.filesize import size
+from esm import RequirementsNotFulfilledError, ServerNeedsToBeStopped, isDebugMode
 from esm.EsmConfigService import EsmConfigService
 from esm.EsmDedicatedServer import EsmDedicatedServer
 from esm.EsmFileSystem import EsmFileSystem
@@ -239,6 +241,81 @@ class EsmBackupService:
 
     def createStaticBackup(self):
         """
-        create a static backup to zip
+        create a static backup to zip, this will use the latest rolling backup mirror as source.
         """
-        raise NotImplementedError("not yet implemented")
+        latestBackupNumber = self.getPreviousBackupNumber()
+        latestBackupFolder = self.getRollingBackupFolder(latestBackupNumber)
+
+        staticBackupFileName = self.getStaticBackupFileName()
+        parentBackupDir = self.fileSystem.getAbsolutePathTo("backup")
+        log.info(f"Creating static backup from {latestBackupFolder.as_posix()} as '{parentBackupDir}/{staticBackupFileName}'. Depending on savegame size, this might take a while.")
+        self.createZip(latestBackupFolder, parentBackupDir, staticBackupFileName)
+
+    def getStaticBackupFileName(self, date=None):
+        """
+        returns a filename for the static zip file looking like: 20231002_2359_savegame.zip
+        """
+        if date:
+            date = date
+        else:
+            date = datetime.now()
+        formattedDate = date.strftime("%Y%m%d_%H%M%S")
+        return f"{formattedDate}_{self.config.server.savegame}.zip"
+
+    def createZip(self, source, backupDirectory, zipFileName):
+        """
+        Create a zipfile of the given source folder, saved under the name given in zipFile.
+
+        This will use the parameters defined in the configuration. Speed is of essence, compression rate is not very important.
+
+        Example: "%zipcmd%" a -tzip -mtp=0 -mm=Deflate64 -mmt=on -mx1 -mfb=32 -mpass=1 -sccUTF-8 -mcu=on -mem=AES256 -bb0 -bse0 -bsp2 -w"workingdir" "zip" "dir"
+        """
+        zipFile = f"{backupDirectory}\{zipFileName}"
+        peaZipExecutable = self.getPeaZipPath()
+        cmd = [peaZipExecutable]
+        cmd.extend(str(self.config.backups.staticBackupPeaZipOptions).split(" "))
+        cmd.extend([f"-w{backupDirectory}", zipFile, f"{source}\\*"])
+        log.debug(f"executing {cmd}")
+        start = timer()
+        process = subprocess.run(cmd)
+        end = timer()
+        elapsedTime = timedelta(seconds=end-start)
+        log.debug(f"process returned: {process} after {elapsedTime}")
+        # this returns when peazip finishes
+        if process.returncode > 0:
+            log.error(f"error executing peazip: stdout: \n{process.stdout}\n, stderr: \n{process.stderr}\n")
+        
+        fileSize = Path(zipFile).stat().st_size
+        log.info(f"Static zip created at {zipFile}, size: {size(fileSize)}, time to create: {elapsedTime}")
+
+        # we'll use a method that is extremely fast, but has a low compression rate
+        # on test: 250MB savegame -> 1 second, 70MB
+        # on test: 500MB savegame -> 2 second, 140MB
+        # "%zipCmdPath%" a -tzip -mtp=0 -mm=Deflate64 -mmt=on -mx1 -mfb=32 -mpass=1 -sccUTF-8 -mcu=on -mem=AES256 -bb0 -bse0 -bsp2 "-w%backupDirPath%" "%backupDirPath%\%backupZipName%" "!backupDir!" >>%zipLogfile%
+
+        # on test: 250MB savegame -> 1 second, 71MB
+        # on test: 500MB savegame -> 2 second, 140MB
+        # "%zipCmdPath%" a -tzip -mtp=0 -mm=Deflate -mmt=on -mx1 -mfb=32 -mpass=1 -sccUTF-8 -mcu=on -mem=AES256 -bb0 -bse0 -bsp2 "-w%backupDirPath%" "%backupDirPath%\%backupZipName%" "!backupDir!" >>%zipLogfile%
+
+        # on test: 250MB savegame -> 3 seconds, 9MB - not supported by tcmd :(
+        # on test: 500MB savegame -> 7 seconds, 12MB - not supported by tcmd :(
+        # "%zipCmdPath%" a -t7z -m0=Zstd -mmt=on -mx1 -ms=8m -mqs=on -sccUTF-8 -bb0 -bse0 -bsp2 "-w%backupDirPath%" "%backupDirPath%\%backupZipName%" "!backupDir!" >>%zipLogfile%
+
+        # on test: 250MB savegame -> 4 seconds, 23MB
+        # on test: 250MB savegame -> 5 seconds, 23MB
+        # on test: 500MB savegame -> 9 seconds, 41MB
+        # "%zipCmdPath%" a -t7z -m0=Deflate64 -mmt=on -mx1 -mfb=32 -mpass=1 -ms=8m -mqs=on -sccUTF-8 -bb0 -bse0 -bsp2 "-w%backupDirPath%" "%backupDirPath%\%backupZipName%" "!backupDir!" >>%zipLogfile%
+
+        # on test: 250MB savegame -> 5 seconds, 34MB
+        # on test: 500MB savegame -> 9 seconds, 66MB
+        # "%zipCmdPath%" a -t7z -m0=Deflate -mmt=on -mx1 -mfb=32 -mpass=1 -ms=8m -mqs=on -sccUTF-8 -bb0 -bse0 -bsp2 "-w%backupDirPath%" "%backupDirPath%\%backupZipName%" "!backupDir!" >>%zipLogfile%
+        pass
+
+    def getPeaZipPath(self):
+        """
+        checks that the pea zip executable exists and returns its path.
+        """
+        peaZip = self.config.paths.peazip
+        if Path(peaZip).exists():
+            return peaZip
+        raise RequirementsNotFulfilledError(f"PeaZip not found in the configured path at {peaZip}. Please make sure it exists and the configuration points to it.")

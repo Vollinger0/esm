@@ -137,3 +137,9 @@ class EsmMain:
         """
         log.info("creating rolling backup")
         self.backupService.createRollingBackup()
+
+    def createStaticBackup(self):
+        """
+        create a static zipped backup of the latest rolling backup
+        """
+        self.backupService.createStaticBackup()
