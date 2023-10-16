@@ -83,6 +83,9 @@ class test_FsTools(unittest.TestCase):
                 else:
                     os.unlink(dir)
                     dir.unlink(missing_ok=True)
+            else:
+                if FsTools.isHardLink(dir):
+                    FsTools.deleteLink(dir)
 
     def test_multipleLinks(self):
         target1 = Path("test-linktarget1")
