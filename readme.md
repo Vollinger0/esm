@@ -1,6 +1,10 @@
 ## ESM - Empyrion Server Manager
 
 
+## releasing:
+* execute a $ pip freeze > requirements.txt
+** check the computed requirements, clean up as necessary
+
 ## TODOS:
 ### done
 [x] usecase: start up gameserver
@@ -11,15 +15,18 @@
 [x] implement regular ram2mirror sync
 [x] usecase: stop gameserver properly
 [x] implement DI
+[x] add ram2mirror synchronizer
 [x] usecase: create incremental backup
+[x] usecase: create manual static backup
 
 ### WIP
 [+] debugmode
-[ ] usecase: create manual static backup
+[ ] usecase: update gameserver
 
 ### later
-[ ] usecase: update gameserver
 [ ] usecase: delete savegame, including tool data, potential mod data too?
+[ ] tool should check free disk space before doing a new static backup
+[ ] tool should check free disk space before starting server (especially in ramdisk mode)
 [+] when useRamdisk is enabled, enable checks for its file structure, when its not, do not start use the synchronizer (of course)
 [ ] use the click library to extend the scripts with command line tools
 [ ] offer some kind of better interactive mode for different stuff

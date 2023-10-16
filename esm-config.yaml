@@ -26,6 +26,7 @@ backups:
   additionalBackupPaths: # add a list of full paths to source files or directories to backup additionally. Those will all end up in the folder "Additional" in the backup.
     - 'D:\EGS\Empyrion\esm\esm-config.yaml' # our own configuration
     - 'D:\EGS\Empyrion\Content\Mods\EncryptoidModPack' # the modpacks database
+  staticBackupPeaZipOptions: "a -tzip -mtp=0 -mm=Deflate64 -mmt=on -mx1 -mfb=32 -mpass=1 -sccUTF-8 -mcu=on -mem=AES256 -bb0 -bse0 -bsp2" #make sure to use the fastest compression options
 
 paths:
   install: 'D:\EGS\Empyrion\'
