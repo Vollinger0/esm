@@ -58,6 +58,7 @@ class EsmFileSystem:
                     "savegame": {
                         "_parent": config.server.savegame,
                         "templates": config.foldernames.templates,
+                        "playfields": config.foldernames.playfields,
                         "globaldb": config.filenames.globaldb
                     }
                 },

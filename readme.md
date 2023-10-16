@@ -29,14 +29,16 @@
 [x] add proper cli - use the click library to extend the scripts with command line tools
 [x] debugmode
 [x] split the config in a "basic" config, an custom config that overwrites the basic config.
+[x] usecase: wipe galaxy - integrate other script
+[x] custom dblocation may not be given in conjunction with nodrymode.
+[x] print out wipetypep descriptions on help too.
 
 ### WIP
-[ ] usecase: wipe galaxy - integrate other script
-[ ] interactive mode for wipe galaxy tool
+[ ] re-mount option for when ramdisk size has to be updated or ramdisk is down for some reason.
 
 ### later
+[ ] interactive mode for wipe galaxy tool
 [+] when useRamdisk is enabled, enable checks for its file structure, when its not, do not start use the synchronizer (of course)
-[ ] re-mount option for when ramdisk size has to be updated
 [ ] offer some kind of better interactive mode for different stuff
 [ ] implement allowMultpleServerInstances switch. Once enabled, do not check for running instances of the game before starting, do not start if startmode is set to direct, etc.
 [ ] implement server-callback with epmremoteclient
@@ -44,6 +46,7 @@
 [ ] implement warning/talkback to server chat for syncs, backups probably even random stuff with funny hamster sentences.
 [ ] integrity check: checks if things fit together (e.g. dedicated.yaml config), our own config when running multiple instances, etc.
     * or adapt config to dedicated.yaml, especially when paths change. probably as a sanity check implementation
+[ ] wipes from the wipetool should appear in cb:wipes? Do i need to alter EAHs database too?
 
 ### optional
 [ ] usecase: purge galaxy

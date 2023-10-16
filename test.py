@@ -15,4 +15,4 @@ log.debug(f"{wtl}")
 foo = list(map(lambda x: x.value.val, wtl))
 log.debug(f"{foo}")
 
-
+log.debug(WipeType.byName("all"))

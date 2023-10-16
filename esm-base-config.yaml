@@ -64,6 +64,7 @@ foldernames:
   saves: 'Saves'
   games: 'Games'
   backup: 'Backup'
+  playfields: 'Playfields'
   templates: 'Templates'
   backupmirrors: 'BackupMirrors'
   backupmirrorprefix: 'rollingBackup_'

@@ -3,7 +3,7 @@ import logging
 from pathlib import Path
 import time
 from esm import AdminRequiredException, UserAbortedException, WrongParameterError
-from esm.DataTypes import WipeType
+from esm.DataTypes import Territory, WipeType
 from esm.EsmBackupService import EsmBackupService
 from esm.EsmDeleteService import EsmDeleteService
 from esm.EsmFileSystem import EsmFileSystem
@@ -300,7 +300,7 @@ class EsmMain:
                 log.info(f"No savegame exists at {savegamePath}. This is either a configuration error or none exists. You might need to create a new one later.")
                 return False
             
-    def wipeEmptyPlayfields(self, dbLocation=None, wipeType=None, territory=None, dryMode=True):
+    def wipeEmptyPlayfields(self, dbLocation=None, wipeType=None, territory=None, nodrymode=False):
         """
         Wipes all defined playfields with the defined wipetype, filtering out any playfield that has a player, player owned structure or terrain placeable on it.
 
@@ -315,21 +315,20 @@ class EsmMain:
             if dbLocationPath.exists():
                 dbLocation = str(dbLocationPath)
             else:
-                raise WrongParameterError(f"DbLocation {dbLocation} is not a valid database location path.")
+                raise WrongParameterError(f"DbLocation '{dbLocation}' is not a valid database location path.")
 
         availableTerritories = self.wipeService.getAvailableTerritories()
-        if territory and (territory in availableTerritories or territory == 'ALL'):
-            log.debug(f"valid territory selected {territory}")
+        atn = list(map(lambda x: x.name, availableTerritories))
+        if territory and (territory in atn or territory == Territory.GALAXY):
+            log.debug(f"valid territory selected '{territory}'")
         else:
-            atn = list(map(lambda x: x.name, availableTerritories))
-            raise WrongParameterError(f"Territory {territory} not valid, must be one of: ALL or {atn}")
+            raise WrongParameterError(f"Territory '{territory}' not valid, must be one of: {Territory.GALAXY} or {atn}")
 
         wtl = list(map(lambda x: x.value.val, list(WipeType)))
         if wipeType and wipeType in wtl:
-            log.debug(f"valid wipetype selected {wipeType}")
+            log.debug(f"valid wipetype selected '{wipeType}'")
         else:
-            raise WrongParameterError(f"Wipe type {wipeType} not valid, must be one of: {wtl}")
+            raise WrongParameterError(f"Wipe type '{wipeType}' not valid, must be one of: {wtl}")
         
-        log.info(f"Calling wipe empty playfields for dbLocation: {dbLocation} territory {territory}, wipeType {wipeType} and dryMode {dryMode}")
-        self.wipeService.wipeEmptyPlayfields(dbLocation, territory, wipeType, dryMode)
-
+        log.info(f"Calling wipe empty playfields for dbLocation: '{dbLocation}' territory '{territory}', wipeType '{wipeType}' and nodrymode '{nodrymode}'")
+        self.wipeService.wipeEmptyPlayfields(dbLocation, territory, wipeType, nodrymode)
