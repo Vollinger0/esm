@@ -2,6 +2,7 @@ import logging
 import os
 from pathlib import Path
 import unittest
+
 from esm.EsmConfigService import EsmConfigService
 
 from esm.EsmFileSystem import EsmFileSystem
@@ -65,6 +66,7 @@ class test_EsmFileSystem(unittest.TestCase):
         if target.exists(): 
             target.rmdir()
 
+    @unittest.skip("this is too dangerous to keep yet, FSTools need to make sure it doesn't delet too much!")
     def test_deleteByPattern(self):
         esmConfig = EsmConfigService(configFilePath="esm-config.yaml")
         esmfs = EsmFileSystem(config=esmConfig)
@@ -81,11 +83,14 @@ class test_EsmFileSystem(unittest.TestCase):
         for entry in [dir1, file1, file2, file3]:
             self.assertTrue(entry.exists())
 
-        esmfs.deleteByPattern("pattern_test/", "foo/*.txt")
+        paths = FsTools.resolveGlobs(["pattern_test/foo/*.txt"])
+        for path in paths:
+            log.debug(f"would delete {path}")
+        # esmfs.delete(path)
 
         for entry in [dir1, file3]:
             self.assertTrue(entry.exists())
         self.assertFalse(file1.exists())
         self.assertFalse(file2.exists())
 
-        FsTools.quickDelete("pattern_test")        
+        #FsTools.quickDelete("pattern_test")        

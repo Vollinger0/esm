@@ -284,9 +284,9 @@ class test_FsTools(unittest.TestCase):
         shutil.rmtree(parent)
 
     def test_isGlobPattern(self):
-        self.assertFalse(FsTools.isGlobPattern("D:\EGS\Empyrion"))
-        self.assertTrue(FsTools.isGlobPattern("D:\EGS\Empyrion\*"))
-        self.assertFalse(FsTools.isGlobPattern("D:\EGS\Empyrion\bla.txt"))
+        self.assertFalse(FsTools.isGlobPattern(r"D:\EGS\Empyrion"))
+        self.assertTrue(FsTools.isGlobPattern(r"D:\EGS\Empyrion\*"))
+        self.assertFalse(FsTools.isGlobPattern(r"D:\EGS\Empyrion\bla.txt"))
         self.assertFalse(FsTools.isGlobPattern("some/path"))
         self.assertTrue(FsTools.isGlobPattern("some/path/with/**/glob/stuff/*.dat"))
         self.assertFalse(FsTools.isGlobPattern("some/path/with/no/glob/stuff.txt"))
