@@ -1,6 +1,8 @@
+from datetime import datetime
 from functools import cached_property
 import logging
 from pathlib import Path
+import shutil
 import subprocess
 import time
 from esm import AdminRequiredException, RequirementsNotFulfilledError
@@ -12,7 +14,7 @@ from esm.EsmDedicatedServer import EsmDedicatedServer, GfxMode
 from esm.EsmRamdiskManager import EsmRamdiskManager
 from esm.FsTools import FsTools
 from esm.ServiceRegistry import ServiceRegistry
-from esm.Tools import askUser, getElapsedTime, getTimer
+from esm.Tools import Timer, askUser, getElapsedTime, getTimer, isDebugMode, monkeyPatchAllFSFunctionsForDebugMode
 
 log = logging.getLogger(__name__)
 
@@ -52,6 +54,10 @@ class EsmMain:
             'caller': self.caller
         }            
         self.config = ServiceRegistry.register(EsmConfigService(configFilePath=self.configFilePath, context=context))
+
+        # in debug mode, monkey patch all functions that may alter the file system or execute other programs.
+        if isDebugMode(self.config):
+            monkeyPatchAllFSFunctionsForDebugMode()
         
     def askUserToCreateNewSavegame(self):
         if askUser("Do you want to create a new savegame? [yes/no] ", "yes"):
@@ -214,3 +220,149 @@ class EsmMain:
                     # its a file
                     log.info(f"copying file {source} into {destination}")  
                     FsTools.copy(source=source, destination=destination)
+
+    def deleteAll(self):
+        """
+        Offers the user to create a static backup first, then backs up the logs and stuff, and then starts deleting stuff.
+        Deletes everything that belongs to a savegame, including:
+        - the savegame (or the ramdisk, if enabled)
+        - the backups (not the static ones)
+        - the mirrors
+        - the eah tool data
+        - the logs from the game, tool and esm
+        - any additional paths that were configured
+
+        This will ask the user before executing the deletes though.
+        """
+        # ask user if he's sure he wants to completely delete the whole game and data
+        log.debug("asking user if he's sure")
+        if not askUser("This will delete *ALL* data belonging to the savegame, including the rolling backups (not the static ones), tool data, logs and everything that has been additionally configured. Are you sure you want to do this now? [yes/no] ", "yes"):
+            log.info("Ok, will not delete anything.")
+            return False
+
+        # ask user for static backup
+        if askUser("It is strongly recommended to create a last static backup, just in case. Do that now? [yes/no] ", "yes"):
+            self.backupService.createStaticBackup()
+
+        if self.config.general.useRamdisk:
+            # just unmount the ramdisk, if it exists.
+            driveLetter = self.config.ramdisk.drive
+            if Path(f"{driveLetter}:").exists():
+                log.info(f"Unmounting ramdisk at {driveLetter}.")
+                try:
+                    self.ramdiskManager.unmountRamdisk(driveLetter=driveLetter)
+                except AdminRequiredException as ex:
+                    log.error(f"exception trying to unmount. Will check if its mounted at all")
+                    if self.ramdiskManager.checkRamdrive(driveLetter=driveLetter):
+                        raise AdminRequiredException(f"Ramdisk is still mounted, can't recuperate from the error here. Exception: {ex}")
+                    else:
+                        log.info(f"There is no more ramdisk mounted as {driveLetter}, will continue.")
+                log.info(f"Ramdisk at {driveLetter} unmounted")
+        else:
+            with Timer() as timer:
+                savegamePath = self.fileSystem.getAbsolutePathTo("saves.games.savegame")
+                log.info(f"Deleting savegame at {savegamePath}. Depending on savegame size this might take a while!")
+                self.fileSystem.delete(savegamePath, native=True)
+            log.debug(f"deleting savegame took {timer.elapsedTime}")
+
+        # delete backups
+        backups = self.fileSystem.getAbsolutePathTo("backup")
+        backupMirrors = self.fileSystem.getAbsolutePathTo("backup.backupmirrors")
+        # delete all hardlinks to the backupmirrors first
+        log.debug(F"deleting all links to the rolling backups")
+        for entry in backups.iterdir():
+            if FsTools.isHardLink(entry):
+                rollingBackup = FsTools.getLinkTarget(entry)
+                if self.config.foldernames.backupmirrorprefix in rollingBackup.name:
+                    # the link points to a rolling backup, delete it
+                    FsTools.deleteLink(entry)
+        with Timer() as timer:
+            log.info(f"Deleting all rolling backups at {backupMirrors}. Depending on savegame size this might take quite a while!")
+            self.fileSystem.delete(backupMirrors, native=True)
+        log.debug(f"deleting rolling backups took {timer.elapsedTime}")
+
+        # delete game mirrors
+        with Timer() as timer:
+            gamesmirrors = self.fileSystem.getAbsolutePathTo("saves.gamesmirror")
+            log.info(f"Deleting all hdd mirrors at {gamesmirrors}. Depending on savegame size this might take a while!")
+            self.fileSystem.delete(gamesmirrors, native=True)
+        log.debug(f"deleting hdd mirrors took {timer.elapsedTime}")
+
+        # delete the cache
+        with Timer() as timer:
+            cache = self.fileSystem.getAbsolutePathTo("saves.cache")
+            cacheSavegame = f"{cache}/{self.config.server.savegame}"
+            log.info(f"Deleting the cache at {cacheSavegame}")
+            self.fileSystem.delete(cacheSavegame)
+        log.debug(f"deleting cache took {timer.elapsedTime}")
+        
+        #delete eah tool data
+        eahToolDataPattern = Path(f"{self.config.paths.eah}/Config/").absolute().joinpath("*.dat")
+        deglobbedPaths = FsTools.resolveGlobs([eahToolDataPattern])
+        for entry in deglobbedPaths:
+            self.fileSystem.delete(entry)
+
+        # delete additionally configured stuff
+        additionalDeletes = self.config.deletes.additionalDeletes
+        if additionalDeletes and len(additionalDeletes)>0:
+            absolutePaths = FsTools.toAbsolutePaths(additionalDeletes, parent=self.config.paths.install)
+            deglobbedPaths = FsTools.resolveGlobs(absolutePaths)
+            for path in deglobbedPaths:
+                self.fileSystem.delete(path)
+        
+        # backupAllLogs
+        self.backupAllLogs()
+        log.info("Deletion complete, you can now start a fresh game.")
+
+    def backupAllLogs(self):
+        backupDir = self.fileSystem.getAbsolutePathTo("backup")
+        logBackupFolder = Path(f"{backupDir}/alllogs")
+        logBackupFolder.mkdir(exist_ok=True)
+        if self.config.deletes.backupGameLogs:
+            source = f"{self.config.paths.install}/Logs/*"
+            self.backupLogs(source, logBackupFolder, "GameLogs")
+        if self.config.deletes.backupEahLogs:
+            source = f"{self.config.paths.eah}/logs/*"
+            self.backupLogs(source, logBackupFolder, "EAHLogs")
+        if self.config.deletes.backupEsmLogs:            
+            source = f"{self.config.paths.install}/*.log"
+            self.backupLogs(source, logBackupFolder, "ESMLogs")
+            source = f"{self.config.paths.install}/esm/*.log"
+            self.backupLogs(source, logBackupFolder, "ESMLogs")
+        # zip the target folder and remove it afterwards
+        zipFileName = self.getLogsBackupFileName()
+        self.backupService.createZip(source=logBackupFolder, backupDirectory=backupDir, zipFileName=zipFileName)
+        self.fileSystem.delete(logBackupFolder)
+        log.info(f"All logs backed up and zipped as {zipFileName}")
+
+    def backupLogs(self, sourcePath, backupFolderPath, folderName):
+        """
+        move the content of given source path to the backup folder path, putting the contents into the folder called foldername at the target
+        """
+        sourcePaths = []
+        # if source is glob, get list of sources.
+        if FsTools.isGlobPattern(sourcePath):
+            sourcePaths.extend(FsTools.resolveGlobs(paths=[sourcePath]))
+        else:
+            sourcePaths.append(sourcePath)
+
+        for source in sourcePaths:
+            # move source into backupfolder as requested.
+            target = backupFolderPath.joinpath(folderName);
+            FsTools.createDir(target)
+            # if we're trying to move our own logfile, just create a copy instead.
+            if Path(self.config.context.logFile).samefile(source):
+                shutil.copy(src=source, dst=target)
+            else:
+                shutil.move(src=source, dst=target)
+        
+    def getLogsBackupFileName(self, date=None):
+        """
+        returns a filename for the static zip file looking like: 20231002_2359_savegame_logs.zip
+        """
+        if date:
+            date = date
+        else:
+            date = datetime.now()
+        formattedDate = date.strftime("%Y%m%d_%H%M%S")
+        return f"{formattedDate}_{self.config.server.savegame}_logs.zip"

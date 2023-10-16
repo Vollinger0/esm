@@ -1,7 +1,7 @@
 general:
-  #debugMode: True
+  # debugMode: True
   debugMode: False
-  #allowMultpleServerInstances: True
+  # allowMultpleServerInstances: True
   externalizeTemplates: True
   useRamdisk: True
 
@@ -42,6 +42,16 @@ updates:
     #- {src: 'D:\EGS\Empyrion\test.txt', dst: 'content\configuration'}
     #- {src: 'D:\EGS\Empyrion\test.txt', dst: 'D:\temp'}
 
+deletes:
+  backupGameLogs: True # backup all game logs
+  backupEahLogs: True  # backup all eah logs
+  backupEsmLogs: True  # backup all esm logs
+  additionalDeletes:
+    # add paths to files/directories that shall be deleted additionally to the savegame, like mod data, etc.. This accepts filesystem globbing (wildcards) like *.dat or similar.
+    # if a path is relative, it will be assumed to be relative to the installation path.
+    - 'test.txt'
+    # - 'Content\Mods\EncryptoidModPack\Mods\AdminTetherport\Database'
+
 paths:
   install: 'D:\EGS\Empyrion\'
   osfmount: 'C:\Users\Nutzer\Programme\OSFMount\osfmount.com'
@@ -57,7 +67,6 @@ foldernames:
   templates: 'Templates'
   backupmirrors: 'BackupMirrors'
   backupmirrorprefix: 'rollingBackup_'
-  logs: 'Logs'
   dedicatedserver: 'DedicatedServer'
   gamesmirror: 'GamesMirror'
   savegamemirrorpostfix: '_Mirror'

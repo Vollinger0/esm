@@ -89,11 +89,14 @@ def testBackup():
 def testStaticBackup():
     esm.createStaticBackup()    
 
-def testInstallFromSteam():
+def testInstallGame():
     esm.installGame()
 
 def testUpdateGame():
     esm.updateGame()
+
+def testDeleteAll():
+    esm.deleteAll()
 
 
 ######################################################
@@ -116,5 +119,6 @@ log.debug(f"Logging to: {esm.logFile}")
 #testStaticBackup()
 #testInstallFromSteam()
 #testUpdateGame()
+testDeleteAll()
 
 log.info(f"Script finished successfully. Check the logfile ({esm.logFile}) if you missed something. Bye!")

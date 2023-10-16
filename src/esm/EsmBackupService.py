@@ -66,7 +66,7 @@ class EsmBackupService:
         if previousBackupNumber > 0:
             self.removeMarkerFile(previousBackupFolder)
 
-        deletedLinks = self.removeDeprecatedBackupFolderLink(targetBackupFolder)
+        deletedLinks = self.removeLinksToTargetBackupFolder(targetBackupFolder)
         if deletedLinks and len(deletedLinks) > 0:
             linkList = ",".join(map(str,deletedLinks))
             log.info(f"Removed now deprecated hardlinks: {linkList}")
@@ -104,7 +104,7 @@ class EsmBackupService:
         backupFolderPath = Path(f"{backupParentDir}/{folderPrefix}{backupNumber}")
         return backupFolderPath
 
-    def removeDeprecatedBackupFolderLink(self, targetBackupFolder):
+    def removeLinksToTargetBackupFolder(self, targetBackupFolder):
         """
         Delete any links in the backup folder that might point to our targetBackupFolder
         
@@ -290,6 +290,7 @@ class EsmBackupService:
         
         fileSize = Path(zipFile).stat().st_size
         log.info(f"Static zip created at {zipFile}, size: {FsTools.realToHumanFileSize(fileSize)}, time to create: {elapsedTime}")
+        return Path(zipFile)
 
         # we'll use a method that is extremely fast, but has a low compression rate
         # on test: 250MB savegame -> 1 second, 70MB

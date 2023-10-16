@@ -282,3 +282,41 @@ class test_FsTools(unittest.TestCase):
         FsTools.copyDir(source=srcDir, destination=dstDir)
         self.assertTrue(Path("copy_test/target_dir/src_dir/file2.txt").exists())
         shutil.rmtree(parent)
+
+    def test_isGlobPattern(self):
+        self.assertFalse(FsTools.isGlobPattern("D:\EGS\Empyrion"))
+        self.assertTrue(FsTools.isGlobPattern("D:\EGS\Empyrion\*"))
+        self.assertFalse(FsTools.isGlobPattern("D:\EGS\Empyrion\bla.txt"))
+        self.assertFalse(FsTools.isGlobPattern("some/path"))
+        self.assertTrue(FsTools.isGlobPattern("some/path/with/**/glob/stuff/*.dat"))
+        self.assertFalse(FsTools.isGlobPattern("some/path/with/no/glob/stuff.txt"))
+
+        self.assertTrue(FsTools.isGlobPattern("D:/some/path/*.txt"))
+        self.assertFalse(FsTools.isGlobPattern("D:/some/path/foo.txt"))
+
+    def test_resolveGlobbedPatternsAndExtendWithAbsolute(self):
+        userentries = [
+            "d:/egs/empyrion/esm/requirements.txt",
+            "d:/egs/empyrion/b*.txt",
+            "esm/esm-config.*",
+            "esm/*.toml"
+            ]
+        expected = [
+            "d:/egs/empyrion/buildnumber.txt",
+            "d:/egs/empyrion/esm/esm-config.yaml",
+            "d:/egs/empyrion/esm/pyproject.toml",
+            "d:/egs/empyrion/esm/requirements.txt"
+            ]
+        
+        parentDir = Path("D:/EGS/Empyrion").absolute()
+
+        absoluteEntries = FsTools.toAbsolutePaths(userentries, parentDir)
+        for entry in absoluteEntries:
+            log.debug(f"absolute: {entry}")
+            self.assertTrue(entry.is_absolute())
+        
+        deglobbedEntries = FsTools.resolveGlobs(absoluteEntries)
+        result = []
+        for entry in deglobbedEntries:
+            result.append(str(entry).lower())
+        self.assertListEqual(sorted(expected), sorted(result))
