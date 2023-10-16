@@ -36,7 +36,7 @@
 [x] implement server-callback with epmremoteclient
 
 ### WIP
-[ ] tool: deletes the "discovered by" flags (potentially also for wipes/purges)
+[ ] tool: deletes the "discovered by" flags for given systems/playfields (potentially also for wipes/purges)
 
 ### later
 [ ] wipes from the wipetool should appear in cb:wipes? Do i need to alter EAHs database too?
