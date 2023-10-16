@@ -1,8 +1,14 @@
 ## ESM - Empyrion Server Manager
 
 
+## running locally
+* install venv: $ py -m venv .venv
+* activate venv: $ .\.venv\Scripts\activate
+* install requirements: $ pip install -r requirements.txt
+* start esm: $ esm
+
 ## releasing:
-* execute a $ pip freeze > requirements.txt
+* execute a $ pip freeze >> requirements.txt
 ** check the computed requirements, clean up as necessary
 
 ## TODOS:
