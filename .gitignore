@@ -1,3 +1,2 @@
 esm-main.log
-src/esm/__pycache__/*
-test/__pycache__/*
+__pycache__/

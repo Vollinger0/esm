@@ -18,6 +18,7 @@
 [ ] usecase: create manual static backup
 [ ] usecase: update gameserver
 [ ] usecase: delete savegame
+[ ] implement allowMultpleServerInstances switch. Once enabled, do not check for running instances of the game before starting, do not start if startmode is set to direct, etc.
 
 ### optional
 [ ] usecase: create configuration?

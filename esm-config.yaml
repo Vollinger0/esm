@@ -1,7 +1,13 @@
+general:
+  allowMultpleServerInstances: True
+
 server:
   dedicatedYaml: 'esm-dedicated.yaml'
+  #startMode: 'direct'
   startMode: 'launcher'
   gfxMode: True
+  launcher:
+    maxStartupTimeout: 15
 
 paths:
   install: 'D:/EGS/Empyrion/'
