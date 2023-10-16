@@ -8,18 +8,22 @@ from datetime import datetime
 
 log = logging.getLogger(__name__)
 
-"""
-Represents the dedicated server (executable), with the ability to start, stop, check if its running, etc.
-"""
 class EsmDedicatedServer:
+    """
+    Represents the dedicated server (executable), with the ability to start, stop, check if its running, etc.
 
-    STARTMODE_DIRECT = ["direct", "will bypass the launcher and use the dedicated.exe directly. Use this mode if you need to run multiple instances of the server on one machine."],
+    contains constants for the different startmodes and gfxmodes
+    
+    Initialize with the configuration, since it will read anything it needs from there.
+    """
+
+    STARTMODE_DIRECT = ["direct", "will bypass the launcher and use the dedicated.exe directly. Use this mode if you need to run multiple instances of the server on one machine."]
     STARTMODE_LAUNCHER = ["launcher", "will use the EmpyrionLauncher.exe to start the game"]
     STARTMODES = [STARTMODE_DIRECT, STARTMODE_LAUNCHER]
 
     GFXMODE_ON = [True, "uses the '-startDediWithGfx' param in the launcher - which enables the server graphics overlay, you may want to use this when you have no other means of stopping the server."]
     GFXMODE_OFF = [False, "graphics overlay disabled, you probably want this if you're using EAH. You'll need to stop the server via EAH or other means."]
-    GFXMODE = [GFXMODE_ON, GFXMODE_OFF]
+    GFXMODES = [GFXMODE_ON, GFXMODE_OFF]
 
     def __init__(self, config):
         self.config = config
@@ -27,39 +31,55 @@ class EsmDedicatedServer:
         dedicatedYaml = config.server.dedicatedYaml
         gfxMode = config.server.gfxMode
         startMode = config.server.startMode
-        log.debug(f"{__name__} initialized with startmode {startMode}, gfxMode {gfxMode}, dedicatedYaml {dedicatedYaml}, installDir {installDir}")
+        log.debug(f"{__name__} initialized with installDir {installDir}, dedicatedYaml {dedicatedYaml}, startmode {startMode}, gfxMode {gfxMode}")
 
-    def start(self):
-        log.debug(f"starting server in startMode {self.config.server.startMode}")
-        if (self.config.server.startMode == EsmDedicatedServer.STARTMODE_DIRECT):
-            self.startDirectMode()
+    def startServer(self):
+        """
+        start the server
+        """
+        if (self.getConfiguredStartMode() == self.STARTMODE_DIRECT):
+            log.debug(f"startMode is {self.STARTMODE_DIRECT}")
+            self.startServerDirectMode()
         else:
-            self.startLauncherMode()
+            log.debug(f"startMode is {self.STARTMODE_LAUNCHER}")
+            self.startServerLauncherMode()
         
-    def startDirectMode(self):
-        arguments = [os.path.abspath(f"{self.config.folderNames.dedicatedServer}/{self.config.filenames.dedicatedExe}")]
-        log.debug(f"gfxMode: {self.config.server.gfxMode}")
-        if (self.config.server.gfxMode == self.GFXMODE_OFF):
-            log.debug(f"gfxMode: {self.config.server.gfxMode} is OFF")
+    def startServerDirectMode(self):
+        """
+        Starts the server using the dedicated exe, bypassing the launcher. This enables us to be able to identify the process id directly
+        This, in turn, allows that there can be multiple instances of the dedicated exe running on the same machine
+        """
+        arguments = [os.path.abspath(f"{self.config.paths.install}/{self.config.foldernames.dedicatedServer}/{self.config.filenames.dedicatedExe}")]
+        if (self.getConfiguredGfxMode() == self.GFXMODE_OFF):
+            log.debug(f"gfxMode is {self.GFXMODE_OFF}")
             arguments.append("-batchmode")
             arguments.append("-nographics")
+        else:
+            log.debug(f"gfxMode is {self.GFXMODE_ON}")
         arguments.append("-dedicated")
         arguments.append(self.config.server.dedicatedYaml)
         arguments.append("-logFile")
         arguments.append(self.createLogFileName())
         log.info(f"Starting server with: {arguments} in directory {self.config.paths.install}")
-        process = subprocess.Popen(args=arguments)
-        log.debug(f"Process returned: {process}. pid: {process.pid}")
+        process = psutil.Popen(args=arguments)
+        log.debug(f"Process returned: {process}")
         self.process = process
+        return self.process
 
     def createLogFileName(self):
-        " reproduce a logfile name like ../Logs/$buildNumber/Dedicated_YYMMDD-HHMMSS-xx.log. xx is unknown, so it can be omited for now."
+        """ 
+        reproduce a logfile name like ../Logs/$buildNumber/Dedicated_YYMMDD-HHMMSS-xx.log. 
+        xx is unknown, so it can be omited for now
+        """
         buildNumber = self.getBuildNumber()
         formattedDate = self.getFormattedDate()
         logFileName = f"../Logs/{buildNumber}/Dedicated_{formattedDate}.log"
         return logFileName
     
     def getBuildNumber(self):
+        """
+        get the numeric build number from the first line in the file 'BuildNumber.txt' in the installdir
+        """
         buildNumberFilePath = os.path.abspath(Path(f"{self.config.paths.install}/{self.config.filenames.buildNumber}"))
         with open(buildNumberFilePath, "r") as buildNumberFilePath:
             firstLine = buildNumberFilePath.readline()
@@ -72,33 +92,61 @@ class EsmDedicatedServer:
         formattedDate = date.strftime("%y%m%d-%H%M%S")
         return formattedDate
 
-    def startLauncherMode(self):
-        exeFileName = self.config.filenames.launcherExe
-        pathToExecutable = os.path.abspath(f"{self.config.paths.install}/{self.config.filenames.launcherExe}")
-        startDedi = "-startDedi"
-        log.debug(f"gfxMode: {self.config.server.gfxMode}")
-        if (self.config.server.gfxMode == self.GFXMODE_ON):
-            log.debug(f"gfxMode: {self.config.server.gfxMode} is ON")
+    def startServerLauncherMode(self):
+        """
+        start the game using the default empyrion launcher, returns the psutil process of the dedicated exe if successful
+        """
+        launcherExeFileName = self.config.filenames.launcherExe
+        pathToExecutable = os.path.abspath(f"{self.config.paths.install}/{launcherExeFileName}")
+        if (self.getConfiguredGfxMode()==self.GFXMODE_ON):
+            log.debug(f"gfxMode is {self.GFXMODE_ON}")
             startDedi = "-startDediWithGfx"
+        else:
+            log.debug(f"gfxMode is {self.GFXMODE_OFF}")
+            startDedi = "-startDedi"
         arguments = [pathToExecutable, startDedi, "-dedicated", self.config.server.dedicatedYaml]
         log.info(f"Starting server with: {arguments} in directory {self.config.paths.install}")
-        process = subprocess.Popen(args=arguments, cwd=self.config.paths.install)
-        # give it a few seconds to start properly
-        time.sleep(5)
+        process = psutil.Popen(args=arguments, cwd=self.config.paths.install)
+        # give the launcher a few seconds to start the dedicated exe
+        time.sleep(3)
         log.debug(f"launcher returned: {process}")
-        # find the process and save its pid
-        processes = self.getProcessByName(self.config.filenames.dedicatedExe)
-        if len(processes) == 1:
-            self.process = processes[0]
-        elif len(processes) > 1:
-            # exit the script with an error to avoid further breaking
-            raise Exception(f"Found more than one process named {self.config.filenames.dedicatedExe}. This will probably break this script. If you want to run multiple instances of the game, use the startmode 'direct'. Otherwise you'll probably want to stop or kill the remaining process first.")
-        else:
-            # exit the script with an error to avoid further breaking
-            raise Exception(f"Found no process named {self.config.filenames.dedicatedExe}. The game probably can't start. Check its logfile and try starting it manually to see why it fails?")
+        
+        # find the dedicated process and remember its process info
+        self.process = self.findProcessByNameWithTimeout(self.config.filenames.dedicatedExe, self.config.server.launcher.maxStartupTimeout)
+        log.debug(f"found process of dedicated server: {self.process}")
+        return self.process
+    
+    def findProcessByNameWithTimeout(self, processName, maxStartupTimeout):
+        """
+        will search for a process that contains or is like the provided processName
+        It will do that every few seconds in a loop until either a process was found
+        or the the maxStartupTimeout is reached, raising a TimeoutError
+        """
+        amountOfProcesses=0
+        timePassed=0
+        checkIntervalInSeconds=3
+        while (amountOfProcesses==0 and timePassed < maxStartupTimeout):
+            processes = self.getProcessByName(processName)
+            if len(processes) == 1:
+                self.process = processes[0]
+                log.debug(f"found process by name '{processName}': {self.process}")
+                return self.process
+            elif len(processes) > 1:
+                # exit the script with an error to avoid further breaking
+                raise Exception(f"Found more than one process named {processName}. This will probably break this script. If you want to run multiple instances of the game, use the startmode 'direct'. Otherwise you'll probably want to stop or kill the remaining process first.")
+            else:
+                time.sleep(checkIntervalInSeconds)
+                timePassed=timePassed+checkIntervalInSeconds
+        # at this point the timeout was reached and we didn't find any processes.
+        # exit the script with an error to avoid further breaking
+        raise TimeoutError(f"Found no process named {processName} after waiting for {maxStartupTimeout} seconds. The game probably can't start or the timeout value is too low. Check its logfile and try starting it manually to see why it fails or increase the config value of 'server.launcher.maxStartupTimeout'.")
         
     def getProcessByName(self, processName):
-        assert processName
+        """ 
+        get the list of processes that somehow match the provided processname.
+        checks the process name, commandline and exe
+        """
+        assert processName, "no process name provided"
         list = []
         for process in psutil.process_iter():
             name, exe, cmdline = "", "", []
@@ -114,12 +162,35 @@ class EsmDedicatedServer:
                 list.append(process)
         return list
     
+    def getGfxModeByString(self, string):
+        for mode in self.GFXMODES:
+            if mode[0]==string:
+                return mode
+        # default to on
+        return self.GFXMODE_ON
+    
+    def getConfiguredGfxMode(self):
+        return self.getGfxModeByString(self.config.server.gfxMode)
+
+    def getStartModeByString(self, string):
+        for mode in self.STARTMODES:
+            if mode[0]==string:
+                return mode
+        # default to launcher
+        return self.STARTMODE_LAUNCHER
+    
+    def getConfiguredStartMode(self):
+            return self.getStartModeByString(self.config.server.startMode)
+    
     def stop(self):
-        log.info(f"Will try to kill the server now")
         if self.process:
-            self.process.kill()
+            log.info(f"Will send the server the shutdown signal now")
+            self.process.terminate()
+            # self.process.kill()
+        else:
+            raise Exception("no process info does not exist, did you forget to start the server?")
 
     def isRunning(self):
         if self.process:
-            return self.process.is_running
+            return self.process.is_running()
         return False

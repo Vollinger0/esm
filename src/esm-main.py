@@ -18,13 +18,12 @@ esm = EsmMain.EsmMain(installDir=os.path.abspath(".."),
 log.debug("Start of script")
 log.debug(f"Logging to: {esm.logFile}")
 
-esm.dedicatedServer.start()
+esm.dedicatedServer.startServer()
 if esm.dedicatedServer.isRunning():
-    log.info("server is running!")
+    log.info("server is running! Will wait 15 secs")
     time.sleep(15)
-
-log.info("stopping server again")
-esm.dedicatedServer.stop()
+    log.info("stopping server again")
+    esm.dedicatedServer.stop()
 
 time.sleep(3)
 stopped=False
