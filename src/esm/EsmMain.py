@@ -179,31 +179,44 @@ class EsmMain:
 
     def ramdiskPrepare(self):
         """
-        Checks that savegame exists and savegamemirror does not, offers the user the possibility to fix that, then proceeds to prepare for ramdisk
+        Checks existence of savegame and mirror, offers the user the possibility to fix that, then proceeds to prepare for ramdisk
+        
+        if mirror and savegame: delete mirror, do prepare
+        if mirror and nosavegame: do nothing
+        if nomirror and savegame:  do prepare
+        if nomirror and nosavegame: create new, do prepare
         """
-        savegameFolderPath = self.fileSystem.getAbsolutePathTo("saves.games.savegame")
-        if not savegameFolderPath.exists():
-            log.info(f"No savegame exists at {savegameFolderPath}. This is either a configuration error or we need to create one first.")
-            if askUser("Do you want to create a new savegame? [yes/no] ", "yes"):
-                log.debug("creating new savegame")
-                self.createNewSavegame()
-            else:
-                log.warning("Can not prepare the file system for ramdisk usage if there is no savegame")
-                raise UserAbortedException("User does not want to create a new savegame")
+        savegameMirrorExists = self.fileSystem.existsDotPath("saves.gamesmirror.savegamemirror.globaldb")
+        savegameExists = self.fileSystem.existsDotPath("saves.games.savegame.globaldb")
+        savegameMirrorPath = self.fileSystem.getAbsolutePathTo("saves.gamesmirror.savegamemirror")
+        savegamePath = self.fileSystem.getAbsolutePathTo("saves.games.savegame")
 
-        savegameMirrorFolderPath = self.fileSystem.getAbsolutePathTo("saves.gamesmirror.savegamemirror")
-        if savegameMirrorFolderPath.exists():
-            log.info(f"A savegame mirror exists at {savegameMirrorFolderPath}. This is either a configuration error or we need to delete it first.")
-            if askUser(f"Delete old savegame mirror at {savegameMirrorFolderPath}? [yes/no] ", "yes"):
-                self.fileSystem.markForDelete(savegameMirrorFolderPath)
-                self.fileSystem.commitDelete()
+        if savegameMirrorExists:
+            if savegameExists:
+                log.info(f"A savegame mirror exists at {savegameMirrorPath}. The file system is either already prepared, there is a configuration error or the savegame mirror needs to be deleted.")
+                if askUser(f"Delete old savegame mirror at {savegameMirrorPath}? [yes/no] ", "yes"):
+                    self.fileSystem.markForDelete(savegameMirrorPath)
+                    self.fileSystem.commitDelete()
+                    self.ramdiskManager.prepare()
+                else:
+                    log.warning("Can not prepare the file system for ramdisk usage as long as a savegamemirror already exists. Maybe we don't need to prepare?")
+                    raise UserAbortedException("User does not want to delete the savegame mirror")
             else:
-                log.warning("Can not prepare the file system for ramdisk usage as long as the savegamemirror already exists.")
-                raise UserAbortedException("User does not want to delete the savegame mirror")
-
-        log.debug("calling ramdisk prepare")
-        self.ramdiskManager.prepare()
-        log.info("Prepare complete, you may now start the ramdisk setup")
+                log.info(f"A savegame mirror exists at {savegameMirrorPath} and no savegame exists at {savegamePath}. Looks like we are already prepared for using a ramdisk. Will not do anything.")
+                return True
+        else:
+            if savegameExists:
+                log.info(f"Savegame exists and no mirror exists, calling prepare.")
+                self.ramdiskManager.prepare()
+            else:
+                log.info(f"No savegame exists at {savegamePath}. This is either a configuration error or we need to create one first.")
+                if askUser("Do you want to create a new savegame? [yes/no] ", "yes"):
+                    log.debug("creating new savegame")
+                    self.createNewSavegame()
+                    self.ramdiskManager.prepare()
+                else:
+                    log.warning("Can not prepare the file system for ramdisk usage if there is no savegame")
+                    raise UserAbortedException("User does not want to create a new savegame")
 
     def ramdiskSetup(self):
         raise NotImplementedError()
