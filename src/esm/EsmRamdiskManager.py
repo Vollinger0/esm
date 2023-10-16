@@ -24,24 +24,35 @@ class EsmRamdiskManager:
         Moves a savegame to the hdd savegame mirror location
         """
         savegameFolderPath = self.fs.getAbsolutePathTo("saves.games.savegame")
+        savegameExists = False
+        savegameMirrorExists = False
+
         # check that there is a savegame
         if not Path(savegameFolderPath).exists():
             log.info(f"Savegame does not exist at '{savegameFolderPath}'. Either the configuration is wrong or you may want to create one.")
-            raise NoSaveGameFoundException("no savegame found nor created")
-        log.info(f"Savegame exists at '{savegameFolderPath}'")
+        else:
+            savegameExists = True
+            log.info(f"Savegame exists at '{savegameFolderPath}'")
 
         savegameMirrorFolderPath = self.fs.getAbsolutePathTo("saves.gamesmirror.savegamemirror")
         # check that there is no savegame mirror
         if Path(savegameMirrorFolderPath).exists():
+            savegameMirrorExists = True
             log.info(f"Savegame mirror does exist already at '{savegameMirrorFolderPath}'. Either the configuration is wrong or this has been installed already, or the folder needs to be deleted.")
+        else:
+            log.debug(f"{savegameMirrorFolderPath} does not exist yet")
+
+        if not savegameExists:
+            raise NoSaveGameFoundException(f"no savegame found at {savegameFolderPath}")
+        
+        if savegameMirrorExists:
             raise SaveGameMirrorExistsException(f"savegame mirror at '{savegameMirrorFolderPath}' already exists.")
-        log.debug(f"{savegameMirrorFolderPath} does not exist yet")
 
         # move the savegame to the hddmirror folder
         self.fs.moveFileTree("saves.games.savegame", "saves.gamesmirror.savegamemirror", 
                             f"Moving savegame to new location, this may take some time if your savegame is large already!")
         
-        log.info("Install compelte, you may now start the ramdisk setup")
+        log.info("Install complete, you may now start the ramdisk setup")
         
     def setup(self):
         """

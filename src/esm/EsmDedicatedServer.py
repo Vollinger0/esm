@@ -1,10 +1,11 @@
+import subprocess
 import time
 import logging
 import psutil
 import re
 from pathlib import Path, PurePath
 from datetime import datetime
-from esm import isDebugMode
+from esm import RequirementsNotFulfilledError, isDebugMode
 
 log = logging.getLogger(__name__)
 
@@ -83,6 +84,7 @@ class EsmDedicatedServer:
         arguments.append(self.createLogFileName())
         log.info(f"Starting server with: {arguments} in directory {self.config.paths.install}")
         if not isDebugMode(self.config):
+            # we do not use subprocess.run here, since we'll need the PID later and only psutil.Popen provides that.            
             process = psutil.Popen(args=arguments)
         else:
             log.debug(f"debug mode enabled!")
@@ -107,13 +109,16 @@ class EsmDedicatedServer:
         arguments = [pathToExecutable, startDedi, "-dedicated", self.config.server.dedicatedYaml]
         log.info(f"Starting server with: {arguments} in directory {self.config.paths.install}")
         if not isDebugMode(self.config):
+            # we do not use subprocess.run here, since we use this in the direct mode too and we want the process field to be of the same type.
             process = psutil.Popen(args=arguments, cwd=self.config.paths.install)
+            # wait for the *launcher* process to end, not the dedicated server.
+            process.wait()
         else:
             log.debug(f"debug mode enabled!")
-        # give the launcher a few seconds to start the dedicated exe
-        time.sleep(3)
         log.debug(f"launcher returned: {process}")
         
+        # give the dedicated process a few seconds before we start to look for it
+        time.sleep(3)
         # find the dedicated process and remember its process info
         self.process = self.findProcessByNameWithTimeout(self.config.filenames.dedicatedExe, self.config.server.launcher.maxStartupTimeout)
         log.debug(f"found process of dedicated server: {self.process}")
@@ -153,10 +158,9 @@ class EsmDedicatedServer:
         It will do that every few seconds in a loop until either a process was found
         or the the maxStartupTimeout is reached, raising a TimeoutError
         """
-        amountOfProcesses=0
         timePassed=0
         checkIntervalInSeconds=3
-        while (amountOfProcesses==0 and timePassed < maxStartupTimeout):
+        while timePassed < maxStartupTimeout:
             processes = self.getProcessByName(processName)
             if len(processes) == 1:
                 self.process = processes[0]
@@ -189,7 +193,7 @@ class EsmDedicatedServer:
                 pass
             except psutil.NoSuchProcess:
                 continue
-            if name == processName or PurePath(exe).name() == processName or (len(cmdline) > 0 and cmdline[0] == processName):
+            if name == processName or PurePath(exe).name == processName or (len(cmdline) > 0 and cmdline[0] == processName):
                 list.append(process)
         return list
     
@@ -213,9 +217,53 @@ class EsmDedicatedServer:
     def getConfiguredStartMode(self):
         return self.getStartModeByString(self.startMode)
     
-    def stop(self, timeout):
-        # TODO: use the epmremoteclient and send a 'saveandexit x' where x is the timeout in minutes. a 0 will stop it immediately.
-        raise NotImplementedError("not implemented yet")
+    def sendExit(self, timeout=0):
+        """
+        sends a "saveandexit $timeout" to the server via the epmremoteclient and returns immediately. 
+        You need to check if the server stopped successfully via isRunning() or just call waitForStop()
+        """
+        # use the epmremoteclient and send a 'saveandexit x' where x is the timeout in minutes. a 0 will stop it immediately.
+        epmrc = self.getEpmRemoteClientPath()
+        cmd = [epmrc, "run",  "-q", f"saveandexit {timeout}"]
+        log.debug(f"executing {cmd}")
+        process = subprocess.run(cmd)
+        log.debug(f"process returned: {process}")
+        # this returns when epmrc ends, not the server!
+
+    def sendExitAndWait(self, timeout=15, stoptimeout=0):
+        """
+        sends a "saveandexit $stoptimeout" to the server via epmremoteclient, then waits for the server process to stop before returning.
+        """
+        log.warn("This might not work, if the server is not ready to accept commands yet (e.g. on startup)")
+        self.sendExit(stoptimeout)
+        self.waitForEnd(timeout)
+
+    def sendExitRetryAndWait(self, stoptimeout=0, additionalTimeout=120, interval=5):
+        """
+        sends a "saveandexit $stoptimeout" to the server via epmremoteclient, then checks every $interval seconds if it actually stopped
+        and retries doing until the stoptimeout*60+additionalTimeout is reached, in which case it raises a TimeOutError
+        returns True when successful
+        """
+        # stoptimeout is in minutes, so we need to add that to the waiting timeout
+        maxTime = additionalTimeout
+        if (stoptimeout>0):
+            maxTime = stoptimeout*60+additionalTimeout
+        waitedTime = 0
+        while waitedTime < maxTime:
+            self.sendExit(stoptimeout)
+            time.sleep(interval)
+            waitedTime = waitedTime + interval
+            if not self.isRunning():
+                log.debug(f"server stopped after {waitedTime} seconds")
+                return True
+            log.debug(f"server didn't stop yet, retrying after {waitedTime} seconds")
+        raise TimeoutError(f"server did not stop after {maxTime} seconds, you may need to kill it with force")
+    
+    def getEpmRemoteClientPath(self):
+        epmRC = self.config.paths.epmremoteclient
+        if Path(epmRC).exists():
+            return epmRC
+        raise RequirementsNotFulfilledError(f"epm remote client not found in the configured path at {epmRC}. Please make sure it exists and the configuration points to it.")
     
     def kill(self):
         if self.process:
@@ -228,8 +276,7 @@ class EsmDedicatedServer:
     def killAndWait(self, timeout=15):
         if self.process:
             self.process.kill()
-            # wait for a few seconds. if the timeout is reached there will be a timeoutexpired exception thrown.
-            self.process.wait(timeout=timeout)
+            self.waitForEnd(timeout)
         else:
             raise Exception("process info does not exist, did you forget to start the server?")
 
@@ -239,8 +286,9 @@ class EsmDedicatedServer:
         else:
             return False
         
-    def waitForStop(self, timeout=60):
+    def waitForEnd(self, timeout=60):
         if self.process:
             return self.process.wait(timeout=timeout)
         else:
             raise Exception("process info does not exist, did you forget to start the server?")
+        

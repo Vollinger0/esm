@@ -1,5 +1,6 @@
 import logging
 from pathlib import Path
+import time
 from halo import Halo
 from psutil import TimeoutExpired
 from esm import AdminRequiredException, askUser
@@ -11,10 +12,10 @@ from esm.EsmRamdiskManager import EsmRamdiskManager
 
 log = logging.getLogger(__name__)
 
-"""
-Main esm class, manages all the other tools, config, etc.
-"""
 class EsmMain:
+    """
+    Main esm class, manages all the other modules, config, etc.
+    """
 
     def __init__(self, installDir, configFileName, caller=__name__):
         # bootstrap
@@ -62,33 +63,24 @@ class EsmMain:
         will start the server shortly to create a new savegame that can be used for installation
         """
         log.info("Will start the server with its blue graphics overlay to create a new savegame. The startup might take a few minutes.")
-        log.info("You'll need to stop it again once you see the button 'Save and Exit' next to the 'Say' button and input field. It takes a bit to appear.")
+        # log.info("You'll probably need to stop it again once you see the button 'Save and Exit' next to the 'Say' button and input field. It takes a bit to appear.")
+        log.info("This script will shut down the server automatically again, if it doesn't work, you'll probably have to stop it yourself by clicking on the 'Save and Exit' button.")
         if askUser("Ready? [yes/no] ", "yes"):
             log.info("Will start the server with the default configuration now")
             newEsm = EsmDedicatedServer.withGfxMode(self.config, EsmDedicatedServer.GFXMODE_ON)
             try:
                 newEsm.startServer()
-                # TODO: use the epmclient to check when the server is up and send a saveandexit from there.
-                if newEsm.isRunning():
-                    log.info("Server is running! Will wait max 600 secs for you to stop it")
-                    with Halo(text='Waiting', spinner='dots'):
-                        try:
-                            newEsm.waitForStop(600)
-                        except TimeoutExpired:
-                            log.info("Server didn't stop after 600 seconds. Will stop it by force now.")
-                            newEsm.killAndWait()
-                        except:
-                            log.info("Stopping server with force")
-                            try:
-                                newEsm.killAndWait(15)
-                                log.info("Server is gone")
-                            except TimeoutExpired:
-                                log.info("Server still didnt stop and can not be killed")
-                                raise AdminRequiredException("While trying to create a new savegame, the server could not be stopped any more. Please check the process tree and kill it manually.")
-                else:
-                    log.info("Server didn't start")    
-            except:
-                log.info("Server didn't start")
+            except Exception as ex:
+                log.info(f"Server didn't start: {ex}")
+
+            # give the server some time to start and create the new savegame before we try stopping it again
+            time.sleep(self.config.server.startUpSleepTime)
+            try:
+                # use the epmclient to check when the server is up and send a saveandexit from there.
+                newEsm.sendExitRetryAndWait()
+            except TimeoutError as ex:
+                log.error(f"could not stop server while trying to create a new savegame. Something's wrong")
+                raise AdminRequiredException("could not stop server while trying to create a new savegame.")
         else:
             log.info("Create a new savegame yourself then, you can always start this installation again.")
 

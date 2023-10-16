@@ -29,3 +29,6 @@ class AdminRequiredException(Exception):
 
 class RequirementsNotFulfilledError(Exception):
     pass
+
+class UserAbortedException(Exception):
+    pass
