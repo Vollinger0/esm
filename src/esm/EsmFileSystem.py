@@ -8,7 +8,7 @@ from esm.Jointpoint import Jointpoint
 
 log = logging.getLogger(__name__)
 
-class EsmFileStructure:
+class EsmFileSystem:
     """
     Represents the filesystem with the relevant bits that we manage
 
@@ -23,7 +23,7 @@ class EsmFileStructure:
         """
         read the config info about folders and filenames, and populate the filestructure
         """
-        structure = {
+        dotPathStructure = {
             "ramdisk": {
                 "_parent": f"{conf.ramdisk.drive}:",
                 "savegame": conf.server.savegame
@@ -58,7 +58,7 @@ class EsmFileStructure:
             }
         }
         # put all in a dot-navigatable dict
-        self.structure = dotsi.Dict(structure)
+        self.structure = dotsi.Dict(dotPathStructure)
 
     def getAbsolutePathTo(self, dotPath, prefixInstallDir=True):
         """
@@ -94,24 +94,24 @@ class EsmFileStructure:
         self.getPathTo(dotPath=dotPath, parts=parts, index=index+1, tree=subtree, segments=segments)
         return "/".join(segments)
     
-    def moveFileTree(self, source, destination, info=None):
+    def moveFileTree(self, sourceDotPath, destinationDotPath, info=None):
         """
         moves a complete filetree from source to destination using robocopy
         """
-        self.executeRobocopy(source, destination, info, "move")
+        self.executeRobocopy(sourceDotPath, destinationDotPath, info, "move")
 
-    def copyFileTree(self, source, destination, info=None):
+    def copyFileTree(self, sourceDotPath, destinationDotPath, info=None):
         """
         copies a complete filetree from source to destination using robocopy
         """
-        self.executeRobocopy(source, destination, info, "copy")
+        self.executeRobocopy(sourceDotPath, destinationDotPath, info, "copy")
 
-    def executeRobocopy(self, source, destination, info=None, operation="copy"):
+    def executeRobocopy(self, sourceDotPath, destinationDotPath, info=None, operation="copy"):
         """
         executes a robocopy command for the given operation
         """
-        sourcePath = self.getAbsolutePathTo(source)
-        destinationPath = self.getAbsolutePathTo(destination)
+        sourcePath = self.getAbsolutePathTo(sourceDotPath)
+        destinationPath = self.getAbsolutePathTo(destinationDotPath)
         if info is not None: 
             log.info(info)
         log.debug(f"will {operation} from '{sourcePath}' -> '{destinationPath}'")
@@ -132,17 +132,17 @@ class EsmFileStructure:
         except KeyError:
             return __name__
 
-    def createJointpoint(self, link, linkTarget):
+    def createJointpoint(self, linkPath, linkTargetPath):
         """
         creates a jointpoint from given source to given destination
         """
-        log.info(f"Creating link from {link} -> {linkTarget}")
-        Jointpoint.create(link, linkTarget)
+        log.info(f"Creating link from {linkPath} -> {linkTargetPath}")
+        Jointpoint.create(linkPath, linkTargetPath)
 
-    def quickDelete(self, target):
+    def quickDelete(self, targetPath):
         """
         quickly delete a folder and all its content
         """
-        log.debug(f"deleting {target} with shutil.rmtree")
-        shutil.rmtree(ignore_errors=True, path=target)
+        log.debug(f"deleting {targetPath} with shutil.rmtree")
+        shutil.rmtree(ignore_errors=True, path=targetPath)
         log.debug(f"done deleting")

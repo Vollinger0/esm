@@ -20,7 +20,7 @@ class test_Jointpoint(unittest.TestCase):
         self.assertFalse(link.exists())
         
         target.mkdir()
-        Jointpoint.create(link=link, target=target)
+        Jointpoint.create(linkPath=link, targetPath=target)
         
         self.assertTrue(target.exists())
         self.assertTrue(link.exists())
@@ -39,7 +39,7 @@ class test_Jointpoint(unittest.TestCase):
         self.assertFalse(link.exists())
         
         target.mkdir()
-        Jointpoint.create(link=link, target=target)
+        Jointpoint.create(linkPath=link, targetPath=target)
         
         self.assertTrue(target.exists())
         self.assertTrue(link.exists())
@@ -63,7 +63,7 @@ class test_Jointpoint(unittest.TestCase):
         self.assertFalse(link.exists())
         
         target.mkdir()
-        Jointpoint.create(link=link, target=target)
+        Jointpoint.create(linkPath=link, targetPath=target)
         
         self.assertTrue(target.exists())
         self.assertTrue(link.exists())
