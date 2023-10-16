@@ -139,6 +139,10 @@ class EsmFileSystem:
         else:
             log.debug(f"debugmode: robocopy {sourcePath} {destinationPath} {options}")
 
+    def existsDotPath(self, dotPath, prefixInstallDir=True):
+        path = self.getAbsolutePathTo(dotPath=dotPath, prefixInstallDir=prefixInstallDir)
+        return Path(path).exists()
+
     def getCaller(self):
         """
         return the caller from the context or __name__ is not given.

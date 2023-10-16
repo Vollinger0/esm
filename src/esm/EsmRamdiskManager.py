@@ -49,10 +49,14 @@ class EsmRamdiskManager:
 
         Moves a savegame to the hdd savegame mirror location
         """
-        savegameFolderPath = self.fileSystem.getAbsolutePathTo("saves.games.savegame")
+        if not self.config.general.useRamdisk:
+            log.error("Ramdisk usage is disabled in the configuration, can not prepare for ramdisk usage when it is disabled.")
+            raise AdminRequiredException("Ramdisk usage is disabled in the configuration, can not prepare for ramdisk usage when it is disabled.")
+
         savegameExists = False
         savegameMirrorExists = False
 
+        savegameFolderPath = self.fileSystem.getAbsolutePathTo("saves.games.savegame")
         # check that there is a savegame
         if not Path(savegameFolderPath).exists():
             log.info(f"Savegame does not exist at '{savegameFolderPath}'. Either the configuration is wrong or you may want to create one.")
@@ -77,8 +81,6 @@ class EsmRamdiskManager:
         # move the savegame to the hddmirror folder
         self.fileSystem.moveFileTree("saves.games.savegame", "saves.gamesmirror.savegamemirror", 
                             f"Moving savegame to new location, this may take some time if your savegame is large already!")
-        
-        log.info("Install complete, you may now start the ramdisk setup")
         
     def setup(self):
         """

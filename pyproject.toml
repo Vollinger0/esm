@@ -1,28 +1,14 @@
-[project]
-name = "esm"
-version = "0.1.0"
-
 [build-system]
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
-#[tool.setuptools]
-#name = "esm"
-#version = "0.1.0"
-#description = "Your ESM command-line tool"
-#author = "Your Name"
-#author_email = "your@email.com"
-#license = "MIT"  # Specify the appropriate license
+[project]
+name = "esm"
+version = "0.1.0"
+# description = "Your ESM command-line tool"
 
-#[tool.setuptools.sdist]
-#formats = ["gztar", "zip"]
-
-#[tool.setuptools.packages]
-#find = {}  # Scanning implicit namespaces is active by default
-
-#[project.scripts]
-#esm = "esm.main:main"
-#console_scripts ="esm.main"
+[project.scripts]
+esm = "esm.main:start"
 
 # pytest recommends storing settings in this file (not setup.cfg)
 [tool.pytest.ini_options]

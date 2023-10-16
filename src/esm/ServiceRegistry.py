@@ -1,3 +1,4 @@
+from typing import TypeVar
 from esm import ServiceNotFoundError
 
 class ServiceRegistryMeta(type):
@@ -10,6 +11,8 @@ class ServiceRegistryMeta(type):
 
 class ServiceRegistry(metaclass=ServiceRegistryMeta):
     _registry = {}
+
+    T = TypeVar('T')
 
     @staticmethod
     def registerDecorated(serviceClass):
@@ -25,7 +28,7 @@ class ServiceRegistry(metaclass=ServiceRegistryMeta):
         return ServiceRegistry._registry[iClass.__name__]
     
     @staticmethod
-    def get(serviceClass):
+    def get(serviceClass: T) -> T:
         service = ServiceRegistry._registry.get(serviceClass.__name__)
         if service:
             return service
