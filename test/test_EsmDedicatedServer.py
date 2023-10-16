@@ -7,13 +7,13 @@ import unittest
 from esm.EsmDedicatedServer import EsmDedicatedServer
 from esm.EsmConfig import EsmConfig
 
-class TestEsmDedicatedServer(unittest.TestCase):
+log = logging.getLogger(__name__)
 
-    log = logging.getLogger(__name__)
+class TestEsmDedicatedServer(unittest.TestCase):
 
     def test_createLogFileName(self):
         esmConfig = EsmConfig.fromConfigFile('test/esm-test-config.yaml')
-        esmDS = EsmDedicatedServer(esmConfig)
+        esmDS = EsmDedicatedServer.withConfig(esmConfig)
         logFileName = esmDS.createLogFileName()
         logFileNameFirst23 = logFileName[:23]
         logFileNameLast4 = logFileName[-4:]
@@ -22,7 +22,7 @@ class TestEsmDedicatedServer(unittest.TestCase):
 
     def test_getGfxModeByString(self):
         esmConfig = EsmConfig.fromConfigFile('test/esm-test-config.yaml')
-        esmDS = EsmDedicatedServer(esmConfig)
+        esmDS = EsmDedicatedServer.withConfig(esmConfig)
         mode = esmDS.getGfxModeByString(True)
         self.assertEqual(mode, EsmDedicatedServer.GFXMODE_ON)
         mode = esmDS.getGfxModeByString(False)
@@ -30,7 +30,7 @@ class TestEsmDedicatedServer(unittest.TestCase):
 
     def test_getStartModeByString(self):
         esmConfig = EsmConfig.fromConfigFile('test/esm-test-config.yaml')
-        esmDS = EsmDedicatedServer(esmConfig)
+        esmDS = EsmDedicatedServer.withConfig(esmConfig)
         mode = esmDS.getStartModeByString('direct')
         self.assertEqual(mode, EsmDedicatedServer.STARTMODE_DIRECT)
         mode = esmDS.getStartModeByString('launcher')

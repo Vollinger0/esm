@@ -2,8 +2,13 @@ general:
   debugMode: False
   allowMultpleServerInstances: True
 
+ramdisk:
+  drive: "R"
+  size: "5G"
+
 server:
   dedicatedYaml: 'esm-dedicated.yaml'
+  savegame: 'EsmDediGame'
   #startMode: 'direct'
   startMode: 'launcher'
   gfxMode: True
@@ -19,11 +24,14 @@ paths:
 foldernames:
   saves: 'Saves'
   games: 'Games'
-  backups: 'Backup'
+  backup: 'Backup'
+  backupmirrors: 'BackupMirrors'
+  backupmirrorprefix: 'rollingBackup_'
   logs: 'Logs'
-  dedicatedServer: 'DedicatedServer'
+  dedicatedserver: 'DedicatedServer'
   gamesmirror: 'GamesMirror'
-  savegame: 'EsmDediGame'
+  savegamemirrorpostfix: '_Mirror'
+  savegametemplatepostfix: '_Templates'
 
 filenames:
   globaldb: 'global.db'
@@ -31,3 +39,9 @@ filenames:
   chatlines: 'hamster_sync_lines.txt'
   dedicatedExe: 'EmpyrionDedicated.exe'
   launcherExe: 'EmpyrionLauncher.exe'
+
+robocopy:
+  encoding: 'ansi' #depending on the shell used, it may be necessary to change this to ansi, utf-8, cp1252 or something. This will be passed to subprocess.run(...encoding=...)
+  options:
+    move: "/MOVE /E /np /ns /nc /nfl /ndl /mt /r:10 /w:10 /unicode"
+    copy: "/MIR  /np /ns /nc /nfl /ndl /mt /r:10 /w:10 /unicode"
