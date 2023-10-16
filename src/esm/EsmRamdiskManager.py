@@ -10,6 +10,7 @@ from esm.EsmDedicatedServer import EsmDedicatedServer
 from esm.EsmFileSystem import EsmFileSystem
 from esm.FsTools import FsTools
 from esm.ServiceRegistry import Service, ServiceRegistry
+from esm.Tools import getElapsedTime, getTimer
 
 log = logging.getLogger(__name__)
 
@@ -42,7 +43,7 @@ class EsmRamdiskManager:
     def fileSystem(self) -> EsmFileSystem:
         return ServiceRegistry.get(EsmFileSystem)
 
-    def install(self):
+    def prepare(self):
         """
         actually takes a non-ramdisk filestructure and converts it into a ramdisk filestructure
 
@@ -102,7 +103,7 @@ class EsmRamdiskManager:
         if FsTools.isHardLink(link):
             log.debug(f"{link} exists and is already a hardlink")
         else:
-            self.fileSystem.createJointpoint(link, linkTarget)
+            self.fileSystem.createHardLink(link, linkTarget)
 
         log.debug("check for externalizing templates")
         # set up the link from ramdisk/templates -> hddmirror_templates
@@ -148,7 +149,7 @@ class EsmRamdiskManager:
         
         if doCreateLink:
             # create link from savegame back to hdd template mirror
-            self.fileSystem.createJointpoint(linkPath=savegametemplatesPath, linkTargetPath=templateshddcopyPath)
+            self.fileSystem.createHardLink(linkPath=savegametemplatesPath, linkTargetPath=templateshddcopyPath)
 
     def mountRamdrive(self, driveLetter, driveSize):
         """
@@ -212,6 +213,8 @@ class EsmRamdiskManager:
         """
         starts a separate thread for the synchronizer, that will call syncram2mirror every $syncInterval
         """
+        if not self.config.general.useRamdisk:
+            log.warn("useRamdisk is set to False, there is no sense much in using the synchronizer. Please check that the code is being used properly.")
         if syncInterval==0:
             log.debug(f"synchronizer is disabled, syncInterval was {syncInterval}")
             return False
@@ -227,8 +230,10 @@ class EsmRamdiskManager:
             timePassed = timePassed + 1
             if timePassed % syncInterval == 0:
                 log.info(f"Synchronizing from ram to mirror")
+                start = getTimer()
                 self.syncRamToMirror()
-                log.info(f"Sync done")
+                elapsedTime = getElapsedTime(start)
+                log.info(f"Sync done. Time needed {elapsedTime}")
             if event.is_set():
                 break
         log.debug("synchronizer shut down")

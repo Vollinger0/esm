@@ -2,10 +2,11 @@ import logging
 import dotsi
 from functools import cached_property
 from pathlib import Path
-from esm import isDebugMode, robocopy
+from esm import robocopy
 from esm.EsmConfigService import EsmConfigService
 from esm.FsTools import FsTools
 from esm.ServiceRegistry import Service, ServiceRegistry
+from esm.Tools import isDebugMode
 
 log = logging.getLogger(__name__)
 
@@ -148,9 +149,9 @@ class EsmFileSystem:
         except KeyError:
             return __name__
 
-    def createJointpoint(self, linkPath, linkTargetPath):
+    def createHardLink(self, linkPath, linkTargetPath):
         """
-        creates a jointpoint from given source to given destination
+        creates a hardlink (jointpoint) from given source to given destination
         """
         log.info(f"Creating link from {linkPath} -> {linkTargetPath}")
         FsTools.createLink(linkPath, linkTargetPath)

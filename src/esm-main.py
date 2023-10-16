@@ -1,7 +1,6 @@
 from threading import Thread
 import time
 import logging
-from pathlib import Path
 from esm import NoSaveGameFoundException, SaveGameMirrorExistsException, UserAbortedException
 from esm.EsmMain import EsmMain
 
@@ -37,27 +36,27 @@ def testStartStopServer():
         except Exception as ex:
             log.info(f"server couldn't be killed {ex}")
 
-def testInstall():
+def testRamdiskPrepare():
     try:
-        log.debug("calling install")
-        esm.ramdiskManager.install()
+        log.debug("calling prepare")
+        esm.ramdiskManager.prepare()
     except NoSaveGameFoundException:
         log.debug("asking user to create new savegame")
         if esm.askUserToCreateNewSavegame():
-            log.info("calling install again")
-            testInstall()
+            log.info("calling prepare again")
+            testRamdiskPrepare()
         else:
-            log.debug("user decided to abort install")
-            raise UserAbortedException("user decided to abort install")
+            log.debug("user decided to abort prepare")
+            raise UserAbortedException("user decided to abort prepare")
     except SaveGameMirrorExistsException:
         log.debug("asking user if he wants to delete the existing savegame mirror")        
         if esm.askUserToDeleteOldSavegameMirror():
             log.debug("deleted old savegame mirror")
-            testInstall()
+            testRamdiskPrepare()
         else:
             log.debug("user decided not to delete the old savegame mirror")
 
-def testSetup():
+def testRamdiskSetup():
     log.debug("calling setup")          
     esm.ramdiskManager.setup()  
 
@@ -105,8 +104,8 @@ esm = EsmMain(caller=__file__,
 log.debug("Start of script")
 log.debug(f"Logging to: {esm.logFile}")
 
-#testInstall()
-#testSetup()
+#testRamdiskPrepare()
+#testRamdiskSetup()
 #testStartStopServerNoTry()
 #testStartStopServer()
 #testStartServerWithSynchronizer()

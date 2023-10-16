@@ -30,7 +30,7 @@ class test_EsmRamdiskManager(unittest.TestCase):
         self.assertFalse(savegameMirror.exists())
 
         # do the install
-        self.rdm.install()
+        self.rdm.prepare()
 
         self.assertFalse(savegamePath.exists())
         self.assertTrue(savegameMirror.exists())
@@ -52,7 +52,7 @@ class test_EsmRamdiskManager(unittest.TestCase):
         savegameTemplates = self.fs.getAbsolutePathTo("saves.games.savegame.templates")
         savegameTemplates.mkdir(parents=True, exist_ok=True)
         savegameMirror = self.fs.getAbsolutePathTo("saves.gamesmirror.savegamemirror")
-        self.rdm.install()
+        self.rdm.prepare()
         self.assertFalse(savegamePath.exists())
         self.assertTrue(savegameMirror.exists())
 

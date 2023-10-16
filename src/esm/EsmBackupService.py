@@ -1,16 +1,15 @@
 import logging
 import subprocess
-from datetime import datetime, timedelta
+from datetime import datetime
 from functools import cached_property
 from pathlib import Path
-from timeit import default_timer as timer
-from hurry.filesize import size
-from esm import RequirementsNotFulfilledError, ServerNeedsToBeStopped, isDebugMode
+from esm import AdminRequiredException, RequirementsNotFulfilledError, ServerNeedsToBeStopped
 from esm.EsmConfigService import EsmConfigService
 from esm.EsmDedicatedServer import EsmDedicatedServer
 from esm.EsmFileSystem import EsmFileSystem
 from esm.FsTools import FsTools
 from esm.ServiceRegistry import Service, ServiceRegistry
+from esm.Tools import getElapsedTime, getTimer
 
 log = logging.getLogger(__name__)
 
@@ -49,6 +48,7 @@ class EsmBackupService:
         nextBackupNumber = self.getNextBackupNumber(previousBackupNumber)
         targetBackupFolder = self.getRollingBackupFolder(nextBackupNumber)
 
+        start = getTimer()
         log.info(f"Starting backup to {targetBackupFolder}")
         self.backupSavegame(savegameSourceFolder, targetBackupFolder)
         log.debug(f"copying tool data")
@@ -71,8 +71,10 @@ class EsmBackupService:
             linkList = ",".join(map(str,deletedLinks))
             log.info(f"Removed now deprecated hardlinks: {linkList}")
 
+        log.info(f"Creating link to latest backup as '{linkPath}' -> '{targetBackupFolder}'")
         linkPath = self.createBackupLink(targetBackupFolder)
-        log.info(f"Created link to latest backup as '{linkPath}' -> '{targetBackupFolder}'")
+        elapsedTime = getElapsedTime(start)
+        log.info(f"Creating rolling backup done, time needed: {elapsedTime}")
 
     def getPreviousBackupNumber(self):
         """
@@ -270,23 +272,24 @@ class EsmBackupService:
 
         Example: "%zipcmd%" a -tzip -mtp=0 -mm=Deflate64 -mmt=on -mx1 -mfb=32 -mpass=1 -sccUTF-8 -mcu=on -mem=AES256 -bb0 -bse0 -bsp2 -w"workingdir" "zip" "dir"
         """
+        self.assertEnoughFreeSpace()
+
         zipFile = f"{backupDirectory}\{zipFileName}"
         peaZipExecutable = self.getPeaZipPath()
         cmd = [peaZipExecutable]
         cmd.extend(str(self.config.backups.staticBackupPeaZipOptions).split(" "))
         cmd.extend([f"-w{backupDirectory}", zipFile, f"{source}\\*"])
         log.debug(f"executing {cmd}")
-        start = timer()
+        start = getTimer()
         process = subprocess.run(cmd)
-        end = timer()
-        elapsedTime = timedelta(seconds=end-start)
+        elapsedTime = getElapsedTime(start)
         log.debug(f"process returned: {process} after {elapsedTime}")
         # this returns when peazip finishes
         if process.returncode > 0:
             log.error(f"error executing peazip: stdout: \n{process.stdout}\n, stderr: \n{process.stderr}\n")
         
         fileSize = Path(zipFile).stat().st_size
-        log.info(f"Static zip created at {zipFile}, size: {size(fileSize)}, time to create: {elapsedTime}")
+        log.info(f"Static zip created at {zipFile}, size: {FsTools.realToHumanFileSize(fileSize)}, time to create: {elapsedTime}")
 
         # we'll use a method that is extremely fast, but has a low compression rate
         # on test: 250MB savegame -> 1 second, 70MB
@@ -319,3 +322,13 @@ class EsmBackupService:
         if Path(peaZip).exists():
             return peaZip
         raise RequirementsNotFulfilledError(f"PeaZip not found in the configured path at {peaZip}. Please make sure it exists and the configuration points to it.")
+
+    def assertEnoughFreeSpace(self):
+        """
+        make sure there is enough space left on the disk, checking against the configured minimum required space. raises an error if there's not enough
+        """
+        drive = self.fileSystem.getAbsolutePathTo("backup").drive
+        minimum = self.config.backups.minDiskSpaceForStaticBackup
+        if not FsTools.hasEnoughFreeDiskSpace(drive, minimum):
+            log.error(f"The drive {drive} has not enough free disk space, the minimum required to create a static backup is configured to be {minimum}")
+            raise AdminRequiredException("Space on the drive is running out, will not create a static backup")

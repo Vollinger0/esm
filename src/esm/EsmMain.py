@@ -2,7 +2,7 @@ from functools import cached_property
 import logging
 from pathlib import Path
 import time
-from esm import AdminRequiredException, askUser
+from esm import AdminRequiredException
 from esm.EsmBackupService import EsmBackupService
 from esm.EsmFileSystem import EsmFileSystem
 from esm.EsmLogger import EsmLogger
@@ -10,6 +10,7 @@ from esm.EsmConfigService import EsmConfigService
 from esm.EsmDedicatedServer import EsmDedicatedServer, GfxMode
 from esm.EsmRamdiskManager import EsmRamdiskManager
 from esm.ServiceRegistry import ServiceRegistry
+from esm.Tools import askUser
 
 log = logging.getLogger(__name__)
 
@@ -62,7 +63,6 @@ class EsmMain:
         will start the server shortly to create a new savegame that can be used for installation
         """
         log.info("Will start the server with its blue graphics overlay to create a new savegame. The startup might take a few minutes.")
-        # log.info("You'll probably need to stop it again once you see the button 'Save and Exit' next to the 'Say' button and input field. It takes a bit to appear.")
         log.info("This script will shut down the server automatically again, if it doesn't work, you'll probably have to stop it yourself by clicking on the 'Save and Exit' button.")
         if askUser("Ready? [yes/no] ", "yes"):
             log.info("Will start the server with the default configuration now")
@@ -96,13 +96,14 @@ class EsmMain:
     
     def startServer(self):
         """
-        Will start the server and the ramdisk synchronizer
+        Will start the server (and the ramdisk synchronizer, if ramdisk is enabled)
         """
-        # start the synchronizer
-        syncInterval = self.config.ramdisk.synchronizeramtohddinterval
-        if syncInterval>0:
-            log.info(f"Starting ram2mirror synchronizer with interval {syncInterval}")
-            self.ramdiskManager.startSynchronizer(syncInterval)
+        if self.config.general.useRamdisk:
+            syncInterval = self.config.ramdisk.synchronizeramtohddinterval
+            if syncInterval>0:
+                # start the synchronizer
+                log.info(f"Starting ram2mirror synchronizer with interval {syncInterval}")
+                self.ramdiskManager.startSynchronizer(syncInterval)
         
         # start the server
         log.info(f"Starting the dedicated server")
@@ -120,16 +121,18 @@ class EsmMain:
         """
         Will stop the synchronizer, then stop the server and do a last sync from ram 2 mirror
         """
-        # stop synchronizer
-        self.ramdiskManager.stopSynchronizer()
+        if self.config.general.useRamdisk:
+            # stop synchronizer
+            self.ramdiskManager.stopSynchronizer()
 
         if self.dedicatedServer.isRunning():
             # stop server
             self.dedicatedServer.sendExitRetryAndWait()
 
-        # sync ram to mirror
-        log.info("Starting final ram to mirror sync after shutdown")
-        self.ramdiskManager.syncRamToMirror()
+        if self.config.general.useRamdisk:
+            # sync ram to mirror
+            log.info("Starting final ram to mirror sync after shutdown")
+            self.ramdiskManager.syncRamToMirror()
 
     def createBackup(self):
         """

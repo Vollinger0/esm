@@ -1,8 +1,11 @@
+import math
 import os
 import shutil
 import subprocess
 import logging
 from pathlib import Path
+
+import humanize
 
 log = logging.getLogger(__name__)
 
@@ -94,4 +97,31 @@ class FsTools:
     @staticmethod
     def copyFile(source: Path, destination: Path):
         shutil.copyfile(source, destination)
+
+    @staticmethod
+    def realToHumanFileSize(size: int) -> str:
+        return humanize.naturalsize(size, gnu=True)
+
+    @staticmethod
+    def humanToRealFileSize(size: str) -> int:
+        gnuSizes = "KMGTPEZY"
+        number = float(size.rstrip(gnuSizes))
+        unit = size[-1:]
+        idx = gnuSizes.index(unit) + 1      # index in list of sizes determines power to raise it to
+        factor = 1024 ** idx                # ** is the "exponent" operator - you can use it instead of math.pow()
+        return math.floor(number * factor)
+    
+    @staticmethod
+    def hasEnoughFreeDiskSpace(driveToCheck, minimumSpaceHuman):
+        """
+        checks if given drive has enough free space, returns True if yes, otherwise False
+        """
+        minimumSpace = FsTools.humanToRealFileSize(minimumSpaceHuman)
+        freeSpace = shutil.disk_usage(path=driveToCheck).free
+        freeSpaceHuman = FsTools.realToHumanFileSize(freeSpace)
+        log.debug(f"Free space on drive {driveToCheck} is {freeSpaceHuman}. Configured minimum for start up is {minimumSpaceHuman}")
+        if freeSpace < minimumSpace:
+            return False
+        else:
+            return True
 

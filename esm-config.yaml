@@ -17,6 +17,7 @@ server:
   startMode: 'launcher' # use 'direct' if you want to bypass the launcher, e.g. if you want to run multiple instances of the server on the same machine.
   gfxMode: False # enables the blue graphics overlay of the server, probably not needed when you use EAH or something else to manage the server
   startUpSleepTime: 15 # min amount of time in seconds to wait for a server start up before we try doing anything with it
+  minDiskSpaceForStartup: 500M # if disk space on the drive with the savegame (or ramdisk) is below this, do NOT start the server to avoid savegame corruption. gnu notation
   launcher:
     maxStartupTimeout: 15 # max amount of time in seconds to find the dedicated exe after calling the launcher.
 
@@ -27,6 +28,7 @@ backups:
     - 'D:\EGS\Empyrion\esm\esm-config.yaml' # our own configuration
     - 'D:\EGS\Empyrion\Content\Mods\EncryptoidModPack' # the modpacks database
   staticBackupPeaZipOptions: "a -tzip -mtp=0 -mm=Deflate64 -mmt=on -mx1 -mfb=32 -mpass=1 -sccUTF-8 -mcu=on -mem=AES256 -bb0 -bse0 -bsp2" #make sure to use the fastest compression options
+  minDiskSpaceForStaticBackup: 500M # if disk space on the drive with the backups has less free space than this, do not create a backup. gnu notation.
 
 paths:
   install: 'D:\EGS\Empyrion\'
