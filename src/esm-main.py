@@ -60,6 +60,15 @@ def testSetup():
     log.debug("calling setup")          
     esm.ramdiskManager.setup()  
 
+def testStartServerWithSynchronizer():
+    log.debug("starting server")
+    esm.startServer()
+    log.debug("server started, waiting 5 minutes")
+    time.sleep(300)
+    log.debug("stopping server")
+    esm.stopServer()
+    log.debug("server stopped")
+
 ######################################################
 ## main code start
 ######################################################
@@ -76,5 +85,6 @@ log.debug(f"Logging to: {esm.logFile}")
 #testSetup()
 #testStartStopServerNoTry()
 #testStartStopServer()
-        
+#testStartServerWithSynchronizer()
+
 log.info(f"Script finished successfully. Check the logfile ({esm.logFile}) if you missed something. Bye!")

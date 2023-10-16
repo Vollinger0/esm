@@ -5,7 +5,8 @@ general:
 
 ramdisk:
   drive: "R"
-  size: "5G"
+  size: "2G" # ramdisk size to use, e.g. '5G' or '32G', etc. If you change this, the ramdisk needs to be re-mounted, and the setup needs to run again.
+  synchronizeramtohddinterval: 60 # interval in seconds at which to do a ram2hdd sync for the savegame. if interval=0 the sync will be disabled! Recommended to leave at 3600 (1h)
 
 server:
   dedicatedYaml: 'esm-dedicated.yaml'

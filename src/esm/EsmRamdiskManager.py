@@ -1,6 +1,8 @@
 import logging
 from pathlib import Path
 import subprocess
+from threading import Event, Thread
+import time
 from esm import NoSaveGameFoundException, NoSaveGameMirrorFoundException, RequirementsNotFulfilledError, SaveGameMirrorExistsException
 from esm.EsmFileStructure import EsmFileStructure
 from esm.Jointpoint import Jointpoint
@@ -15,6 +17,8 @@ class EsmRamdiskManager:
     def __init__(self, config, dedicatedServer) -> None:
         self.config = config
         self.dedicatedServer = dedicatedServer
+        self.synchronizerEvent = None
+        self.synchronizerThread = None
         self.fs = EsmFileStructure(config)
 
     def install(self):
@@ -182,3 +186,33 @@ class EsmRamdiskManager:
         reverts the changes made by the install, basically moving the savegame back to its original place, removing the mirror
         """
         raise NotImplementedError("not implemented yet")
+    
+    def startSynchronizer(self, syncInterval):
+        """
+        starts a separate thread for the synchronizer, that will call syncram2mirror every $syncInterval
+        """
+        if syncInterval==0:
+            log.debug(f"synchronizer is disabled, syncInterval was {syncInterval}")
+            return False
+        self.synchronizerEvent = Event()
+        self.synchronizerThread = Thread(target=self.syncTask, args=(self.synchronizerEvent, syncInterval))
+        self.synchronizerThread.start()
+        log.info(f"ram2mirror synchronizer started with an interval of {syncInterval}")
+    
+    def syncTask(self, event, syncInterval):
+        timePassed = 0
+        while True:
+            time.sleep(1)
+            timePassed = timePassed + 1
+            if timePassed % syncInterval == 0:
+                self.syncRamToMirror()
+            if event.is_set():
+                break
+        log.debug("synchronizer shut down")
+
+    def stopSynchronizer(self):
+        # set the shared boolean, which will make the synchronizer
+        self.synchronizerEvent.set()
+        # wait for the thread to join the main thread
+        self.synchronizerThread.join()
+        log.info(f"ram2mirror synchronizer stopped")

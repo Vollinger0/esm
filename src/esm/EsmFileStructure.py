@@ -114,7 +114,7 @@ class EsmFileStructure:
         destinationPath = self.getAbsolutePathTo(destination)
         if info is not None: 
             log.info(info)
-        log.info(f"will {operation} from '{sourcePath}' -> '{destinationPath}'")
+        log.debug(f"will {operation} from '{sourcePath}' -> '{destinationPath}'")
         options = self.config.robocopy.options.get(operation).split(" ")
         logFile = Path(self.getCaller()).stem + "_robocopy.log"
         if not isDebugMode(self.config):
