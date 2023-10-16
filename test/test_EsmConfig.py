@@ -9,16 +9,13 @@ class test_EsmConfig(unittest.TestCase):
 
     def test_accessibleConfig(self):
         configFile = os.path.abspath("./test/test.yaml")
-        config = EsmConfig(configFile)
-        self.log.debug(f"read config: {config}")
-        print(f"read config: {config}")
-
-        # database_host = config.database.host
-        # app_name = config.app.name
-        # debug_mode = config.app.debug
-
-        # print(f"Database Host: {database_host}")
-        # print(f"App Name: {app_name}")
-        # print(f"Debug Mode: {debug_mode}")
-
-        # self.assertEquals(config.database.host, "localhost")
+        config = EsmConfig.fromConfigFile(configFile)
+        print(f"config: {config}")
+        print(f"config.database: {config.database}")
+        print(f"config.database.host: {config.database.host}")
+        print(f"config.app: {config.app}")
+        print(f"config.app.name: {config.app.name}")
+        self.assertEqual(config.database.host, "localhost")
+        self.assertEqual(config.app.name, "My App")
+        self.assertEqual(config.app.sub_config.value1, "abc")
+        self.assertEqual(config.numbers.integers, [1,2,3])

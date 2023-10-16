@@ -1,8 +1,6 @@
 ## ESM - Empyrion Server Manager
 
 
-## 
-
 
 ## TODOS:
 ### WIP

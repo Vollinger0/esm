@@ -5,13 +5,16 @@ import psutil
 from pathlib import Path
 import unittest
 from esm.EsmDedicatedServer import EsmDedicatedServer
+from esm.EsmConfig import EsmConfig
 
 class TestEsmDedicatedServer(unittest.TestCase):
 
     log = logging.getLogger(__name__)
 
     def test_createLogFileName(self):
-        esmDS = EsmDedicatedServer(installDir="..")
+        # esmDS = EsmDedicatedServer(installDir="..", dedicatedYaml="esm-dedicated.yaml")
+        esmConfig = EsmConfig.fromConfigFile('test/esm-test-config.yaml')
+        esmDS = EsmDedicatedServer(esmConfig)
         logFileName = esmDS.createLogFileName()
         logFileNameFirst23 = logFileName[:23]
         logFileNameLast4 = logFileName[-4:]

@@ -1,18 +1,19 @@
 import os
-import yaml
 import logging
-from esm import EsmLogger, EsmDedicatedServer, EsmConfig
+from esm.EsmLogger import EsmLogger
+from esm.EsmConfig import EsmConfig
+from esm.EsmDedicatedServer import EsmDedicatedServer
+
+log = logging.getLogger(__name__)
 
 """
 Main esm class, manages all the other tools, config, etc.
 """
 class EsmMain:
-    
-    logger = logging.getLogger(__name__)
 
-    def __init__(self, installDir=os.path.abspath("."), logFile=os.path.splitext(os.path.basename(__file__))[0] + ".log"):
-        self.installDir = installDir
+    def __init__(self, logFile, installDir, configFileName):
         self.logFile = logFile
+        configFilePath = os.path.abspath(f"{installDir}/{configFileName}")
+        self.config = EsmConfig.fromConfigFile(configFilePath)
         EsmLogger.setUpLogging(logFile)
-        self.config = EsmConfig("esm.yaml")
-        self.dedicatedServer = EsmDedicatedServer(workingDir=installDir)
+        self.dedicatedServer = EsmDedicatedServer(self.config)
