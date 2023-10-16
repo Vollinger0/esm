@@ -1,7 +1,34 @@
+[project]
+name = "esm"
+version = "0.1.0"
+
+[build-system]
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
+
+#[tool.setuptools]
+#name = "esm"
+#version = "0.1.0"
+#description = "Your ESM command-line tool"
+#author = "Your Name"
+#author_email = "your@email.com"
+#license = "MIT"  # Specify the appropriate license
+
+#[tool.setuptools.sdist]
+#formats = ["gztar", "zip"]
+
+#[tool.setuptools.packages]
+#find = {}  # Scanning implicit namespaces is active by default
+
+#[project.scripts]
+#esm = "esm.main:main"
+#console_scripts ="esm.main"
+
 # pytest recommends storing settings in this file (not setup.cfg)
 [tool.pytest.ini_options]
 testpaths = ["test"]
 pythonpath = ["src"]
+# log_cli=true and level setting below make sure logging in tests shows up in the output
 log_cli = true
 # log_cli_level = logging.DEBUG
 log_cli_level = 10
