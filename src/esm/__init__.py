@@ -21,3 +21,6 @@ class ServiceNotFoundError(Exception):
 
 class ServerNeedsToBeStopped(Exception):
     pass
+
+class SecurityException(Exception):
+    pass

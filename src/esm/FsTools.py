@@ -9,9 +9,15 @@ from pathlib import Path
 
 import humanize
 
+from esm import SecurityException
+
 log = logging.getLogger(__name__)
 
 class FsTools:
+
+    # used to check that a path has at least 3 parts before we delete it, just to make sure no error/misconfiguriation deletes a whole drive.
+    MIN_PATH_DEPTH_FOR_DELETE = 3
+
     """
     Tools to work with the file system, includes handling of hardlink/jointpoint
     """
@@ -78,13 +84,21 @@ class FsTools:
         """
         quickly delete a folder and all its content. May be slow. use #quickDeleteNative for the fastest but native method.
         """
-        shutil.rmtree(ignore_errors=True, path=targetPath)
+        if len(Path(targetPath).parts) < FsTools.MIN_PATH_DEPTH_FOR_DELETE:
+            log.warn(f"prevented delete of path {targetPath} since it has a depth lower than {FsTools.MIN_PATH_DEPTH_FOR_DELETE}")
+            raise SecurityException(f"prevented delete of path {targetPath} since it has a depth lower than {FsTools.MIN_PATH_DEPTH_FOR_DELETE}")
 
+        shutil.rmtree(ignore_errors=True, path=targetPath)
+    
     @staticmethod
     def quickDeleteNative(targetPath: Path):
         """
         quickly delete a folder and all its content, using the del /f/q/s and rmdir /s/q shell commands 
         """
+        if len(Path(targetPath).parts) < FsTools.MIN_PATH_DEPTH_FOR_DELETE:
+            log.warn(f"prevented delete of path {targetPath} since it has a depth lower than {FsTools.MIN_PATH_DEPTH_FOR_DELETE}")
+            raise SecurityException(f"prevented delete of path {targetPath} since it has a depth lower than {FsTools.MIN_PATH_DEPTH_FOR_DELETE}")
+
         cmd = ["del", "/f", "/q", "/s", targetPath]
         log.debug(f"executing {cmd}")
         process = subprocess.run(cmd, shell=True)
@@ -104,7 +118,12 @@ class FsTools:
         dirPath.mkdir(parents=True, exist_ok=True)
 
     @staticmethod
+
     def deleteDir(dirPath: Path, recursive=False):
+        if len(Path(dirPath).parts) < FsTools.MIN_PATH_DEPTH_FOR_DELETE:
+            log.warn(f"prevented delete of path {dirPath} since it has a depth lower than {FsTools.MIN_PATH_DEPTH_FOR_DELETE}")
+            raise SecurityException(f"prevented delete of path {dirPath} since it has a depth lower than {FsTools.MIN_PATH_DEPTH_FOR_DELETE}")
+        
         if dirPath.exists():
             if recursive:
                 shutil.rmtree(dirPath)
@@ -198,3 +217,16 @@ class FsTools:
             else:
                 resolvedPaths.append(Path(path).absolute().as_posix())
         return resolvedPaths
+    
+    @staticmethod
+    def pathContainsSubPath(path: Path, subPath: Path):
+        """
+        returns true if subPath is contained in path.
+        """
+        try:
+            child = Path(subPath).resolve()
+            parent = Path(path).resolve()
+        except FileNotFoundError:
+            return False
+        return child.parts[:len(parent.parts)] == parent.parts
+
