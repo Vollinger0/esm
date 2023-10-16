@@ -74,7 +74,8 @@ class EsmMain:
         log.info("This script will shut down the server automatically again, if it doesn't work, you'll probably have to stop it yourself by clicking on the 'Save and Exit' button.")
         if askUser("Ready? [yes/no] ", "yes"):
             log.info("Will start the server with the default configuration now")
-            newEsm = EsmDedicatedServer(config=self.config, gfxMode=GfxMode.ON)
+            newEsm = EsmDedicatedServer(config=self.config)
+            newEsm.gfxMode = GfxMode.ON
             try:
                 newEsm.startServer()
                 # give the server some time to start and create the new savegame before we try stopping it again
@@ -99,6 +100,7 @@ class EsmMain:
         savegameMirrorPath = self.fileSystem.getAbsolutePathTo("saves.gamesmirror.savegamemirror")
         if askUser(f"Delete old savegame mirror at {savegameMirrorPath}? [yes/no] ", "yes"):
             self.fileSystem.delete(savegameMirrorPath)
+            self.fileSystem.commitDelete()
             return True
         return False
     
@@ -208,18 +210,21 @@ class EsmMain:
                 if not Path(source).is_absolute():
                     source = Path(f"{self.config.paths.install}/{source}")
 
-                destination = Path(additionalStuff.dst)
-                if not Path(destination).is_absolute():
-                    destination = Path(f"{self.config.paths.install}/{destination}")
+                if source.exists():
+                    destination = Path(additionalStuff.dst)
+                    if not Path(destination).is_absolute():
+                        destination = Path(f"{self.config.paths.install}/{destination}")
 
-                if source.is_dir():
-                    # its a dir
-                    log.info(f"copying directory {source} into {destination}")  
-                    FsTools.copyDir(source=source, destination=destination)
+                    if source.is_dir():
+                        # its a dir
+                        log.info(f"copying directory {source} into {destination}")  
+                        FsTools.copyDir(source=source, destination=destination)
+                    else:
+                        # its a file
+                        log.info(f"copying file {source} into {destination}")  
+                        FsTools.copy(source=source, destination=destination)
                 else:
-                    # its a file
-                    log.info(f"copying file {source} into {destination}")  
-                    FsTools.copy(source=source, destination=destination)
+                    log.warning(f"Configured additional path {source} does not exist.")
 
     def deleteAll(self):
         """
@@ -259,11 +264,9 @@ class EsmMain:
                         log.info(f"There is no more ramdisk mounted as {driveLetter}, will continue.")
                 log.info(f"Ramdisk at {driveLetter} unmounted")
         else:
-            with Timer() as timer:
-                savegamePath = self.fileSystem.getAbsolutePathTo("saves.games.savegame")
-                log.info(f"Deleting savegame at {savegamePath}. Depending on savegame size this might take a while!")
-                self.fileSystem.delete(savegamePath, native=True)
-            log.debug(f"deleting savegame took {timer.elapsedTime}")
+            savegamePath = self.fileSystem.getAbsolutePathTo("saves.games.savegame")
+            log.info(f"Deleting savegame at {savegamePath}. Depending on savegame size this might take a while!")
+            self.fileSystem.delete(savegamePath, native=True)
 
         # delete backups
         backups = self.fileSystem.getAbsolutePathTo("backup")
@@ -276,25 +279,19 @@ class EsmMain:
                 if self.config.foldernames.backupmirrorprefix in rollingBackup.name:
                     # the link points to a rolling backup, delete it
                     FsTools.deleteLink(entry)
-        with Timer() as timer:
-            log.info(f"Deleting all rolling backups at {backupMirrors}. Depending on savegame size this might take quite a while!")
-            self.fileSystem.delete(backupMirrors, native=True)
-        log.debug(f"deleting rolling backups took {timer.elapsedTime}")
+        log.info(f"Deleting all rolling backups at {backupMirrors}. Depending on savegame size this might take quite a while!")
+        self.fileSystem.delete(backupMirrors, native=True)
 
         # delete game mirrors
-        with Timer() as timer:
-            gamesmirrors = self.fileSystem.getAbsolutePathTo("saves.gamesmirror")
-            log.info(f"Deleting all hdd mirrors at {gamesmirrors}. Depending on savegame size this might take a while!")
-            self.fileSystem.delete(gamesmirrors, native=True)
-        log.debug(f"deleting hdd mirrors took {timer.elapsedTime}")
+        gamesmirrors = self.fileSystem.getAbsolutePathTo("saves.gamesmirror")
+        log.info(f"Deleting all hdd mirrors at {gamesmirrors}. Depending on savegame size this might take a while!")
+        self.fileSystem.delete(gamesmirrors, native=True)
 
         # delete the cache
-        with Timer() as timer:
-            cache = self.fileSystem.getAbsolutePathTo("saves.cache")
-            cacheSavegame = f"{cache}/{self.config.server.savegame}"
-            log.info(f"Deleting the cache at {cacheSavegame}")
-            self.fileSystem.delete(cacheSavegame)
-        log.debug(f"deleting cache took {timer.elapsedTime}")
+        cache = self.fileSystem.getAbsolutePathTo("saves.cache")
+        cacheSavegame = f"{cache}/{self.config.server.savegame}"
+        log.info(f"Deleting the cache at {cacheSavegame}")
+        self.fileSystem.delete(cacheSavegame)
         
         #delete eah tool data
         eahToolDataPattern = Path(f"{self.config.paths.eah}/Config/").absolute().joinpath("*.dat")
@@ -312,7 +309,14 @@ class EsmMain:
         
         # backupAllLogs
         self.backupAllLogs()
-        log.info("Deletion complete, you can now start a fresh game.")
+
+        log.info(f"Will start deletion tasks now")
+        with Timer() as timer:
+            if self.fileSystem.commitDelete():
+                log.info(f"Deleting all that took {timer.elapsedTime}. You can now start a fresh game.")
+            else:
+                self.fileSystem.clearPendingDeletePaths()
+                log.warning("Deletion cancelled")
 
     def backupAllLogs(self):
         backupDir = self.fileSystem.getAbsolutePathTo("backup")

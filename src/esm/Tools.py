@@ -35,13 +35,17 @@ def monkeyPatchAllFSFunctionsForDebugMode():
 def isDebugMode(config):
     return config.general.debugMode
 
-def askUser(question, answerForTrue):
+def askUser(question, answerForTrue, override=None):
     """
     asks the user for input, returns true if the answer was 'answerForTrue'
     """
-    log.debug(f"asking for user input: {question}")
-    answer = input(question).lower()
-    log.debug(f"user answered with {answer}")
+    if override:
+        log.warning(f"using override for user input: {override}")
+        answer = override
+    else:
+        log.debug(f"asking for user input: {question}")
+        answer = input(question).lower()
+        log.debug(f"user answered with {answer}")
     return answer==answerForTrue
 
 def getTimer():

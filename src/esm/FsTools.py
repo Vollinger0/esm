@@ -84,7 +84,7 @@ class FsTools:
         """
         quickly delete a folder and all its content. May be slow. use #quickDeleteNative for the fastest but native method.
         """
-        if len(Path(targetPath).parts) < FsTools.MIN_PATH_DEPTH_FOR_DELETE:
+        if len(Path(targetPath).resolve().parts) < FsTools.MIN_PATH_DEPTH_FOR_DELETE:
             log.warn(f"prevented delete of path {targetPath} since it has a depth lower than {FsTools.MIN_PATH_DEPTH_FOR_DELETE}")
             raise SecurityException(f"prevented delete of path {targetPath} since it has a depth lower than {FsTools.MIN_PATH_DEPTH_FOR_DELETE}")
 
@@ -95,7 +95,7 @@ class FsTools:
         """
         quickly delete a folder and all its content, using the del /f/q/s and rmdir /s/q shell commands 
         """
-        if len(Path(targetPath).parts) < FsTools.MIN_PATH_DEPTH_FOR_DELETE:
+        if len(Path(targetPath).resolve().parts) < FsTools.MIN_PATH_DEPTH_FOR_DELETE:
             log.warn(f"prevented delete of path {targetPath} since it has a depth lower than {FsTools.MIN_PATH_DEPTH_FOR_DELETE}")
             raise SecurityException(f"prevented delete of path {targetPath} since it has a depth lower than {FsTools.MIN_PATH_DEPTH_FOR_DELETE}")
 
@@ -118,10 +118,9 @@ class FsTools:
         dirPath.mkdir(parents=True, exist_ok=True)
 
     @staticmethod
-
     def deleteDir(dirPath: Path, recursive=False):
         if len(Path(dirPath).parts) < FsTools.MIN_PATH_DEPTH_FOR_DELETE:
-            log.warn(f"prevented delete of path {dirPath} since it has a depth lower than {FsTools.MIN_PATH_DEPTH_FOR_DELETE}")
+            log.warning(f"prevented delete of path {dirPath} since it has a depth lower than {FsTools.MIN_PATH_DEPTH_FOR_DELETE}")
             raise SecurityException(f"prevented delete of path {dirPath} since it has a depth lower than {FsTools.MIN_PATH_DEPTH_FOR_DELETE}")
         
         if dirPath.exists():

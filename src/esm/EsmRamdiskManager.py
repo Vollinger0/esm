@@ -10,7 +10,7 @@ from esm.EsmDedicatedServer import EsmDedicatedServer
 from esm.EsmFileSystem import EsmFileSystem
 from esm.FsTools import FsTools
 from esm.ServiceRegistry import Service, ServiceRegistry
-from esm.Tools import getElapsedTime, getTimer
+from esm.Tools import Timer, getElapsedTime, getTimer
 
 log = logging.getLogger(__name__)
 
@@ -87,7 +87,7 @@ class EsmRamdiskManager:
         """
         # check and mount the ramdisk
         log.debug("check and mount ramdisk")
-        ramdiskDrive = Path(self.config.ramdisk.drive + ":")
+        ramdiskDrive = Path(self.config.ramdisk.drive)
         ramdiskSize = Path(self.config.ramdisk.size)
         if ramdiskDrive.exists(): 
             log.info(f"{ramdiskDrive} already exists as a drive, assuming this is our ramdrive. If its not, please use another drive letter in the configuration.")
@@ -116,8 +116,8 @@ class EsmRamdiskManager:
         savegamemirror = self.fileSystem.getAbsolutePathTo("saves.gamesmirror.savegamemirror")
         if not savegamemirror.exists():
             raise NoSaveGameMirrorFoundException("f{savegamemirror} does not exist! Is the configuration correct? Did you call the install action before calling the setup?")
+        log.info("Syncing mirror 2 ram")
         self.syncMirrorToRam()
-
         log.info("Setup completed, you may now start the server")
 
     def externalizeTemplates(self):
@@ -140,12 +140,13 @@ class EsmRamdiskManager:
             
         if doMoveFolder:
             # move template folder to hdd template mirror
-            self.fileSystem.moveFileTree(
-                sourceDotPath="saves.games.savegame.templates", 
-                destinationDotPath="saves.gamesmirror.savegametemplate", 
-                info=f"Moving Templates back to HDD. If your savegame is big already, this can take a while"
-                )
-            log.info(f"Moved templates from {savegametemplatesPath} to {templateshddcopyPath}")
+            with Timer() as timer:
+                self.fileSystem.moveFileTree(
+                    sourceDotPath="saves.games.savegame.templates", 
+                    destinationDotPath="saves.gamesmirror.savegametemplate", 
+                    info=f"Moving Templates back to HDD. If your savegame is big already, this can take a while"
+                    )
+            log.info(f"Moved templates from {savegametemplatesPath} to {templateshddcopyPath} in {timer.elapsedTime}")
         
         if doCreateLink:
             # create link from savegame back to hdd template mirror
@@ -159,7 +160,7 @@ class EsmRamdiskManager:
         osfMount = self.checkAndGetOsfMountPath()
         cmd = [osfMount]
         #-a -t vm -m T -o format:ntfs:'Ramdisk',logical -s 2G
-        args = f"-a -t vm -m {driveLetter}: -o format:ntfs:'Ramdisk',logical -s {driveSize}"
+        args = f"-a -t vm -m {driveLetter} -o format:ntfs:'Ramdisk',logical -s {driveSize}"
         cmd.extend(args.split(" "))
         log.info(f"Executing {cmd}. This will require admin privileges")
         process = subprocess.run(cmd, capture_output=True, shell=True)
@@ -171,7 +172,7 @@ class EsmRamdiskManager:
         returns True if there is a drive mounted as 'driveLetter' and it is a osfmount ramdrive.
         """
         osfMount = self.checkAndGetOsfMountPath()
-        cmd = [osfMount, "-l", "-m", str(driveLetter)+":"]
+        cmd = [osfMount, "-l", "-m", driveLetter]
         log.info(f"Executing {cmd}. This will require admin privileges")
         try:
             subprocess.run(cmd, capture_output=True, shell=True, check=True)
@@ -215,14 +216,14 @@ class EsmRamdiskManager:
         starts a separate thread for the synchronizer, that will call syncram2mirror every $syncInterval
         """
         if not self.config.general.useRamdisk:
-            log.warn("useRamdisk is set to False, there is no sense much in using the synchronizer. Please check that the code is being used properly.")
+            log.warn("useRamdisk is set to False, there is no much sense in using the synchronizer. Please check that the code is being used properly.")
         if syncInterval==0:
             log.debug(f"synchronizer is disabled, syncInterval was {syncInterval}")
             return False
         self.synchronizerShutdownEvent = Event()
         self.synchronizerThread = Thread(target=self.syncTask, args=(self.synchronizerShutdownEvent, syncInterval), daemon=True)
         self.synchronizerThread.start()
-        log.info(f"ram2mirror synchronizer started with an interval of {syncInterval}")
+        log.info(f"ram to mirror synchronizer started with an interval of {syncInterval}")
     
     def syncTask(self, event, syncInterval):
         timePassed = 0
@@ -231,10 +232,9 @@ class EsmRamdiskManager:
             timePassed = timePassed + 1
             if timePassed % syncInterval == 0:
                 log.info(f"Synchronizing from ram to mirror")
-                start = getTimer()
-                self.syncRamToMirror()
-                elapsedTime = getElapsedTime(start)
-                log.info(f"Sync done. Time needed {elapsedTime}")
+                with Timer() as timer:
+                    self.syncRamToMirror()
+                log.info(f"Sync done. Time needed {timer.elapsedTime}")
             if event.is_set():
                 break
         log.debug("synchronizer shut down")
@@ -252,7 +252,7 @@ class EsmRamdiskManager:
         dismount ramdisk, deleting all its content in the process.
         """
         osfMount = self.checkAndGetOsfMountPath()
-        cmd = [osfMount, "-d", "-m", str(driveLetter)+":"]
+        cmd = [osfMount, "-d", "-m", driveLetter]
         log.info(f"Executing {cmd}. This could require admin privileges")
         try:
             process = subprocess.run(cmd, capture_output=True, shell=True, check=True)

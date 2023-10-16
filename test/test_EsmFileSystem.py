@@ -66,7 +66,7 @@ class test_EsmFileSystem(unittest.TestCase):
         if target.exists(): 
             target.rmdir()
 
-    @unittest.skip("this is too dangerous to keep yet, FSTools need to make sure it doesn't delet too much!")
+    # @unittest.skip("this is too dangerous to keep yet, FSTools need to make sure it doesn't delete too much!")
     def test_deleteByPattern(self):
         esmConfig = EsmConfigService(configFilePath="esm-config.yaml")
         esmfs = EsmFileSystem(config=esmConfig)
@@ -86,11 +86,45 @@ class test_EsmFileSystem(unittest.TestCase):
         paths = FsTools.resolveGlobs(["pattern_test/foo/*.txt"])
         for path in paths:
             log.debug(f"would delete {path}")
-        # esmfs.delete(path)
+            esmfs.delete(path)
+            esmfs.commitDelete("yes")
 
         for entry in [dir1, file3]:
             self.assertTrue(entry.exists())
         self.assertFalse(file1.exists())
         self.assertFalse(file2.exists())
 
-        #FsTools.quickDelete("pattern_test")        
+        FsTools.quickDelete("pattern_test")
+
+    def test_deleteAndCommit(self):
+        esmConfig = EsmConfigService(configFilePath="esm-config.yaml")
+        esmfs = EsmFileSystem(config=esmConfig)
+        FsTools.quickDelete("delete_test")
+
+        dir1 = Path("delete_test/foo/bar")
+        file1 = Path("delete_test/foo/baz.txt")
+        file2 = Path("delete_test/foo/moo.txt")
+        file3 = Path("delete_test/foo/moep.dat")
+        FsTools.createDirs([dir1])
+        for file in [file1, file2, file3]:
+            file.write_text("blubb")
+        for entry in [dir1, file1, file2, file3]:
+            self.assertTrue(entry.exists())
+
+        esmfs.delete(dir1)
+        esmfs.delete(file2)
+
+        for entry in [dir1, file1, file2, file3]:
+            self.assertTrue(entry.exists())
+
+        absolutePaths = FsTools.toAbsolutePaths(paths=[dir1, file2], parent=Path("."))
+        self.assertListEqual(sorted(esmfs.getPendingDeletePaths()), sorted(absolutePaths))
+
+        esmfs.commitDelete(override="yes")
+
+        for entry in [file1, file3]:
+            self.assertTrue(entry.exists())
+        self.assertFalse(dir1.exists())
+        self.assertFalse(file2.exists())
+
+        FsTools.quickDelete("delete_test")
