@@ -3,7 +3,7 @@ import os
 import dotsi
 from functools import cached_property
 from pathlib import Path
-from esm import robocopy
+from esm import UserAbortedException, robocopy
 from esm.EsmConfigService import EsmConfigService
 from esm.FsTools import FsTools
 from esm.ServiceRegistry import Service, ServiceRegistry
@@ -197,7 +197,8 @@ class EsmFileSystem:
 
         if not askUser("Proceed? [yes/no] ", "yes", override=override):
             log.info("Will not delete the listed files.")
-            return False, None
+            raise UserAbortedException("User aborted file deletion.")
+            # return False, None
 
         start = getTimer()
         for path, targetPath, native in self.pendingDeletePaths:

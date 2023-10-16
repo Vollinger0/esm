@@ -139,14 +139,14 @@ class EsmBackupService:
         """
         if self.config.general.useRamdisk:
             log.info("Ramdisk mode is enabled, will use the hdd mirror as backup source")
-            savegameSource = self.getBackupSourceFromHddMirror()
+            savegameSource = self.fileSystem.getAbsolutePathTo("saves.gamesmirror.savegamemirror")
         else:
             log.info("Ramdisk mode is disabled, will use the savegame as backup source. This requires the server to be stopped!")
             # make sure the server is not running
             if self.dedicatedServer.isRunning():
                 log.warn("The server is currently running, creating a backup from the savegame in use may be problematic, please shut down the server first.")
                 raise ServerNeedsToBeStopped("Can not create backup from an active savegame while the server is running. Please shut down server first.")
-            savegameSource = self.getBackupSourceFromSavegame()
+            savegameSource = self.fileSystem.getAbsolutePathTo("saves.games.savegame")
         return savegameSource
     
     def assertBackupFilestructure(self):
@@ -159,18 +159,6 @@ class EsmBackupService:
             folderName=f"{self.config.foldernames.backupmirrorprefix}{i}"
             FsTools.createDir(Path(f"{backupParentDir}/{folderName}"))
 
-    def getBackupSourceFromHddMirror(self):
-        """
-        return the folder path of the source to use for backup from hdd mirror
-        """
-        return self.fileSystem.getAbsolutePathTo("saves.gamesmirror.savegamemirror")
-    
-    def getBackupSourceFromSavegame(self):
-        """
-        return the folder path of the source to use for backup from the active savegame
-        """
-        return self.fileSystem.getAbsolutePathTo("saves.games.savegame")
-    
     def backupSavegame(self, savegameSource, targetBackupFolder):
         """
         actually back up the savegame using the source given

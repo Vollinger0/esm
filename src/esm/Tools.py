@@ -45,7 +45,7 @@ def askUser(question, answerForTrue, override=None):
     else:
         log.debug(f"asking for user input: {question}")
         answer = input(question).lower()
-        log.debug(f"user answered with {answer}")
+        log.debug(f"user answered with '{answer}'")
     return answer==answerForTrue
 
 def getTimer():

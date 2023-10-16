@@ -37,28 +37,9 @@ def testStartStopServer():
 
 def testRamdiskPrepare():
     esm.ramdiskPrepare()
-    # try:
-    #     log.debug("calling prepare")
-    #     esm.ramdiskManager.prepare()
-    # except NoSaveGameFoundException:
-    #     log.debug("asking user to create new savegame")
-    #     if esm.askUserToCreateNewSavegame():
-    #         log.info("calling prepare again")
-    #         testRamdiskPrepare()
-    #     else:
-    #         log.debug("user decided to abort prepare")
-    #         raise UserAbortedException("user decided to abort prepare")
-    # except SaveGameMirrorExistsException:
-    #     log.debug("asking user if he wants to delete the existing savegame mirror")        
-    #     if esm.askUserToDeleteOldSavegameMirror():
-    #         log.debug("deleted old savegame mirror")
-    #         testRamdiskPrepare()
-    #     else:
-    #         log.debug("user decided not to delete the old savegame mirror")
 
 def testRamdiskSetup():
-    log.debug("calling setup")          
-    esm.ramdiskManager.setup()  
+    esm.ramdiskSetup()  
 
 def testStartServerWithSynchronizer():
     log.debug("starting server")
@@ -111,7 +92,7 @@ log.debug("Start of script")
 log.debug(f"Logging to: {esm.logFile}")
 
 #testInstallFromSteam()
-#testRamdiskPrepare()
+testRamdiskPrepare()
 #testRamdiskSetup()
 #testStartStopServerNoTry()
 #testStartStopServer()
