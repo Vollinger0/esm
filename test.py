@@ -1,21 +1,18 @@
 import logging
 from esm.EsmMain import EsmMain
+from esm.DataTypes import WipeType
 
-esm = EsmMain(caller=__file__,
-              configFileName="esm-config.yaml"
-              )
+esm = EsmMain(caller="test")
 log = logging.getLogger(__name__)
 
 log.debug("Start of script")
 log.debug(f"Logging to: {esm.logFile}")
 log.debug(f"debugging is: {esm.config.general.debugMode}")
 
-def testMultipleReturnValues():
-    return "Hello", 43, "world"
+wtl = list(WipeType)
+
+log.debug(f"{wtl}")
+foo = list(map(lambda x: x.value.val, wtl))
+log.debug(f"{foo}")
 
 
-test1 = testMultipleReturnValues()
-test2, test22, test23 = testMultipleReturnValues()
-
-log.debug(f"test1 {test1}")
-log.debug(f"test2 {test2}, test22 {test22}, test23 {test23}")

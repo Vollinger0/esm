@@ -2,7 +2,8 @@ from functools import cached_property
 import logging
 from pathlib import Path
 import time
-from esm import AdminRequiredException, UserAbortedException
+from esm import AdminRequiredException, UserAbortedException, WrongParameterError
+from esm.DataTypes import WipeType
 from esm.EsmBackupService import EsmBackupService
 from esm.EsmDeleteService import EsmDeleteService
 from esm.EsmFileSystem import EsmFileSystem
@@ -11,6 +12,7 @@ from esm.EsmConfigService import EsmConfigService
 from esm.EsmDedicatedServer import EsmDedicatedServer, GfxMode
 from esm.EsmRamdiskManager import EsmRamdiskManager
 from esm.EsmSteamService import EsmSteamService
+from esm.EsmWipeService import EsmWipeService
 from esm.ServiceRegistry import ServiceRegistry
 from esm.Tools import askUser, isDebugMode, monkeyPatchAllFSFunctionsForDebugMode
 
@@ -44,7 +46,11 @@ class EsmMain:
     def deleteService(self) -> EsmDeleteService:
         return ServiceRegistry.get(EsmDeleteService)
 
-    def __init__(self, configFileName, customConfigFileName=None, caller=__name__, fileLogLevel=logging.DEBUG, streamLogLevel=logging.DEBUG):
+    @cached_property    
+    def wipeService(self) -> EsmWipeService:
+        return ServiceRegistry.get(EsmWipeService)
+
+    def __init__(self, configFileName="esm-base-config.yaml", customConfigFileName="esm-custom-config.yaml", caller=__name__, fileLogLevel=logging.DEBUG, streamLogLevel=logging.DEBUG):
         self.configFilename = configFileName
         self.customConfigFileName = customConfigFileName
         self.caller = caller
@@ -270,10 +276,8 @@ class EsmMain:
         if force:
             log.warning("Forcing uninstall even though the configuration is set to not use a ramdisk")
 
-        mirrorExists = self.fileSystem.existsDotPath("saves.gamesmirror.savegamemirror.globaldb")
-        mirrorPath = self.fileSystem.getAbsolutePathTo("saves.gamesmirror.savegamemirror")
-        savegameExists = self.fileSystem.existsDotPath("saves.games.savegame.globaldb")
-        savegamePath = self.fileSystem.getAbsolutePathTo("saves.games.savegame")
+        mirrorExists, mirrorPath = self.ramdiskManager.existsMirror()
+        savegameExists, savegamePath = self.ramdiskManager.existsSavegame()
 
         if mirrorExists:
             if savegameExists:
@@ -295,3 +299,37 @@ class EsmMain:
             else:
                 log.info(f"No savegame exists at {savegamePath}. This is either a configuration error or none exists. You might need to create a new one later.")
                 return False
+            
+    def wipeEmptyPlayfields(self, dbLocation=None, wipeType=None, territory=None, dryMode=True):
+        """
+        Wipes all defined playfields with the defined wipetype, filtering out any playfield that has a player, player owned structure or terrain placeable on it.
+
+        Optimized for speed and huge savegames.
+        Takes about a minute to wipe 50k playfields on a 30GB savegame. 
+        Comparison: EAH's "wipe empty playfield" function takes 36hs and does not take into account terrain placeables.
+        """
+        if dbLocation is None:
+            dbLocation = self.fileSystem.getAbsolutePathTo("saves.games.savegame.globaldb")
+        else:
+            dbLocationPath = Path(dbLocation).resolve().absolute()
+            if dbLocationPath.exists():
+                dbLocation = str(dbLocationPath)
+            else:
+                raise WrongParameterError(f"DbLocation {dbLocation} is not a valid database location path.")
+
+        availableTerritories = self.wipeService.getAvailableTerritories()
+        if territory and (territory in availableTerritories or territory == 'ALL'):
+            log.debug(f"valid territory selected {territory}")
+        else:
+            atn = list(map(lambda x: x.name, availableTerritories))
+            raise WrongParameterError(f"Territory {territory} not valid, must be one of: ALL or {atn}")
+
+        wtl = list(map(lambda x: x.value.val, list(WipeType)))
+        if wipeType and wipeType in wtl:
+            log.debug(f"valid wipetype selected {wipeType}")
+        else:
+            raise WrongParameterError(f"Wipe type {wipeType} not valid, must be one of: {wtl}")
+        
+        log.info(f"Calling wipe empty playfields for dbLocation: {dbLocation} territory {territory}, wipeType {wipeType} and dryMode {dryMode}")
+        self.wipeService.wipeEmptyPlayfields(dbLocation, territory, wipeType, dryMode)
+

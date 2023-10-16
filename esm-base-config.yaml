@@ -1,13 +1,10 @@
 general:
-  # debugMode: True
-  debugMode: False
-  # allowMultpleServerInstances: True
-  externalizeTemplates: True
-  useRamdisk: True
-  #useRamdisk: False
+  debugMode: False # if True, most file system operations will not be executed and processes not started. You probably don't need this unless you're developing this.
+  externalizeTemplates: True # if True, will "externalize" the savegame templates, meaning that they will be symlinked back to the hdd when using the ramdisk. This saves aboit 40% of space on the ramdisk!
+  useRamdisk: True # if True, use a ramdisk for the savegame. Requires the user to call ramdisk-prepare and ramdisk-setup to work. Will completely solve your server performance issues.
 
 ramdisk:
-  drive: "R:"
+  drive: "R:" # the drive letter to use for the ramdisk, e.g. "R:"
   size: "2G" # ramdisk size to use, e.g. '5G' or '32G', etc. If you change this, the ramdisk needs to be re-mounted, and the setup needs to run again.
   synchronizeRamToMirrorInterval: 60 # interval in seconds at which to do a ram2hdd sync for the savegame. if interval=0 the sync will be disabled! Recommended to leave at 3600 (1h)
 

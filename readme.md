@@ -28,25 +28,26 @@
 [x] usecase: deinstall ramdisk
 [x] add proper cli - use the click library to extend the scripts with command line tools
 [x] debugmode
+[x] split the config in a "basic" config, an custom config that overwrites the basic config.
 
 ### WIP
-[+] split the config in a "basic" config, an custom config that overwrites the basic config.
+[ ] usecase: wipe galaxy - integrate other script
+[ ] interactive mode for wipe galaxy tool
 
 ### later
 [+] when useRamdisk is enabled, enable checks for its file structure, when its not, do not start use the synchronizer (of course)
+[ ] re-mount option for when ramdisk size has to be updated
 [ ] offer some kind of better interactive mode for different stuff
 [ ] implement allowMultpleServerInstances switch. Once enabled, do not check for running instances of the game before starting, do not start if startmode is set to direct, etc.
 [ ] implement server-callback with epmremoteclient
 [ ] implement warning/talkback via tickets
 [ ] implement warning/talkback to server chat for syncs, backups probably even random stuff with funny hamster sentences.
 [ ] integrity check: checks if things fit together (e.g. dedicated.yaml config), our own config when running multiple instances, etc.
-
+    * or adapt config to dedicated.yaml, especially when paths change. probably as a sanity check implementation
 
 ### optional
-[ ] usecase: create configuration?
-[ ] usecase: wipe galaxy
-[ ] usecase: purge galaxy, 
+[ ] usecase: purge galaxy
+[ ] tool: deletes the "discovered by" flags (potentially also for wipes/purges)
 [ ] create separate windows-gui thingy that resides in the taskbar or similar and provides a shortcut to the cli tool.
    ** probably with wxPython
-[ ] adapt config to dedicated.yaml, especially when paths change. probably as a sanity check implementation
-[ ] tool: deletes the "discovered by" flags (potentially also for wipes/purges)
+[-] usecase: create configuration? => probably not needed. the custom config covers our needs.
