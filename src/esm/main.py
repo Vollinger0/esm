@@ -1,5 +1,7 @@
 import logging
 import click
+from esm import WrongParameterError
+from esm.DataTypes import Territory, WipeType
 from esm.ServiceRegistry import ServiceRegistry
 from esm.EsmMain import EsmMain
 from esm.Tools import getElapsedTime, getTimer, isDebugMode
@@ -7,6 +9,7 @@ from esm.Tools import getElapsedTime, getTimer, isDebugMode
 log = logging.getLogger(__name__)
 
 class LogContext:
+    """context for cli commands to have some basic logging for troubleshooting"""
     def __enter__(self):
         self.esm = ServiceRegistry.get(EsmMain)
         log.debug(f"Script started")
@@ -19,8 +22,9 @@ class LogContext:
     def __exit__(self, exc_type, exc_value, traceback):
         log.info(f"Script finished. Check the logfile ({self.esm.logFile}) if you missed something. Bye!")
 
-#@click.option('--config', default="esm-config.yaml", short_help='configuration file to use', show_default=True)
-#@click.option('--log', default="esm", short_help='logfile name, .log will be appended', show_default=True)
+#
+#  start of cli (click) configuration for the script. see https://click.palletsprojects.com/ for help
+#
 @click.group(epilog='Brought to you by hamster, coffee and pancake symphatisants')
 @click.option('-v', '--verbose', is_flag=True, help='set loglevel on console to DEBUG')
 @click.option('-c', '--config', default="esm-custom-config.yaml", metavar='<file>', show_default=True, help="set the custom config file to use")
@@ -30,6 +34,8 @@ def cli(verbose, config):
     Optimized for speed to be used for busy servers with huge savegames.
 
     Make sure to check the configuration before running stuff.
+
+    Tip: You can get more info and options to each command by calling it with the param --help.
     """
     if verbose:
         init(streamLogLevel=logging.DEBUG, customConfig=config)
@@ -127,23 +133,39 @@ def deleteAll():
         esm.deleteAll()
 
 @cli.command(name="wipe-empty-playfields", short_help="wipes empty playfields for a given territory or galaxy-wide")
-@click.option('--dblocation', metavar='file', help="location of database file to be used optionally with --dryode")
-@click.option('--territory', help="territory to wipe")
-@click.option('--wipetype', help="wipe type")
-@click.option('--drymode', is_flag=True, default=True, show_default=True, help="set to False to actually execute the wipe on the disk")
-def wipeEmptyPlayfields(dblocation, territory, wipetype, drymode):
-    """Will wipe playfields without players, player owned structures, terrain placeables for a given territory or galaxy wide.
+@click.option('--dblocation', metavar='file', help="location of database file to be used in dry mode. Defaults to use the current savegames DB")
+@click.option('--territory', help=f"territory to wipe, use {Territory.GALAXY} for the whole galaxy or any of the configured ones")
+@click.option('--wipetype', help=f"wipe type, one of: {list(map(lambda x: x.value.val, list(WipeType)))}")
+@click.option('--nodrymode', is_flag=True, help="set to actually execute the wipe on the disk. A custom --dblocation will be ignored!")
+@click.option('--showtypes', is_flag=True, help=f"show the supported wipetypes")
+@click.option('--showterritories', is_flag=True, help=f"show the configured territories")
+def wipeEmptyPlayfields(dblocation, territory, wipetype, nodrymode, showtypes, showterritories):
+    """Will wipe playfields without players, player owned structures, terrain placeables for a given territory or the whole galaxy.
     This requires the server to be shut down, since it needs access to the current state of the savegame and the filesystem.
-    This feature is equivalent to EAH's "wipe empty playfields" feature, but takes only 1 minute for a 30GB savegame, compared to 36hs of EAH, and also considers terrain placeables (which get wiped in EAH)
+    This feature is similar to EAH's "wipe empty playfields" feature, but also considers terrain placeables (which get wiped in EAH).
+    This also only takes 60 seconds for a 40GB savegame. EAH needs ~37 hours.
     
-    Defaults to use a dry mode, so the results are only written to a file for you to check.
-
+    Defaults to use a drymode, so the results are only written to a file for you to check.
     If you use the dry mode just to see how it works, you may aswell define a different savegame database with the corresponding option.
+    when not in dry mode, you can not specify a different database to make sure you do not accidentally wipe the wrong playfields folder.
     """
     with LogContext():
-        esm = ServiceRegistry.get(EsmMain)
-        esm.wipeEmptyPlayfields(dbLocation=dblocation, territory=territory, wipeType=wipetype, dryMode=drymode)
+        esm = ServiceRegistry.get(EsmMain)  
 
+        if showtypes:
+            click.echo("Supported wipe types are:\n" + "\n".join(f"{wt.value.val}\t\t-\t{wt.value.desc}" for wt in list(WipeType)))
+            return
+        if showterritories:
+            click.echo("Configured custom territories:\n" + "\n".join(f"{ct.name}" for ct in esm.wipeService.getAvailableTerritories()))
+            return
+
+        if nodrymode and dblocation:
+            log.error(f"--nodrymode and --dblocation can not be used together")
+        else:
+            try:
+                esm.wipeEmptyPlayfields(dbLocation=dblocation, territory=territory, wipeType=wipetype, nodrymode=nodrymode)
+            except WrongParameterError as ex:
+                log.error(f"Wrong Parameters: {ex}")
 
 @cli.command(short_help="for development purposes")
 def test():
@@ -155,7 +177,7 @@ def test():
 def getEsm():
     return ServiceRegistry.get(EsmMain)
 
-# main cli entry point
+# main cli entry point.
 def start():
     cli()
 

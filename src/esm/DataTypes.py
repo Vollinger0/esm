@@ -5,6 +5,7 @@ class Territory:
     """
     data type for an ingame territory info
     """
+    GALAXY = 'GALAXY'
     def __init__(self, name, x, y, z, radius):
         self.name = name
         self.x = x * 100000
@@ -12,9 +13,9 @@ class Territory:
         self.z = z * 100000
         self.radius = radius * 100000
 
-class Star:
+class SolarSystem:
     """
-    contains the star info as its saved in the db
+    contains the SolarSystem info as its saved in the db
     """
     def __init__(self, ssid, name, x, y, z):
         self.ssid = ssid
@@ -23,7 +24,7 @@ class Star:
         self.y = y
         self.z = z
     def __eq__(self, other):
-        if isinstance(other, Star):
+        if isinstance(other, SolarSystem):
             return self.ssid == other.ssid
         return False        
     def __hash__(self):
@@ -55,3 +56,9 @@ class WipeType(Enum):
     POI = WipeTypeInfo('poi', "Only wipe POIs - be aware that stuff in their bounding box may be affected aswell.")
     PLAYER = WipeTypeInfo('player', 'Wipes all player owned structures?')
     TERRAIN = WipeTypeInfo('terrain', 'Regenerates the terrain, e.g. if there are holes in it. Probably includes a wipe of the deposits.')
+
+    @staticmethod
+    def byName(name):
+        for wt in list(WipeType):
+            if wt.value.val == name:
+                return wt
