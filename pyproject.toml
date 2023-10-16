@@ -1,0 +1,4 @@
+# pytest recommends storing settings in this file (not setup.cfg)
+[tool.pytest.ini_options]
+testpaths = ["test"]
+pythonpath = ["src"]
