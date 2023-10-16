@@ -223,23 +223,21 @@ class EsmMain:
         if nomirror and savegame:  do prepare
         if nomirror and nosavegame: create new, do prepare
         """
-        savegameMirrorExists = self.fileSystem.existsDotPath("saves.gamesmirror.savegamemirror.globaldb")
-        savegameExists = self.fileSystem.existsDotPath("saves.games.savegame.globaldb")
-        savegameMirrorPath = self.fileSystem.getAbsolutePathTo("saves.gamesmirror.savegamemirror")
-        savegamePath = self.fileSystem.getAbsolutePathTo("saves.games.savegame")
+        mirrorExists, mirrorPath = self.ramdiskManager.existsMirror()
+        savegameExists, savegamePath = self.ramdiskManager.existsSavegame()
 
-        if savegameMirrorExists:
+        if mirrorExists:
             if savegameExists:
-                log.info(f"A savegame mirror exists at {savegameMirrorPath}. The file system is either already prepared, there is a configuration error or the savegame mirror needs to be deleted.")
-                if askUser(f"Delete old savegame mirror at {savegameMirrorPath}? [yes/no] ", "yes"):
-                    self.fileSystem.markForDelete(savegameMirrorPath)
+                log.info(f"A savegame mirror exists at {mirrorPath}. The file system is either already prepared, there is a configuration error or the savegame mirror needs to be deleted.")
+                if askUser(f"Delete old savegame mirror at {mirrorPath}? [yes/no] ", "yes"):
+                    self.fileSystem.markForDelete(mirrorPath)
                     self.fileSystem.commitDelete()
                     self.ramdiskManager.prepare()
                 else:
                     log.warning("Can not prepare the file system for ramdisk usage as long as a savegamemirror already exists. Maybe we don't need to prepare?")
                     raise UserAbortedException("User does not want to delete the savegame mirror")
             else:
-                log.info(f"A savegame mirror exists at {savegameMirrorPath} and no savegame exists at {savegamePath}. Looks like we are already prepared for using a ramdisk. Will not do anything.")
+                log.info(f"A savegame mirror exists at {mirrorPath} and no savegame exists at {savegamePath}. Looks like we are already prepared for using a ramdisk. Will not do anything.")
                 return True
         else:
             if savegameExists:
@@ -332,3 +330,30 @@ class EsmMain:
         
         log.info(f"Calling wipe empty playfields for dbLocation: '{dbLocation}' territory '{territory}', wipeType '{wipeType}' and nodrymode '{nodrymode}'")
         self.wipeService.wipeEmptyPlayfields(dbLocation, territory, wipeType, nodrymode)
+
+    def ramdiskRemount(self):
+        """
+        just unmounts and mounts the ramdisk again. Can be used when the ramdisk size configuration changed. Will just unmount and call the setip.
+        """
+        if not self.config.general.useRamdisk:
+            log.error("Ramdisk usage is disabled in the configuration, remount the ramdisk if its not enabled.")
+            raise AdminRequiredException("Ramdisk usage is disabled in the configuration, remount the ramdisk if its not enabled.")
+
+        # just unmount the ramdisk, if it exists.
+        ramdiskDriveLetter = self.config.ramdisk.drive
+        if Path(ramdiskDriveLetter).exists():
+            log.info(f"Unmounting ramdisk at {ramdiskDriveLetter}.")
+            try:
+                self.ramdiskManager.unmountRamdisk(driveLetter=ramdiskDriveLetter)
+            except AdminRequiredException as ex:
+                log.error(f"exception trying to unmount. Will check if its mounted at all")
+                if self.ramdiskManager.checkRamdrive(driveLetter=ramdiskDriveLetter):
+                    raise AdminRequiredException(f"Ramdisk is still mounted, can't recuperate from the error here. Exception: {ex}")
+                else:
+                    log.info(f"There is no more ramdisk mounted as {ramdiskDriveLetter}, will continue.")
+            log.info(f"Ramdisk at {ramdiskDriveLetter} unmounted")
+        else:
+            log.info(f"Ramdisk at {ramdiskDriveLetter} did not exist, will assume it is not mounted")
+        
+        log.info("Calling ramdisk setup to mount it again with the current configuration and sync the savegame again.")
+        self.ramdiskSetup()
