@@ -32,25 +32,24 @@
 [x] usecase: wipe galaxy - integrate other script
 [x] custom dblocation may not be given in conjunction with nodrymode.
 [x] print out wipetypep descriptions on help too.
+[x] re-mount option for when ramdisk size has to be updated or ramdisk is down for some reason.
 
 ### WIP
-[ ] re-mount option for when ramdisk size has to be updated or ramdisk is down for some reason.
+[ ] implement server-callback with epmremoteclient
 
 ### later
 [ ] interactive mode for wipe galaxy tool
 [+] when useRamdisk is enabled, enable checks for its file structure, when its not, do not start use the synchronizer (of course)
 [ ] offer some kind of better interactive mode for different stuff
 [ ] implement allowMultpleServerInstances switch. Once enabled, do not check for running instances of the game before starting, do not start if startmode is set to direct, etc.
-[ ] implement server-callback with epmremoteclient
 [ ] implement warning/talkback via tickets
 [ ] implement warning/talkback to server chat for syncs, backups probably even random stuff with funny hamster sentences.
 [ ] integrity check: checks if things fit together (e.g. dedicated.yaml config), our own config when running multiple instances, etc.
     * or adapt config to dedicated.yaml, especially when paths change. probably as a sanity check implementation
 [ ] wipes from the wipetool should appear in cb:wipes? Do i need to alter EAHs database too?
+[+] create separate windows-gui thingy that resides in the taskbar or similar and provides a shortcut to the cli tool.
 
 ### optional
 [ ] usecase: purge galaxy
 [ ] tool: deletes the "discovered by" flags (potentially also for wipes/purges)
-[ ] create separate windows-gui thingy that resides in the taskbar or similar and provides a shortcut to the cli tool.
-   ** probably with wxPython
 [-] usecase: create configuration? => probably not needed. the custom config covers our needs.
