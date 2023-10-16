@@ -1,20 +1,18 @@
-from datetime import datetime
 from functools import cached_property
 import logging
 from pathlib import Path
-import shutil
-import subprocess
 import time
-from esm import AdminRequiredException, RequirementsNotFulfilledError
+from esm import AdminRequiredException, NoSaveGameFoundException, SaveGameMirrorExistsException, UserAbortedException
 from esm.EsmBackupService import EsmBackupService
+from esm.EsmDeleteService import EsmDeleteService
 from esm.EsmFileSystem import EsmFileSystem
 from esm.EsmLogger import EsmLogger
 from esm.EsmConfigService import EsmConfigService
 from esm.EsmDedicatedServer import EsmDedicatedServer, GfxMode
 from esm.EsmRamdiskManager import EsmRamdiskManager
-from esm.FsTools import FsTools
+from esm.EsmSteamService import EsmSteamService
 from esm.ServiceRegistry import ServiceRegistry
-from esm.Tools import Timer, askUser, getElapsedTime, getTimer, isDebugMode, monkeyPatchAllFSFunctionsForDebugMode
+from esm.Tools import askUser, isDebugMode, monkeyPatchAllFSFunctionsForDebugMode
 
 log = logging.getLogger(__name__)
 
@@ -37,6 +35,14 @@ class EsmMain:
     @cached_property
     def fileSystem(self) -> EsmFileSystem:
         return ServiceRegistry.get(EsmFileSystem)
+    
+    @cached_property
+    def steamService(self) -> EsmSteamService:
+        return ServiceRegistry.get(EsmSteamService)
+    
+    @cached_property
+    def deleteService(self) -> EsmDeleteService:
+        return ServiceRegistry.get(EsmDeleteService)
 
     def __init__(self, configFileName, caller=__name__):
         self.configFilename = configFileName
@@ -59,13 +65,6 @@ class EsmMain:
         if isDebugMode(self.config):
             monkeyPatchAllFSFunctionsForDebugMode()
         
-    def askUserToCreateNewSavegame(self):
-        if askUser("Do you want to create a new savegame? [yes/no] ", "yes"):
-            log.debug("creating new savegame")
-            self.createNewSavegame()
-            return True
-        return False
-
     def createNewSavegame(self):
         """
         will start the server shortly to create a new savegame that can be used for installation
@@ -93,17 +92,6 @@ class EsmMain:
             log.info("Create a new savegame yourself then, you can always start this installation again.")
         return False
 
-    def askUserToDeleteOldSavegameMirror(self):
-        """
-        ask user if he wants to the delete the old savegame mirror and do that if so
-        """
-        savegameMirrorPath = self.fileSystem.getAbsolutePathTo("saves.gamesmirror.savegamemirror")
-        if askUser(f"Delete old savegame mirror at {savegameMirrorPath}? [yes/no] ", "yes"):
-            self.fileSystem.markForDelete(savegameMirrorPath)
-            self.fileSystem.commitDelete()
-            return True
-        return False
-    
     def startServer(self):
         """
         Will start the server (and the ramdisk synchronizer, if ramdisk is enabled)
@@ -160,87 +148,23 @@ class EsmMain:
     def installGame(self):
         """
         calls steam to install the game via steam to the given installation directory
-
-        # %steamCmdPath% +force_install_dir %installPath% +login anonymous +app_update 530870 validate +quit"
         """
-        # steam install
-        steamcmdExe = self.getSteamCmdExecutable()
-        installPath = self.config.paths.install
-        cmd = [steamcmdExe]
-        cmd.extend(str(f"+force_install_dir {installPath} +login anonymous +app_update 530870 validate +quit").split(" "))
-        log.debug(f"executing {cmd}")
-        start = getTimer()
-        process = subprocess.run(cmd)
-        elapsedTime = getElapsedTime(start)
-        log.debug(f"after {elapsedTime} process returned: {process} ")
-        # this returns when the process finishes
-        if process.returncode > 0:
-            log.error(f"error executing steamcmd: stdout: \n{process.stdout}\n, stderr: \n{process.stderr}\n")
+        return self.steamService.installGame()
     
     def updateGame(self):
         """
         calls steam to update the game via steam and call any additionally configured steps (like updating the scenario, copying files etc.)
-
-        # %steamCmdPath% +force_install_dir %installPath% +login anonymous +app_update 530870 validate +quit"
         """
-        # steam update is actually the exact same call as the install command, so we'll call just that instead.
-        self.installGame()
-
-        # additional copying according to configuration
-        self.copyAdditionalUpdateStuff()
-
-    def getSteamCmdExecutable(self):
-        """
-        checks that the steam executable exists and returns its path.
-        """
-        steamcmdExe = self.config.paths.steamcmd
-        if Path(steamcmdExe).exists():
-            return steamcmdExe
-        raise RequirementsNotFulfilledError(f"steamcmd.exe not found in the configured path at {steamcmdExe}. Please make sure it exists and the configuration points to it.")
+        return self.steamService.updateGame()
     
-    def copyAdditionalUpdateStuff(self):
-        """
-        copies any additionally configured stuff in the config under updates.additional
-        """
-        additionalStuffList = self.config.updates.additional
-        if additionalStuffList and len(additionalStuffList)>0:
-            for additionalStuff in additionalStuffList:
-
-                source = Path(additionalStuff.src)
-                if not Path(source).is_absolute():
-                    source = Path(f"{self.config.paths.install}/{source}")
-
-                if source.exists():
-                    destination = Path(additionalStuff.dst)
-                    if not Path(destination).is_absolute():
-                        destination = Path(f"{self.config.paths.install}/{destination}")
-
-                    if source.is_dir():
-                        # its a dir
-                        log.info(f"copying directory {source} into {destination}")  
-                        FsTools.copyDir(source=source, destination=destination)
-                    else:
-                        # its a file
-                        log.info(f"copying file {source} into {destination}")  
-                        FsTools.copy(source=source, destination=destination)
-                else:
-                    log.warning(f"Configured additional path {source} does not exist.")
-
     def deleteAll(self):
         """
-        Offers the user to create a static backup first, then backs up the logs and stuff, and then starts marking stuff for deletion
-        Marks everything that belongs to a savegame, including:
-        - the savegame (or the ramdisk, if enabled)
-        - the backups (not the static ones)
-        - the mirrors
-        - the eah tool data
-        - the logs from the game, tool and esm
-        - any additional paths that were configured
-
-        After all that, the user will be shown the list of files that are marked and asked a last time before deletion.
+        Deletes the savegame, the related rolling backups, all ehh data, logs etc.
+        
+        Asks user if he's sure and offers to create a static backup first.
         """
         # ask user if he's sure he wants to completely delete the whole game and data
-        log.debug("asking user if he's sure")
+        log.debug("Asking user if he's sure he wants to delete everything related to the savegame.")
         if not askUser("This will delete *ALL* data belonging to the savegame, including the rolling backups (not the static ones), tool data, logs and everything that has been additionally configured. Are you sure you want to do this now? [yes/no] ", "yes"):
             log.info("Ok, will not delete anything.")
             return False
@@ -249,127 +173,41 @@ class EsmMain:
         if askUser("It is strongly recommended to create a last static backup, just in case. Do that now? [yes/no] ", "yes"):
             self.backupService.createStaticBackup()
 
-        if self.config.general.useRamdisk:
-            # just unmount the ramdisk, if it exists.
-            ramdiskDriveLetter = self.config.ramdisk.drive
-            if Path(f"{ramdiskDriveLetter}:").exists():
-                log.info(f"Unmounting ramdisk at {ramdiskDriveLetter}.")
-                try:
-                    self.ramdiskManager.unmountRamdisk(driveLetter=ramdiskDriveLetter)
-                except AdminRequiredException as ex:
-                    log.error(f"exception trying to unmount. Will check if its mounted at all")
-                    if self.ramdiskManager.checkRamdrive(driveLetter=ramdiskDriveLetter):
-                        raise AdminRequiredException(f"Ramdisk is still mounted, can't recuperate from the error here. Exception: {ex}")
-                    else:
-                        log.info(f"There is no more ramdisk mounted as {ramdiskDriveLetter}, will continue.")
-                log.info(f"Ramdisk at {ramdiskDriveLetter} unmounted")
-        else:
-            savegamePath = self.fileSystem.getAbsolutePathTo("saves.games.savegame")
-            log.info(f"Marking for deletion: savegame at {savegamePath}")
-            self.fileSystem.markForDelete(savegamePath, native=True)
+        return self.deleteService.deleteAll()
 
-        # delete backups
-        backups = self.fileSystem.getAbsolutePathTo("backup")
-        backupMirrors = self.fileSystem.getAbsolutePathTo("backup.backupmirrors")
-        # delete all hardlinks to the backupmirrors first
-        log.debug(F"Marking for deletion: all links to the rolling backups")
-        for entry in backups.iterdir():
-            if FsTools.isHardLink(entry):
-                rollingBackup = FsTools.getLinkTarget(entry)
-                if self.config.foldernames.backupmirrorprefix in rollingBackup.name:
-                    # the link points to a rolling backup, delete it
-                    self.fileSystem.markForDelete(entry)
-        log.info(f"Marking for deletion: all rolling backups at {backupMirrors}")
-        self.fileSystem.markForDelete(backupMirrors, native=True)
+    def ramdiskPrepare(self):
+        try:
+            try:
+                log.debug("calling ramdisk prepare")
+                self.ramdiskManager.prepare()
+                log.debug("ramdisk prepare finished")
+                log.info("Prepare complete, you may now start the ramdisk setup")
+            except NoSaveGameFoundException:
+                log.debug("asking user to create new savegame")
+                if askUser("Do you want to create a new savegame? [yes/no] ", "yes"):
+                    log.debug("creating new savegame")
+                    self.createNewSavegame()
+                    log.info("Calling prepare again. Won't handle another fail.")
+                    self.ramdiskManager.prepare()
+                else:
+                    log.debug("user decided to abort prepare")
+                    raise UserAbortedException("user decided to abort prepare")
+            except SaveGameMirrorExistsException:
+                log.debug("asking user if he wants to delete the existing savegame mirror")        
+                savegameMirrorPath = self.fileSystem.getAbsolutePathTo("saves.gamesmirror.savegamemirror")
+                if askUser(f"Delete old savegame mirror at {savegameMirrorPath}? [yes/no] ", "yes"):
+                    self.fileSystem.markForDelete(savegameMirrorPath)
+                    self.fileSystem.commitDelete()
+                    log.debug("deleted old savegame mirror")
+                    self.ramdiskPrepare()
+                else:
+                    log.debug("user decided not to delete the old savegame mirror")
+        except UserAbortedException:
+            log.info("User aborted operation")
 
-        # delete game mirrors
-        gamesmirrors = self.fileSystem.getAbsolutePathTo("saves.gamesmirror")
-        log.info(f"Marking for deletion: all hdd mirrors at {gamesmirrors}")
-        self.fileSystem.markForDelete(gamesmirrors, native=True)
+    def ramdiskSetup(self):
+        raise NotImplementedError()
 
-        # delete the cache
-        cache = self.fileSystem.getAbsolutePathTo("saves.cache")
-        cacheSavegame = f"{cache}/{self.config.server.savegame}"
-        log.info(f"Marking for deletion: the cache at {cacheSavegame}")
-        self.fileSystem.markForDelete(cacheSavegame)
-        
-        #delete eah tool data
-        eahToolDataPattern = Path(f"{self.config.paths.eah}/Config/").absolute().joinpath("*.dat")
-        deglobbedPaths = FsTools.resolveGlobs([eahToolDataPattern])
-        for entry in deglobbedPaths:
-            log.info(f"Marking for deletion: eah tool data at {entry}")
-            self.fileSystem.markForDelete(entry)
-
-        # delete additionally configured stuff
-        additionalDeletes = self.config.deletes.additionalDeletes
-        if additionalDeletes and len(additionalDeletes)>0:
-            absolutePaths = FsTools.toAbsolutePaths(additionalDeletes, parent=self.config.paths.install)
-            deglobbedPaths = FsTools.resolveGlobs(absolutePaths)
-            for path in deglobbedPaths:
-                log.info(f"Marking for deletion: configured additional path at {path}")
-                self.fileSystem.markForDelete(path)
-        
-        # backupAllLogs
-        self.backupAllLogs()
-
-        log.info(f"Will start deletion tasks now. Depending on savegame size and amount of backup mirrors, this might take a while!")
-        comitted, elapsedTime = self.fileSystem.commitDelete()
-        if comitted:
-            log.info(f"Deleting all took {elapsedTime}. You can now start a fresh game.")
-        else:
-            self.fileSystem.clearPendingDeletePaths()
-            log.warning("Deletion cancelled")
-
-    def backupAllLogs(self):
-        backupDir = self.fileSystem.getAbsolutePathTo("backup")
-        logBackupFolder = Path(f"{backupDir}/alllogs")
-        logBackupFolder.mkdir(exist_ok=True)
-        if self.config.deletes.backupGameLogs:
-            source = f"{self.config.paths.install}/Logs/*"
-            self.backupLogs(source, logBackupFolder, "GameLogs")
-        if self.config.deletes.backupEahLogs:
-            source = f"{self.config.paths.eah}/logs/*"
-            self.backupLogs(source, logBackupFolder, "EAHLogs")
-        if self.config.deletes.backupEsmLogs:            
-            source = f"{self.config.paths.install}/*.log"
-            self.backupLogs(source, logBackupFolder, "ESMLogs")
-            source = f"{self.config.paths.install}/esm/*.log"
-            self.backupLogs(source, logBackupFolder, "ESMLogs")
-        # zip the target folder and remove it afterwards
-        zipFileName = self.getLogsBackupFileName()
-        self.backupService.createZip(source=logBackupFolder, backupDirectory=backupDir, zipFileName=zipFileName)
-        # we can delete this folder directly at this point, since we backed them up and to not confuse the user later
-        FsTools.deleteDir(logBackupFolder, recursive=True)
-        log.info(f"All logs backed up and zipped as {zipFileName}")
-
-    def backupLogs(self, sourcePath, backupFolderPath, folderName):
-        """
-        move the content of given source path to the backup folder path, putting the contents into the folder called foldername at the target
-        """
-        sourcePaths = []
-        # if source is glob, get list of sources.
-        if FsTools.isGlobPattern(sourcePath):
-            sourcePaths.extend(FsTools.resolveGlobs(paths=[sourcePath]))
-        else:
-            sourcePaths.append(sourcePath)
-
-        for source in sourcePaths:
-            # move source into backupfolder as requested.
-            target = backupFolderPath.joinpath(folderName);
-            FsTools.createDir(target)
-            # if we're trying to move our own logfile, just create a copy instead.
-            if Path(self.config.context.logFile).samefile(source):
-                shutil.copy(src=source, dst=target)
-            else:
-                shutil.move(src=source, dst=target)
-        
-    def getLogsBackupFileName(self, date=None):
-        """
-        returns a filename for the static zip file looking like: 20231002_2359_savegame_logs.zip
-        """
-        if date:
-            date = date
-        else:
-            date = datetime.now()
-        formattedDate = date.strftime("%Y%m%d_%H%M%S")
-        return f"{formattedDate}_{self.config.server.savegame}_logs.zip"
+    def ramdiskUninstall(self):
+        raise NotImplementedError()
+    

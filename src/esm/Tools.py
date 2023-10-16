@@ -67,9 +67,5 @@ class Timer:
         return self
 
     def __exit__(self, exc_type, exc_value, traceback):
-        # Code to execute at the end of the block
-        # if exc_type is None:
-        #     log.debug("Exiting the timer context normally")
-        # else:
-        #     log.debug(f"Exiting the timer context with an exception: {exc_type}, {exc_value}")
         self.elapsedTime = getElapsedTime(self.start)
+

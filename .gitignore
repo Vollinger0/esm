@@ -8,3 +8,5 @@ __pycache__/
 *.pyc
 .venv
 src/esm.egg-info
+esm.egg-info
+build/
