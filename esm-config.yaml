@@ -11,16 +11,17 @@ server:
   dedicatedYaml: 'esm-dedicated.yaml'
   savegame: 'EsmDediGame'
   #startMode: 'direct'
-  startMode: 'launcher'
-  gfxMode: True
+  startMode: 'launcher' # use 'direct' if you want to bypass the launcher, e.g. if you want to run multiple instances of the server on the same machine.
+  gfxMode: False # enables the blue graphics overlay of the server, probably not needed when you use EAH or something else to manage the server
+  startUpSleepTime: 15 # min amount of time in seconds to wait for a server start up before we try doing anything with it
   launcher:
-    maxStartupTimeout: 15
+    maxStartupTimeout: 15 # max amount of time in seconds to find the dedicated exe after calling the launcher.
 
 paths:
   install: 'D:\EGS\Empyrion\'
   osfmount: 'C:\Users\Nutzer\Programme\OSFMount\osfmount.com'
   peazip: 'C:\Program Files\PeaZip\res\bin\7z\7z.exe'
-  epmremoteclient: ''
+  epmremoteclient: 'D:\EGS\Empyrion\EmpyrionPrime.RemoteClient.Console.exe'
 
 foldernames:
   saves: 'Saves'

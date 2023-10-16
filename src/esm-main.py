@@ -1,24 +1,40 @@
 import time
 import logging
 from pathlib import Path
-from esm import NoSaveGameFoundException, SaveGameMirrorExistsException
+from esm import NoSaveGameFoundException, SaveGameMirrorExistsException, UserAbortedException
 from esm.EsmMain import EsmMain
 
 log = logging.getLogger(__name__)
 
+def testStartStopServerNoTry():
+    log.info("starting server")
+    esm.dedicatedServer.startServer()
+    log.info("server is running! Will wait 15 secs")
+    time.sleep(15)
+    log.info("Stopping server again")
+    esm.dedicatedServer.sendExitRetryAndWait()
+    log.info("Server stopped")
+
 def testStartStopServer():
     try:
+        log.info("starting server")
         esm.dedicatedServer.startServer()
         log.info("server is running! Will wait 15 secs")
         time.sleep(15)
+    except Exception as ex:
+        log.info(f"server didn't start, {ex}")
+    
+    try:
         log.info("Stopping server again")
+        esm.dedicatedServer.sendExitRetryAndWait()
+        log.info("Server stopped")
+    except Exception as ex:
+        log.info(f"Server didnt stop! {ex}")
         try:
             esm.dedicatedServer.killAndWait()
-            log.info("Server stopped")
-        except:
-            log.info("Server didnt stop!")
-    except:
-        log.info("server didn't start")
+            log.info("Server killed")
+        except Exception as ex:
+            log.info(f"server couldn't be killed {ex}")
 
 def testInstall():
     try:
@@ -31,6 +47,7 @@ def testInstall():
             testInstall()
         else:
             log.debug("user decided to abort install")
+            raise UserAbortedException("user decided to abort install")
     except SaveGameMirrorExistsException:
         log.debug("asking user if he wants to delete the existing savegame mirror")        
         if esm.askUserToDeleteOldSavegameMirror():
@@ -55,8 +72,9 @@ esm = EsmMain(installDir=Path(".."),
 log.debug("Start of script")
 log.debug(f"Logging to: {esm.logFile}")
 
-#testStartStopServer()
 #testInstall()
-testSetup()
+#testSetup()
+#testStartStopServerNoTry()
+#testStartStopServer()
         
 log.info(f"Script finished successfully. Check the logfile ({esm.logFile}) if you missed something. Bye!")
