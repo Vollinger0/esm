@@ -3,7 +3,7 @@ import time
 from esm import EsmMain, NoSaveGameFoundException, SaveGameMirrorExistsException
 import logging
 
-log = logging.getLogger()
+log = logging.getLogger(__name__)
 
 def testStartStopServer():
     try:
@@ -38,6 +38,10 @@ def testInstall():
         else:
             log.debug("user decided not to delete the old savegame mirror")
 
+def testSetup():
+    log.debug("calling setup")          
+    esm.ramdiskManager.setup()  
+
 ######################################################
 ## main code start
 ######################################################
@@ -50,7 +54,8 @@ esm = EsmMain.EsmMain(installDir=Path(".."),
 log.debug("Start of script")
 log.debug(f"Logging to: {esm.logFile}")
 
-#testInstall()
 #testStartStopServer()
+#testInstall()
+testSetup()
         
 log.info(f"Script finished successfully. Check the logfile ({esm.logFile}) if you missed something. Bye!")
