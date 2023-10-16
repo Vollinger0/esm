@@ -20,10 +20,11 @@
 [x] usecase: create manual static backup
 [x] tool should check free disk space before doing a new static backup
 [x] tool should check free disk space before starting server (especially in ramdisk mode)
+[x] usecase: update game
+[x] usecase: install game
 
 ### WIP
 [+] debugmode
-[ ] usecase: update gameserver
 
 ### later
 [ ] usecase: delete savegame, including tool data, potential mod data too, add extensions like for the backup

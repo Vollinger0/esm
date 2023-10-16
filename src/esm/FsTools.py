@@ -95,8 +95,21 @@ class FsTools:
         filePath.unlink()
 
     @staticmethod
+    def copy(source: Path, destination: Path):
+        """ destination may be a directory """
+        shutil.copy(source, destination)
+
+    @staticmethod
     def copyFile(source: Path, destination: Path):
+        """ both src and dst must be files """
         shutil.copyfile(source, destination)
+
+    @staticmethod
+    def copyDir(source: Path, destination: Path):
+        """ recursively copy source *into* destination """
+        if destination.is_dir() and destination.exists():
+            destination = Path(f"{destination}/{source.name}")
+        shutil.copytree(source, destination, dirs_exist_ok=True)
 
     @staticmethod
     def realToHumanFileSize(size: int) -> str:

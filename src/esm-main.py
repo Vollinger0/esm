@@ -83,15 +83,18 @@ def testStartServerWithSynchronizer():
         esm.stopServer()
     log.debug("server stopped")
 
-def test():
-    esm.startServer()
-    esm.stopServer()
-
 def testBackup():
     esm.createBackup()
 
 def testStaticBackup():
     esm.createStaticBackup()    
+
+def testInstallFromSteam():
+    esm.installGame()
+
+def testUpdateGame():
+    esm.updateGame()
+
 
 ######################################################
 ## main code start
@@ -111,6 +114,7 @@ log.debug(f"Logging to: {esm.logFile}")
 #testStartServerWithSynchronizer()
 #testBackup()
 #testStaticBackup()
-#test()
+#testInstallFromSteam()
+#testUpdateGame()
 
 log.info(f"Script finished successfully. Check the logfile ({esm.logFile}) if you missed something. Bye!")

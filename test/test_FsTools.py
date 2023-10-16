@@ -1,6 +1,7 @@
 import logging
 import os
 from pathlib import Path
+import shutil
 import unittest
 from esm.FsTools import FsTools
 
@@ -198,3 +199,86 @@ class test_FsTools(unittest.TestCase):
     def test_hasEnoughFreeDiskSpace(self):
         self.assertTrue(FsTools.hasEnoughFreeDiskSpace("C:", "1M"))
         self.assertFalse(FsTools.hasEnoughFreeDiskSpace("C:", "1P")) # "should be enough for everybody "
+
+    def test_copyFileToFile(self):
+        parent = Path("copy_test")
+        if parent.exists(): 
+            shutil.rmtree(parent)
+        parent.mkdir()
+        srcFile = Path("copy_test/src_file.txt")
+        srcFile.write_text("blabla")
+        dstFile = Path("copy_test/target_file.txt")
+
+        # file to file
+        FsTools.copy(source=srcFile, destination=dstFile)
+        self.assertTrue(dstFile.exists())
+        shutil.rmtree(parent)
+
+    def test_copyFileToDir(self):
+        parent = Path("copy_test")
+        if parent.exists(): 
+            shutil.rmtree(parent)
+        
+        parent.mkdir()
+        srcFile = Path("copy_test/src_file.txt")
+        srcFile.write_text("blabla")
+        dstDir = Path("copy_test/targetDir")
+        dstDir.mkdir()
+
+        # file to file
+        FsTools.copy(source=srcFile, destination=dstDir)
+        self.assertTrue(Path(f"{dstDir}/src_file.txt").exists())
+        shutil.rmtree(parent)
+
+
+
+    def test_copyDirToFile(self):
+        parent = Path("copy_test")
+        if parent.exists(): 
+            shutil.rmtree(parent)
+        
+        parent.mkdir()
+        srcDir = Path("copy_test/src_dir")
+        srcDir.mkdir()
+        dstFile = Path("copy_test/target_file.txt")
+        dstFile.write_text("omg")
+
+        # file to file SHOULD FAIL!
+        with self.assertRaises(FileExistsError) as context:
+            FsTools.copyDir(source=srcDir, destination=dstFile)
+        shutil.rmtree(parent)
+
+    def test_copyDirToDir(self):
+        parent = Path("copy_test")
+        if parent.exists(): 
+            shutil.rmtree(parent)
+        
+        parent.mkdir()
+        srcDir = Path("copy_test/src_dir")
+        srcDir.mkdir()
+        srcDirFile = Path("copy_test/src_dir/file2.txt")
+        srcDirFile.write_text("bar")
+        dstDir = Path("copy_test/target_dir")
+
+        # file to file
+        FsTools.copyDir(source=srcDir, destination=dstDir)
+        self.assertTrue(Path("copy_test/target_dir/file2.txt").exists())
+        shutil.rmtree(parent)
+
+    def test_copyDirToDirTargetExists(self):
+        parent = Path("copy_test")
+        if parent.exists(): 
+            shutil.rmtree(parent)
+        
+        parent.mkdir()
+        srcDir = Path("copy_test/src_dir")
+        srcDir.mkdir()
+        srcDirFile = Path("copy_test/src_dir/file2.txt")
+        srcDirFile.write_text("bar")
+        dstDir = Path("copy_test/target_dir")
+        dstDir.mkdir()
+
+        # file to file
+        FsTools.copyDir(source=srcDir, destination=dstDir)
+        self.assertTrue(Path("copy_test/target_dir/src_dir/file2.txt").exists())
+        shutil.rmtree(parent)
