@@ -9,18 +9,20 @@ general:
 ramdisk:
   drive: "R:"
   size: "2G" # ramdisk size to use, e.g. '5G' or '32G', etc. If you change this, the ramdisk needs to be re-mounted, and the setup needs to run again.
-  synchronizeramtohddinterval: 60 # interval in seconds at which to do a ram2hdd sync for the savegame. if interval=0 the sync will be disabled! Recommended to leave at 3600 (1h)
+  synchronizeRamToMirrorInterval: 60 # interval in seconds at which to do a ram2hdd sync for the savegame. if interval=0 the sync will be disabled! Recommended to leave at 3600 (1h)
 
 server:
   dedicatedYaml: 'esm-dedicated.yaml'
   savegame: 'EsmDediGame'
-  #startMode: 'direct'
-  startMode: 'launcher' # use 'direct' if you want to bypass the launcher, e.g. if you want to run multiple instances of the server on the same machine.
-  gfxMode: False # enables the blue graphics overlay of the server, probably not needed when you use EAH or something else to manage the server
-  startUpSleepTime: 15 # min amount of time in seconds to wait for a server start up before we try doing anything with it
+  #startMode: 'direct'  # use 'direct' if you want to bypass the launcher, e.g. if you want to run multiple instances of the server on the same machine.
+  startMode: 'launcher' # use 'launcher' if you want to start the game the usual way. The launcher itself will then start the dedicated server.
+  gfxMode: False # if True, enables the blue graphics overlay of the server, probably not needed when you use EAH or something else to manage the server
+  startUpSleepTime: 15 # min amount of time in seconds to wait for a server start up before we try doing anything else with it
   minDiskSpaceForStartup: 500M # if disk space on the drive with the savegame (or ramdisk) is below this, do NOT start the server to avoid savegame corruption. gnu notation
   launcher:
     maxStartupTimeout: 15 # max amount of time in seconds to find the dedicated exe after calling the launcher.
+  sendExitTimeout: 60 # amount of seconds to wait until we give up stopping the server and throw an error
+  sendExitInterval: 5 # how many seconds to wait before retrying to send another 'saveandexit' to the server to stop it
 
 backups:
   amount: 4 # amount of rolling mirror backups to keep

@@ -45,37 +45,28 @@ class EsmRamdiskManager:
 
     def prepare(self):
         """
-        actually takes a non-ramdisk filestructure and converts it into a ramdisk filestructure
+        Actually takes a non-ramdisk filestructure and converts it into a ramdisk filestructure
 
-        Moves a savegame to the hdd savegame mirror location
+        Moves a savegame to the hdd savegame mirror location. Will throw exceptions of there is no savegame, the mirror exists or ramdisk is disabled.
         """
         if not self.config.general.useRamdisk:
             log.error("Ramdisk usage is disabled in the configuration, can not prepare for ramdisk usage when it is disabled.")
             raise AdminRequiredException("Ramdisk usage is disabled in the configuration, can not prepare for ramdisk usage when it is disabled.")
 
-        savegameExists = False
-        savegameMirrorExists = False
-
         savegameFolderPath = self.fileSystem.getAbsolutePathTo("saves.games.savegame")
         # check that there is a savegame
-        if not Path(savegameFolderPath).exists():
-            log.info(f"Savegame does not exist at '{savegameFolderPath}'. Either the configuration is wrong or you may want to create one.")
+        if Path(savegameFolderPath).exists():
+            log.debug(f"Savegame exists at '{savegameFolderPath}'")
         else:
-            savegameExists = True
-            log.info(f"Savegame exists at '{savegameFolderPath}'")
+            log.error(f"Savegame does not exist at '{savegameFolderPath}'. Either the configuration is wrong or you may want to create one.")
+            raise NoSaveGameFoundException(f"no savegame found at {savegameFolderPath}")
 
         savegameMirrorFolderPath = self.fileSystem.getAbsolutePathTo("saves.gamesmirror.savegamemirror")
         # check that there is no savegame mirror
-        if Path(savegameMirrorFolderPath).exists():
-            savegameMirrorExists = True
-            log.info(f"Savegame mirror does exist already at '{savegameMirrorFolderPath}'. Either the configuration is wrong or this has been installed already, or the folder needs to be deleted.")
-        else:
+        if not Path(savegameMirrorFolderPath).exists():
             log.debug(f"{savegameMirrorFolderPath} does not exist yet")
-
-        if not savegameExists:
-            raise NoSaveGameFoundException(f"no savegame found at {savegameFolderPath}")
-        
-        if savegameMirrorExists:
+        else:
+            log.error(f"Savegame mirror does exist already at '{savegameMirrorFolderPath}'. Either the configuration is wrong or this has been installed already, or the folder needs to be deleted.")
             raise SaveGameMirrorExistsException(f"savegame mirror at '{savegameMirrorFolderPath}' already exists.")
 
         # move the savegame to the hddmirror folder
@@ -242,7 +233,11 @@ class EsmRamdiskManager:
         log.debug("synchronizer shut down")
 
     def stopSynchronizer(self):
-        # set the shared boolean, which will make the synchronizer
+        if not self.synchronizerShutdownEvent:
+            log.warn("Can not stop synchronizer since there is probably no synchronizer running.")
+            return
+        
+        # set the shared boolean, which will make the synchronizer stop
         self.synchronizerShutdownEvent.set()
         # wait for the thread to join the main thread
         log.debug("waiting for synchronizer thread to finish")
