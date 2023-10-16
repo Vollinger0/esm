@@ -14,11 +14,14 @@ class test_EsmFileStructure(unittest.TestCase):
     def test_walkablePathTree(self):
         esmConfig = EsmConfig.fromConfigFile("esm-config.yaml")
         esmfs = EsmFileStructure(config=esmConfig)
-        print(f"esmfs: {esmfs}")
-        print(f"esmfs.structure: {esmfs.structure}")
+        log.debug(f"esmfs: {esmfs}")
+        log.debug(f"esmfs.structure: {esmfs.structure}")
 
         path = esmfs.getPathTo("saves.games.savegame")
         self.assertEqual("Saves/Games/EsmDediGame", path)
+
+        path = esmfs.getPathTo("saves.games.savegame.templates")
+        self.assertEqual("Saves/Games/EsmDediGame/Templates", path)
 
         path = esmfs.getPathTo("saves")
         self.assertEqual("Saves", path)

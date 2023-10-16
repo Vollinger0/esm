@@ -1,7 +1,8 @@
-from pathlib import Path
 import time
-from esm import EsmMain, NoSaveGameFoundException, SaveGameMirrorExistsException
 import logging
+from pathlib import Path
+from esm import NoSaveGameFoundException, SaveGameMirrorExistsException
+from esm.EsmMain import EsmMain
 
 log = logging.getLogger(__name__)
 
@@ -46,7 +47,7 @@ def testSetup():
 ## main code start
 ######################################################
 # initialize config and logging
-esm = EsmMain.EsmMain(installDir=Path(".."),
+esm = EsmMain(installDir=Path(".."),
               caller=__file__,
               configFileName="esm/esm-config.yaml"
               )
