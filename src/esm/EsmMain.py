@@ -1,15 +1,15 @@
+from functools import cached_property
 import logging
 from pathlib import Path
 import time
-from halo import Halo
-from psutil import TimeoutExpired
 from esm import AdminRequiredException, askUser
 from esm.EsmBackupManager import EsmBackupManager
 from esm.EsmFileSystem import EsmFileSystem
 from esm.EsmLogger import EsmLogger
-from esm.EsmConfig import EsmConfig
-from esm.EsmDedicatedServer import EsmDedicatedServer
+from esm.EsmConfigService import EsmConfigService
+from esm.EsmDedicatedServer import EsmDedicatedServer, GfxMode
 from esm.EsmRamdiskManager import EsmRamdiskManager
+from esm.ServiceRegistry import ServiceRegistry
 
 log = logging.getLogger(__name__)
 
@@ -18,48 +18,23 @@ class EsmMain:
     Main esm class, manages all the other modules, config, etc.
     """
 
-    def __init__(self, installDir, configFileName, caller=__name__):
-        # bootstrap
+    def __init__(self, configFileName, caller=__name__):
+        self.configFilename = configFileName
+        self.caller = caller
+
+        # set up logging
         self.logFile = Path(caller).stem + ".log"
         EsmLogger.setUpLogging(self.logFile)
-        configFilePath = Path(f"{installDir}/{configFileName}").absolute()
-        self.config = self.createEsmConfig(configFilePath)
 
-        # create instances
-        self.dedicatedServer = self.createDedicatedServer()
-        self.fileSystem = self.createEsmFileSystem()
-        self.ramdiskManager = self.createEsmRamdiskManager(self.dedicatedServer)
-        self.backupManager = self.createBackupManager()
-
-        # extend the config with some context information
-        contextMap = {
-                    'installDir': installDir,
-                    'configFileName': configFileName,
-                    'caller': caller,
-                    'logFile': self.logFile,
-                    'configFilePath': configFilePath,
-                    'dedicatedserver': self.dedicatedServer,
-                    'filesystem': self.fileSystem,
-                    'ramdiskmanager': self.ramdiskManager,
-                    'backupmanager': self.backupManager
-                }
-        self.config.context.update(contextMap)
-
-    def createEsmConfig(self, configFilePath):
-        return EsmConfig.fromConfigFile(configFilePath)
-
-    def createDedicatedServer(self):
-        return EsmDedicatedServer.withConfig(self.config)
-    
-    def createEsmFileSystem(self):
-        return EsmFileSystem(self.config)
-    
-    def createEsmRamdiskManager(self, dedicatedServer):
-        return EsmRamdiskManager(self.config, dedicatedServer)
-    
-    def createBackupManager(self):
-        return EsmBackupManager(self.config)
-    
+        # set up config
+        self.configFilePath = Path(configFileName).absolute()
+        context = {           
+            'configFilePath': self.configFilePath,
+            'logFile': self.logFile,
+            'caller': self.caller
+        }            
+        self.config = ServiceRegistry.register(EsmConfigService(configFilePath=self.configFilePath, context=context))
+        
     def askUserToCreateNewSavegame(self):
         if askUser("Do you want to create a new savegame? [yes/no] ", "yes"):
             log.debug("creating new savegame")
@@ -76,7 +51,7 @@ class EsmMain:
         log.info("This script will shut down the server automatically again, if it doesn't work, you'll probably have to stop it yourself by clicking on the 'Save and Exit' button.")
         if askUser("Ready? [yes/no] ", "yes"):
             log.info("Will start the server with the default configuration now")
-            newEsm = EsmDedicatedServer.withGfxMode(self.config, EsmDedicatedServer.GFXMODE_ON)
+            newEsm = EsmDedicatedServer(config=self.config, gfxMode=GfxMode.ON)
             try:
                 newEsm.startServer()
                 # give the server some time to start and create the new savegame before we try stopping it again
@@ -147,3 +122,19 @@ class EsmMain:
         """
         log.info("creating rolling backup")
         self.backupManager.createRollingBackup()
+
+    @cached_property
+    def backupManager(self):
+        return ServiceRegistry.get(EsmBackupManager)
+
+    @cached_property    
+    def ramdiskManager(self):
+        return ServiceRegistry.get(EsmRamdiskManager)
+    
+    @cached_property
+    def dedicatedServer(self):
+        return ServiceRegistry.get(EsmDedicatedServer)
+    
+    @cached_property
+    def fileSystem(self):
+        return ServiceRegistry.get(EsmFileSystem)

@@ -1,12 +1,19 @@
 import logging
 
+from esm.EsmConfigService import EsmConfigService
+from esm.ServiceRegistry import Service, ServiceRegistry
+
 log = logging.getLogger(__name__)
 
+@Service
 class EsmBackupManager:
 
-    def __init__(self, config):
-        self.config = config
-        self.backupAmount = self.config.backups.amount
+    def __init__(self, config=None):
+        if config is None:
+            self.config = ServiceRegistry.get(EsmConfigService)
+        else:
+            self.config = config
+        # self.backupAmount = self.config.backups.amount
 
     def createRollingBackup(self):
         """

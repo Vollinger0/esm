@@ -32,3 +32,6 @@ class RequirementsNotFulfilledError(Exception):
 
 class UserAbortedException(Exception):
     pass
+
+class ServiceNotFoundError(Exception):
+    pass

@@ -1,3 +1,5 @@
+from enum import Enum
+from functools import cached_property
 import subprocess
 import time
 import logging
@@ -6,48 +8,41 @@ import re
 from pathlib import Path, PurePath
 from datetime import datetime
 from esm import RequirementsNotFulfilledError, isDebugMode
+from esm.EsmConfigService import EsmConfigService
+from esm.ServiceRegistry import Service, ServiceRegistry
 
 log = logging.getLogger(__name__)
 
+class StartMode(Enum):
+    DIRECT = "direct" #"will bypass the launcher and use the dedicated exe directly. Use this mode if you need to run multiple instances of the server on one machine."]
+    LAUNCHER = "launcher" #"will use the launcher to start the game"
+
+class GfxMode(Enum):
+    ON = True #"uses the '-startDediWithGfx' param in the launcher - which enables the server graphics overlay, you may want to use this when you have no other means of stopping the server."]
+    OFF = False # "graphics overlay disabled, you probably want this if you're using EAH. You'll need to stop the server via EAH or other means."]
+
+@Service
 class EsmDedicatedServer:
     """
     Represents the dedicated server (executable), with the ability to start, stop, check if its running, etc.
 
     contains constants for the different startmodes and gfxmodes
-    
-    Initialize with the configuration, since it will read anything it needs from there.
     """
+    def __init__(self, config=None):
+        if config:
+            self.config = config
 
-    STARTMODE_DIRECT = ["direct", "will bypass the launcher and use the dedicated.exe directly. Use this mode if you need to run multiple instances of the server on one machine."]
-    STARTMODE_LAUNCHER = ["launcher", "will use the EmpyrionLauncher.exe to start the game"]
-    STARTMODES = [STARTMODE_DIRECT, STARTMODE_LAUNCHER]
-
-    GFXMODE_ON = [True, "uses the '-startDediWithGfx' param in the launcher - which enables the server graphics overlay, you may want to use this when you have no other means of stopping the server."]
-    GFXMODE_OFF = [False, "graphics overlay disabled, you probably want this if you're using EAH. You'll need to stop the server via EAH or other means."]
-    GFXMODES = [GFXMODE_ON, GFXMODE_OFF]
-
-    def __init__(self, config, installDir=None, dedicatedYaml=None, startMode=None, gfxMode=None):
-        self.config = config
-        self.installDir = installDir
-        self.dedicatedYaml = dedicatedYaml
-        self.startMode = startMode
-        self.gfxMode = gfxMode        
-        log.debug(f"{__name__} initialized with installDir {installDir}, dedicatedYaml {dedicatedYaml}, startmode {startMode}, gfxMode {gfxMode}")
-
-    @classmethod
-    def withConfig(cls, config):
-        installDir = config.paths.install
-        dedicatedYaml = config.server.dedicatedYaml
-        gfxMode = config.server.gfxMode
-        startMode = config.server.startMode
-        return cls(config, installDir, dedicatedYaml, startMode, gfxMode)
-
-    @classmethod    
-    def withGfxMode(cls, config, gfxMode):
-        installDir = config.paths.install
-        dedicatedYaml = config.server.dedicatedYaml
-        startMode = config.server.startMode
-        return cls(config, installDir, dedicatedYaml, startMode, gfxMode)
+    @cached_property
+    def config(self) -> EsmConfigService:
+        return ServiceRegistry.get(EsmConfigService)
+    
+    @cached_property
+    def gfxMode(self):
+        return GfxMode(self.config.server.gfxMode)
+    
+    @cached_property
+    def startMode(self):
+        return StartMode(self.config.server.startMode)
 
     def startServer(self):
         """
@@ -56,11 +51,11 @@ class EsmDedicatedServer:
 
         If the server started successfully, the psutil process is returned.
         """
-        if (self.getConfiguredStartMode() == self.STARTMODE_DIRECT):
-            log.debug(f"startMode is {self.STARTMODE_DIRECT}")
+        if (self.startMode == StartMode.DIRECT):
+            log.debug(f"startMode is {StartMode.DIRECT}")
             return self.startServerDirectMode()
         else:
-            log.debug(f"startMode is {self.STARTMODE_LAUNCHER}")
+            log.debug(f"startMode is {StartMode.LAUNCHER}")
             return self.startServerLauncherMode()
         
     def startServerDirectMode(self):
@@ -70,18 +65,7 @@ class EsmDedicatedServer:
 
         Method returns as soon as the process is started and its process info is returned.
         """
-        pathToExecutable = Path(f"{self.config.paths.install}/{self.config.foldernames.dedicatedServer}/{self.config.filenames.dedicatedExe}").absolute()
-        arguments = [pathToExecutable]
-        if self.getConfiguredGfxMode() == self.GFXMODE_OFF:
-            log.debug(f"gfxMode is {self.GFXMODE_OFF}")
-            arguments.append("-batchmode")
-            arguments.append("-nographics")
-        else:
-            log.debug(f"gfxMode is {self.GFXMODE_ON}")
-        arguments.append("-dedicated")
-        arguments.append(self.config.server.dedicatedYaml)
-        arguments.append("-logFile")
-        arguments.append(self.createLogFileName())
+        arguments = self.getCommandForDirectMode()
         log.info(f"Starting server with: {arguments} in directory {self.config.paths.install}")
         if not isDebugMode(self.config):
             # we do not use subprocess.run here, since we'll need the PID later and only psutil.Popen provides that.            
@@ -91,6 +75,21 @@ class EsmDedicatedServer:
         log.debug(f"Process returned: {process}")
         self.process = process
         return self.process
+
+    def getCommandForDirectMode(self):
+        pathToExecutable = Path(f"{self.config.paths.install}/{self.config.foldernames.dedicatedserver}/{self.config.filenames.dedicatedExe}").absolute()
+        arguments = [pathToExecutable]
+        if self.gfxMode == GfxMode.OFF:
+            log.debug(f"gfxMode is {GfxMode.OFF}")
+            arguments.append("-batchmode")
+            arguments.append("-nographics")
+        else:
+            log.debug(f"gfxMode is {GfxMode.ON}")
+        arguments.append("-dedicated")
+        arguments.append(self.config.server.dedicatedYaml)
+        arguments.append("-logFile")
+        arguments.append(self.createLogFileName())
+        return arguments
     
     def startServerLauncherMode(self):
         """
@@ -98,15 +97,7 @@ class EsmDedicatedServer:
 
         Method returns as soon as the process of the dedicated server was found and its process info is returned, otherwise exceptions are passed.
         """
-        launcherExeFileName = self.config.filenames.launcherExe
-        pathToExecutable = Path(f"{self.config.paths.install}/{launcherExeFileName}").absolute()
-        if (self.getConfiguredGfxMode()==self.GFXMODE_ON):
-            log.debug(f"gfxMode is {self.GFXMODE_ON}")
-            startDedi = "-startDediWithGfx"
-        else:
-            log.debug(f"gfxMode is {self.GFXMODE_OFF}")
-            startDedi = "-startDedi"
-        arguments = [pathToExecutable, startDedi, "-dedicated", self.config.server.dedicatedYaml]
+        arguments = self.getCommandForLauncherMode()
         log.info(f"Starting server with: {arguments} in directory {self.config.paths.install}")
         if not isDebugMode(self.config):
             # we do not use subprocess.run here, since we use this in the direct mode too and we want the process field to be of the same type.
@@ -123,6 +114,18 @@ class EsmDedicatedServer:
         self.process = self.findProcessByNameWithTimeout(self.config.filenames.dedicatedExe, self.config.server.launcher.maxStartupTimeout)
         log.debug(f"found process of dedicated server: {self.process}")
         return self.process
+
+    def getCommandForLauncherMode(self):
+        launcherExeFileName = self.config.filenames.launcherExe
+        pathToExecutable = Path(f"{self.config.paths.install}/{launcherExeFileName}").absolute()
+        if (self.gfxMode==GfxMode.ON):
+            log.debug(f"gfxMode is {GfxMode.ON}")
+            startDedi = "-startDediWithGfx"
+        else:
+            log.debug(f"gfxMode is {GfxMode.OFF}")
+            startDedi = "-startDedi"
+        arguments = [pathToExecutable, startDedi, "-dedicated", self.config.server.dedicatedYaml]
+        return arguments
     
     def createLogFileName(self):
         """ 
@@ -196,26 +199,6 @@ class EsmDedicatedServer:
             if name == processName or PurePath(exe).name == processName or (len(cmdline) > 0 and cmdline[0] == processName):
                 list.append(process)
         return list
-    
-    def getGfxModeByString(self, string):
-        for mode in self.GFXMODES:
-            if mode[0]==string:
-                return mode
-        # default to on
-        return self.GFXMODE_ON
-    
-    def getConfiguredGfxMode(self):
-        return self.getGfxModeByString(self.gfxMode)
-
-    def getStartModeByString(self, string):
-        for mode in self.STARTMODES:
-            if mode[0]==string:
-                return mode
-        # default to launcher
-        return self.STARTMODE_LAUNCHER
-    
-    def getConfiguredStartMode(self):
-        return self.getStartModeByString(self.startMode)
     
     def sendExit(self, timeout=0):
         """

@@ -1,25 +1,46 @@
+from functools import cached_property
 import logging
-from pathlib import Path
 import subprocess
-from threading import Event, Thread
 import time
+from pathlib import Path
+from threading import Event, Thread
 from esm import NoSaveGameFoundException, NoSaveGameMirrorFoundException, RequirementsNotFulfilledError, SaveGameMirrorExistsException
+from esm.EsmConfigService import EsmConfigService
+from esm.EsmDedicatedServer import EsmDedicatedServer
 from esm.EsmFileSystem import EsmFileSystem
 from esm.FsTools import FsTools
+from esm.ServiceRegistry import Service, ServiceRegistry
 
 log = logging.getLogger(__name__)
 
+@Service
 class EsmRamdiskManager:
     """
     class that manages anything related to the ramdisk, that includes install, setup, deinstall, syncs and so on.
     
     """
-    def __init__(self, config, dedicatedServer) -> None:
-        self.config = config
-        self.dedicatedServer = dedicatedServer
+    def __init__(self, config=None, dedicatedServer=None, fileSystem=None):
+        if config:
+            self.config = config
+        if dedicatedServer:
+            self.dedicatedServer = dedicatedServer
+        if fileSystem:
+            self.fileSystem = fileSystem
+
         self.synchronizerShutdownEvent = None
         self.synchronizerThread = None
-        self.fs = EsmFileSystem(config)
+
+    @cached_property
+    def config(self) -> EsmConfigService:
+        return ServiceRegistry.get(EsmConfigService)
+
+    @cached_property        
+    def dedicatedServer(self) -> EsmDedicatedServer:
+        return ServiceRegistry.get(EsmDedicatedServer)
+
+    @cached_property
+    def fileSystem(self) -> EsmFileSystem:
+        return ServiceRegistry.get(EsmFileSystem)
 
     def install(self):
         """
@@ -27,7 +48,7 @@ class EsmRamdiskManager:
 
         Moves a savegame to the hdd savegame mirror location
         """
-        savegameFolderPath = self.fs.getAbsolutePathTo("saves.games.savegame")
+        savegameFolderPath = self.fileSystem.getAbsolutePathTo("saves.games.savegame")
         savegameExists = False
         savegameMirrorExists = False
 
@@ -38,7 +59,7 @@ class EsmRamdiskManager:
             savegameExists = True
             log.info(f"Savegame exists at '{savegameFolderPath}'")
 
-        savegameMirrorFolderPath = self.fs.getAbsolutePathTo("saves.gamesmirror.savegamemirror")
+        savegameMirrorFolderPath = self.fileSystem.getAbsolutePathTo("saves.gamesmirror.savegamemirror")
         # check that there is no savegame mirror
         if Path(savegameMirrorFolderPath).exists():
             savegameMirrorExists = True
@@ -53,7 +74,7 @@ class EsmRamdiskManager:
             raise SaveGameMirrorExistsException(f"savegame mirror at '{savegameMirrorFolderPath}' already exists.")
 
         # move the savegame to the hddmirror folder
-        self.fs.moveFileTree("saves.games.savegame", "saves.gamesmirror.savegamemirror", 
+        self.fileSystem.moveFileTree("saves.games.savegame", "saves.gamesmirror.savegamemirror", 
                             f"Moving savegame to new location, this may take some time if your savegame is large already!")
         
         log.info("Install complete, you may now start the ramdisk setup")
@@ -74,14 +95,14 @@ class EsmRamdiskManager:
             self.mountRamdrive(ramdiskDrive, ramdiskSize)
 
         # create the link savegame -> ramdisk
-        link = self.fs.getAbsolutePathTo("saves.games.savegame")
-        linkTarget = self.fs.getAbsolutePathTo("ramdisk.savegame", prefixInstallDir=False)
+        link = self.fileSystem.getAbsolutePathTo("saves.games.savegame")
+        linkTarget = self.fileSystem.getAbsolutePathTo("ramdisk.savegame", prefixInstallDir=False)
         if not linkTarget.exists():
             linkTarget.mkdir()
         if FsTools.isHardLink(link):
             log.debug(f"{link} exists and is already a hardlink")
         else:
-            self.fs.createJointpoint(link, linkTarget)
+            self.fileSystem.createJointpoint(link, linkTarget)
 
         log.debug("check for externalizing templates")
         # set up the link from ramdisk/templates -> hddmirror_templates
@@ -91,7 +112,7 @@ class EsmRamdiskManager:
             log.info("externalizing templates is disabled. If you have a huge savegame, consider enabling this to reduce ramdisk usage.")
 
         # sync the mirror to the ramdisk
-        savegamemirror = self.fs.getAbsolutePathTo("saves.gamesmirror.savegamemirror")
+        savegamemirror = self.fileSystem.getAbsolutePathTo("saves.gamesmirror.savegamemirror")
         if not savegamemirror.exists():
             raise NoSaveGameMirrorFoundException("f{savegamemirror} does not exist! Is the configuration correct? Did you call the install action before calling the setup?")
         self.syncMirrorToRam()
@@ -103,8 +124,8 @@ class EsmRamdiskManager:
         will move the savegame template folder from the ram back to the hdd, in a separate mirror folder and create a hardlink
         """
         log.info(f"Externalizing Templates folder to hdd")
-        savegametemplatesPath = self.fs.getAbsolutePathTo("saves.games.savegame.templates")
-        templateshddcopyPath = self.fs.getAbsolutePathTo("saves.gamesmirror.savegametemplate")
+        savegametemplatesPath = self.fileSystem.getAbsolutePathTo("saves.games.savegame.templates")
+        templateshddcopyPath = self.fileSystem.getAbsolutePathTo("saves.gamesmirror.savegametemplate")
         doCreateLink = True
         doMoveFolder = True
 
@@ -118,7 +139,7 @@ class EsmRamdiskManager:
             
         if doMoveFolder:
             # move template folder to hdd template mirror
-            self.fs.moveFileTree(
+            self.fileSystem.moveFileTree(
                 sourceDotPath="saves.games.savegame.templates", 
                 destinationDotPath="saves.gamesmirror.savegametemplate", 
                 info=f"Moving Templates back to HDD. If your savegame is big already, this can take a while"
@@ -127,7 +148,7 @@ class EsmRamdiskManager:
         
         if doCreateLink:
             # create link from savegame back to hdd template mirror
-            self.fs.createJointpoint(linkPath=savegametemplatesPath, linkTargetPath=templateshddcopyPath)
+            self.fileSystem.createJointpoint(linkPath=savegametemplatesPath, linkTargetPath=templateshddcopyPath)
 
     def mountRamdrive(self, driveLetter, driveSize):
         """
@@ -151,7 +172,7 @@ class EsmRamdiskManager:
         cmd = [osfMount, "-l", "-m", str(driveLetter)+":"]
         log.info(f"Executing {cmd}. This will require admin privileges")
         try:
-            process = subprocess.run(cmd, capture_output=True, shell=True, check=True)
+            subprocess.run(cmd, capture_output=True, shell=True, check=True)
             log.debug(f"There is an osf mounted ramdrive as {driveLetter}")
             return True
         except subprocess.CalledProcessError:
@@ -172,14 +193,14 @@ class EsmRamdiskManager:
         syncs the mirror to ram once
         """
         # the target should be the hardlink to ramdisk at this point, so we'll use the link as target
-        self.fs.copyFileTree("saves.gamesmirror.savegamemirror", "saves.games.savegame")
+        self.fileSystem.copyFileTree("saves.gamesmirror.savegamemirror", "saves.games.savegame")
 
     def syncRamToMirror(self):
         """
         syncs the ram to mirror once
         """
         # the source should be the hardlink to ramdisk at this point, so we'll use the link as target
-        self.fs.copyFileTree("saves.games.savegame", "saves.gamesmirror.savegamemirror")
+        self.fileSystem.copyFileTree("saves.games.savegame", "saves.gamesmirror.savegamemirror")
 
     def uninstall(self):
         """

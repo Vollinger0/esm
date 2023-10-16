@@ -1,14 +1,12 @@
 import logging
 import os
 from pathlib import Path
-import subprocess
 import unittest
-from esm.EsmConfig import EsmConfig
 from esm.FsTools import FsTools
 
 log = logging.getLogger(__name__)
 
-class test_Jointpoint(unittest.TestCase):
+class test_FsTools(unittest.TestCase):
 
     def test_create(self):
         target = Path("test-linktarget")
