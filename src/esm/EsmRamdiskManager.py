@@ -133,11 +133,10 @@ class EsmRamdiskManager:
         returns True if there is a drive mounted as 'driveLetter' and it is a osfmount ramdrive.
         """
         osfMount = self.checkAndGetOsfMountPath()
-        cmd = [osfMount, "-l", "-m", str(driveLetter)]
+        cmd = [osfMount, "-l", "-m", str(driveLetter)+":"]
         log.info(f"Executing {cmd}. This will require admin privileges")
-        process = subprocess.run(cmd, capture_output=True, shell=True)
         try:
-            process.check_returncode()
+            process = subprocess.run(cmd, capture_output=True, shell=True, check=True)
             log.debug(f"There is an osf mounted ramdrive as {driveLetter}")
             return True
         except subprocess.CalledProcessError:

@@ -1,4 +1,5 @@
 import logging
+from pathlib import Path
 import unittest
 from esm.EsmDedicatedServer import EsmDedicatedServer
 from esm.EsmConfig import EsmConfig
@@ -9,6 +10,13 @@ class TestEsmDedicatedServer(unittest.TestCase):
 
     def test_createLogFileName(self):
         esmConfig = EsmConfig.fromConfigFile('test/esm-test-config.yaml')
+        
+        # create the buildnumber file in the testdata first
+        filePath = Path(f"{esmConfig.paths.install}/{esmConfig.filenames.buildNumber}").absolute()
+        filePath.parent.mkdir(parents=True, exist_ok=True)
+        with open(filePath, "w") as file:
+            file.write("4243 ")
+
         esmDS = EsmDedicatedServer.withConfig(esmConfig)
         logFileName = esmDS.createLogFileName()
         logFileNameFirst23 = logFileName[:23]

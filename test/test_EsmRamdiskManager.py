@@ -8,6 +8,7 @@ from esm.EsmConfig import EsmConfig
 from esm.EsmDedicatedServer import EsmDedicatedServer
 from esm.EsmFileStructure import EsmFileStructure
 from esm.EsmRamdiskManager import EsmRamdiskManager
+from esm.Jointpoint import Jointpoint
 
 log = logging.getLogger(__name__)
 
@@ -23,17 +24,52 @@ class test_EsmRamdiskManager(unittest.TestCase):
         self.createTestFileSystem()
         savegamePath = self.fs.getAbsolutePathTo("saves.games.savegame")
         savegameMirror = self.fs.getAbsolutePathTo("saves.gamesmirror.savegamemirror")
-
         self.assertTrue(savegamePath.exists())
         self.assertFalse(savegameMirror.exists())
 
+        # do the install
         self.rdm.install()
 
         self.assertFalse(savegamePath.exists())
         self.assertTrue(savegameMirror.exists())
 
+        # remove testing trash
         rmtree(self.config.paths.install)
 
+    @unittest.skip("only execute this manually, since it requires admin privileges and will pop up that window for the user.")
+    def test_setup(self):
+        self.config = EsmConfig.fromConfigFile("test/esm-test-config.yaml")
+        self.fs = EsmFileStructure(self.config)
+        self.ds = EsmDedicatedServer.withConfig(self.config)
+        self.rdm = EsmRamdiskManager(self.config, dedicatedServer=self.ds)
+
+        # prepare folders
+        self.createTestFileSystem()
+        savegamePath = self.fs.getAbsolutePathTo("saves.games.savegame")
+        savegameTemplates = self.fs.getAbsolutePathTo("saves.games.savegame.templates")
+        savegameTemplates.mkdir(parents=True, exist_ok=True)
+        savegameMirror = self.fs.getAbsolutePathTo("saves.gamesmirror.savegamemirror")
+        self.rdm.install()
+        self.assertFalse(savegamePath.exists())
+        self.assertTrue(savegameMirror.exists())
+
+        self.rdm.setup()
+
+        # check ramdisk exists
+        self.assertTrue(self.rdm.checkRamdrive(self.config.ramdisk.drive))
+        ramdiskSavegame = self.fs.getAbsolutePathTo("ramdisk.savegame", prefixInstallDir=False)
+        self.assertTrue(ramdiskSavegame.exists())
+        self.assertTrue(savegamePath.exists())
+        self.assertTrue(Jointpoint.isHardLink(link=savegamePath))
+        self.assertTrue(savegameMirror.exists())
+
+        # check externalizeTemplate worked
+        savegameTemplates = self.fs.getAbsolutePathTo("saves.games.savegame.templates")
+        self.assertTrue(Jointpoint.isHardLink(link=savegameTemplates))
+        templateshddcopy = self.fs.getAbsolutePathTo("saves.gamesmirror.savegametemplate")
+        self.assertTrue(templateshddcopy.exists())
+
+        rmtree(self.config.paths.install)
 
     def createTestFileSystem(self):
         if Path(self.config.paths.install).exists():
