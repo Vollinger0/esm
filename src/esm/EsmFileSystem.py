@@ -182,10 +182,3 @@ class EsmFileSystem:
                 log.debug(f"deleting file {targetPath}")
                 FsTools.deleteFile(path)
         log.debug(f"done deleting")
-
-    def deleteByPattern(self, parentDir: Path, pattern: Path):
-        """
-        deletes files and directories below the parent that match the given pattern. allows complex globbing, see Path.glob for infos.
-        """
-        for entry in Path(parentDir).glob(pattern=pattern):
-            self.delete(entry)

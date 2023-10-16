@@ -60,6 +60,7 @@ class EsmBackupService:
         additionalBackupPaths = self.config.backups.additionalBackupPaths
         if additionalBackupPaths and len(additionalBackupPaths) > 0:
             log.debug(f"copying additional data")
+            # no globbing will be supported here, since the sources would potentially all end up in one folder, creating a mess in the backup.
             self.backupAdditionalPaths(additionalBackupPaths, targetBackupFolder)
 
         self.createMarkerFile(targetBackupFolder)

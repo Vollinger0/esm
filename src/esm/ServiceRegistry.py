@@ -11,9 +11,11 @@ class ServiceRegistryMeta(type):
 class ServiceRegistry(metaclass=ServiceRegistryMeta):
     _registry = {}
 
+    @staticmethod
     def registerDecorated(serviceClass):
         ServiceRegistry._registry[serviceClass.__name__] = serviceClass()
 
+    @staticmethod
     def register(instance=None):
         iClass = instance.__class__
         if instance is None:
@@ -22,6 +24,7 @@ class ServiceRegistry(metaclass=ServiceRegistryMeta):
             ServiceRegistry._registry[iClass.__name__] = instance
         return ServiceRegistry._registry[iClass.__name__]
     
+    @staticmethod
     def get(serviceClass):
         service = ServiceRegistry._registry.get(serviceClass.__name__)
         if service:
