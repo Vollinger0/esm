@@ -295,7 +295,9 @@ class EsmDedicatedServer:
             driveToCheck = Path(self.config.paths.install).drive
 
         minimumSpaceHuman = self.config.server.minDiskSpaceForStartup
-        if not FsTools.hasEnoughFreeDiskSpace(driveToCheck, minimumSpaceHuman):
+        hasEnough, freeSpace, freeSpaceHuman = FsTools.hasEnoughFreeDiskSpace(driveToCheck, minimumSpaceHuman)
+        log.debug(f"Free space on drive {driveToCheck} is {freeSpaceHuman}. Configured minimum for startup is {minimumSpaceHuman}")
+        if not hasEnough:
             log.error(f"The drive {driveToCheck} has not enough free disk space, the minimum required to start up is configured to be {minimumSpaceHuman}")
             raise AdminRequiredException("Space on the drive is running out, will not start up the server to prevent savegame corruption")
         return True

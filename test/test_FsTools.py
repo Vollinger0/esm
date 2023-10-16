@@ -197,8 +197,8 @@ class test_FsTools(unittest.TestCase):
         self.assertEqual(integer, actual)
 
     def test_hasEnoughFreeDiskSpace(self):
-        self.assertTrue(FsTools.hasEnoughFreeDiskSpace("C:", "1M"))
-        self.assertFalse(FsTools.hasEnoughFreeDiskSpace("C:", "1P")) # "should be enough for everybody "
+        self.assertTrue(FsTools.hasEnoughFreeDiskSpace("C:", "1M")[0])
+        self.assertFalse(FsTools.hasEnoughFreeDiskSpace("C:", "1P")[0]) # "should be enough for everybody "
 
     def test_copyFileToFile(self):
         parent = Path("copy_test")
