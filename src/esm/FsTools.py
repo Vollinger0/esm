@@ -6,6 +6,7 @@ import shutil
 import subprocess
 import logging
 from pathlib import Path
+from typing import List
 
 import humanize
 
@@ -189,7 +190,7 @@ class FsTools:
         return bool(re.search(glob_patterns, str(path)))        
     
     @staticmethod
-    def toAbsolutePaths(paths: [Path], parent: Path):
+    def toAbsolutePaths(paths: [Path], parent: Path) -> List[Path]:
         """
         returns the list of paths given, but all relative links will be joined with the given parent path.
         """
@@ -202,7 +203,7 @@ class FsTools:
         return absolutePaths
 
     @staticmethod    
-    def resolveGlobs(paths: [Path]):
+    def resolveGlobs(paths: [Path]) -> List[Path]:
         """
         will resolve any glob pattern given in the list of paths and add them to the resulting list. Any non-pattern path will be added as is.
         """
@@ -211,10 +212,10 @@ class FsTools:
             if FsTools.isGlobPattern(path):
                 globResult = glob(pathname=Path(path).as_posix(), recursive=True)
                 for entry in globResult:
-                    resolvedPaths.append(Path(entry).absolute().as_posix())
+                    resolvedPaths.append(Path(entry).resolve())
                 
             else:
-                resolvedPaths.append(Path(path).absolute().as_posix())
+                resolvedPaths.append(Path(path).resolve())
         return resolvedPaths
     
     @staticmethod
