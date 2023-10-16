@@ -10,7 +10,7 @@ log = logging.getLogger(__name__)
 
 class EsmFileStructure:
     """
-    represents the filesystem with the relevant bits that we manage
+    Represents the filesystem with the relevant bits that we manage
 
     allows to decorate this with convenient functions and operations, aswell as resolve
     them according to the configuration automatically
@@ -45,7 +45,10 @@ class EsmFileStructure:
                 "cache": "Cache",
                 "games": {
                     "_parent": conf.foldernames.games,
-                    "savegame": conf.server.savegame
+                    "savegame": {
+                        "_parent": conf.server.savegame,
+                        "templates": conf.foldernames.templates
+                    }
                 },
                 "gamesmirror": {
                     "_parent": conf.foldernames.gamesmirror,
@@ -91,33 +94,43 @@ class EsmFileStructure:
         self.getPathTo(dotPath=dotPath, parts=parts, index=index+1, tree=subtree, segments=segments)
         return "/".join(segments)
     
-    def moveFileTree(self, source, destination, info, operation="move"):
+    def moveFileTree(self, source, destination, info=None):
         """
         moves a complete filetree from source to destination using robocopy
         """
         self.executeRobocopy(source, destination, info, "move")
 
-    def copyFileTree(self, source, destination, info):
+    def copyFileTree(self, source, destination, info=None):
         """
         copies a complete filetree from source to destination using robocopy
         """
         self.executeRobocopy(source, destination, info, "copy")
 
-    def executeRobocopy(self, source, destination, info, operation="copy"):
+    def executeRobocopy(self, source, destination, info=None, operation="copy"):
         """
         executes a robocopy command for the given operation
         """
         sourcePath = self.getAbsolutePathTo(source)
         destinationPath = self.getAbsolutePathTo(destination)
-        log.info(info)
+        if info is not None: 
+            log.info(info)
         log.info(f"will {operation} from '{sourcePath}' -> '{destinationPath}'")
         options = self.config.robocopy.options.get(operation).split(" ")
-        logFile = Path(self.config.context.caller).stem + "_robocopy.log"
+        logFile = Path(self.getCaller()).stem + "_robocopy.log"
         if not isDebugMode(self.config):
             process=robocopy.execute(sourcePath, destinationPath, options, logFile, encoding=self.config.robocopy.encoding)
             return process
         else:
             log.debug(f"debugmode: robocopy {sourcePath} {destinationPath} {options}")
+
+    def getCaller(self):
+        """
+        return the caller from the context or __name__ is not given.
+        """
+        try:
+            return self.config.context.caller
+        except KeyError:
+            return __name__
 
     def createJointpoint(self, link, linkTarget):
         """

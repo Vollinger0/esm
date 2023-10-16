@@ -1,8 +1,8 @@
-import os, time
+import time
 import logging
 import psutil
 import re
-from pathlib import Path
+from pathlib import Path, PurePath
 from datetime import datetime
 from esm import isDebugMode
 
@@ -69,7 +69,8 @@ class EsmDedicatedServer:
 
         Method returns as soon as the process is started and its process info is returned.
         """
-        arguments = [os.path.abspath(f"{self.config.paths.install}/{self.config.foldernames.dedicatedServer}/{self.config.filenames.dedicatedExe}")]
+        pathToExecutable = Path(f"{self.config.paths.install}/{self.config.foldernames.dedicatedServer}/{self.config.filenames.dedicatedExe}").absolute()
+        arguments = [pathToExecutable]
         if self.getConfiguredGfxMode() == self.GFXMODE_OFF:
             log.debug(f"gfxMode is {self.GFXMODE_OFF}")
             arguments.append("-batchmode")
@@ -96,7 +97,7 @@ class EsmDedicatedServer:
         Method returns as soon as the process of the dedicated server was found and its process info is returned, otherwise exceptions are passed.
         """
         launcherExeFileName = self.config.filenames.launcherExe
-        pathToExecutable = os.path.abspath(f"{self.config.paths.install}/{launcherExeFileName}")
+        pathToExecutable = Path(f"{self.config.paths.install}/{launcherExeFileName}").absolute()
         if (self.getConfiguredGfxMode()==self.GFXMODE_ON):
             log.debug(f"gfxMode is {self.GFXMODE_ON}")
             startDedi = "-startDediWithGfx"
@@ -122,6 +123,8 @@ class EsmDedicatedServer:
         """ 
         reproduce a logfile name like ../Logs/$buildNumber/Dedicated_YYMMDD-HHMMSS-xx.log. 
         xx is unknown, so it can be omited for now
+
+        Since the PF-Servers will always use "../Logs/", no matter what working dir you call the dedicated exe from, we'll hard code this here!
         """
         buildNumber = self.getBuildNumber()
         formattedDate = self.getFormattedDate()
@@ -132,7 +135,7 @@ class EsmDedicatedServer:
         """
         get the numeric build number from the first line in the file 'BuildNumber.txt' in the installdir
         """
-        buildNumberFilePath = os.path.abspath(Path(f"{self.config.paths.install}/{self.config.filenames.buildNumber}"))
+        buildNumberFilePath = Path(f"{self.config.paths.install}/{self.config.filenames.buildNumber}").absolute()
         with open(buildNumberFilePath, "r") as buildNumberFilePath:
             firstLine = buildNumberFilePath.readline()
             cleanedString = re.sub(r'[^a-zA-Z0-9]', '', firstLine)
@@ -186,7 +189,7 @@ class EsmDedicatedServer:
                 pass
             except psutil.NoSuchProcess:
                 continue
-            if name == processName or os.path.basename(exe) == processName or (len(cmdline) > 0 and cmdline[0] == processName):
+            if name == processName or PurePath(exe).name() == processName or (len(cmdline) > 0 and cmdline[0] == processName):
                 list.append(process)
         return list
     
@@ -211,7 +214,7 @@ class EsmDedicatedServer:
         return self.getStartModeByString(self.startMode)
     
     def stop(self, timeout):
-        # TODO: use the epmremoteclientn and send a 'saveandexit x' where x is the timeout in minutes. a 0 will stop it immediately.
+        # TODO: use the epmremoteclient and send a 'saveandexit x' where x is the timeout in minutes. a 0 will stop it immediately.
         raise NotImplementedError("not implemented yet")
     
     def kill(self):

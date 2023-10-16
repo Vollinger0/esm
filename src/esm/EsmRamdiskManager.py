@@ -1,7 +1,7 @@
 import logging
 from pathlib import Path
 import subprocess
-from esm import NoSaveGameFoundException, SaveGameMirrorExistsException
+from esm import NoSaveGameFoundException, NoSaveGameMirrorFoundException, RequirementsNotFulfilledError, SaveGameMirrorExistsException
 from esm.EsmFileStructure import EsmFileStructure
 from esm.Jointpoint import Jointpoint
 
@@ -28,7 +28,7 @@ class EsmRamdiskManager:
         if not Path(savegameFolderPath).exists():
             log.info(f"Savegame does not exist at '{savegameFolderPath}'. Either the configuration is wrong or you may want to create one.")
             raise NoSaveGameFoundException("no savegame found nor created")
-        log.info(f"savegame exists at '{savegameFolderPath}'")
+        log.info(f"Savegame exists at '{savegameFolderPath}'")
 
         savegameMirrorFolderPath = self.fs.getAbsolutePathTo("saves.gamesmirror.savegamemirror")
         # check that there is no savegame mirror
@@ -41,7 +41,7 @@ class EsmRamdiskManager:
         self.fs.moveFileTree("saves.games.savegame", "saves.gamesmirror.savegamemirror", 
                             f"Moving savegame to new location, this may take some time if your savegame is large already!")
         
-        log.info("install compelte, you may now start the ramdisk setup")
+        log.info("Install compelte, you may now start the ramdisk setup")
         
     def setup(self):
         """
@@ -53,15 +53,12 @@ class EsmRamdiskManager:
         ramdiskDrive = Path(self.config.ramdisk.drive + ":")
         ramdiskSize = Path(self.config.ramdisk.size)
         if ramdiskDrive.exists(): 
-            log.debug(f"{ramdiskDrive} already exists as a drive")
-            if self.checkRamdrive(ramdiskDrive):
-                log.debug(f"there is an osfmounted ramdrive, assuming this is our ramdrive.")
+            log.info(f"{ramdiskDrive} already exists as a drive, assuming this is our ramdrive. If its not, please use another drive letter in the configuration.")
         else:
             log.debug(f"{ramdiskDrive} does not exist")
             self.mountRamdrive(ramdiskDrive, ramdiskSize)
 
         # create the link savegame -> ramdisk
-        log.debug("create link savegame -> ramdisk")
         link = self.fs.getAbsolutePathTo("saves.games.savegame")
         linkTarget = self.fs.getAbsolutePathTo("ramdisk.savegame", prefixInstallDir=False)
         if not linkTarget.exists():
@@ -70,32 +67,59 @@ class EsmRamdiskManager:
             log.debug(f"{link} exists and is already a hardlink")
         else:
             self.fs.createJointpoint(link, linkTarget)
-            log.debug(f"{link} link created")
 
         log.debug("check for externalizing templates")
         # set up the link from ramdisk/templates -> hddmirror_templates
         if self.config.general.externalizeTemplates==True:
             self.externalizeTemplates()
+        else:
+            log.info("externalizing templates is disabled. If you have a huge savegame, consider enabling this to reduce ramdisk usage.")
 
         # sync the mirror to the ramdisk
+        savegamemirror = self.fs.getAbsolutePathTo("saves.gamesmirror.savegamemirror")
+        if not savegamemirror.exists():
+            raise NoSaveGameMirrorFoundException("f{savegamemirror} does not exist! Is the configuration correct? Did you call the install action before calling the setup?")
         self.syncMirrorToRam()
+
         log.info("Setup completed, you may now start the server")
 
     def externalizeTemplates(self):
         """
         will move the savegame template folder from the ram back to the hdd, in a separate mirror folder and create a hardlink
         """
-        log.info(f"externalizing Templates folder")
-        # TODO: move template folder to hdd template mirror
-        # TODO: create link from ram to hdd template mirror
+        log.info(f"Externalizing Templates folder to hdd")
+        savegametemplatesPath = self.fs.getAbsolutePathTo("saves.games.savegame.templates")
+        templateshddcopyPath = self.fs.getAbsolutePathTo("saves.gamesmirror.savegametemplate")
+        doCreateLink = True
+        doMoveFolder = True
+
+        if Jointpoint.isHardLink(savegametemplatesPath):
+            log.info(f"Templates folder in savegame at {savegametemplatesPath} is already a hardlink.")
+            doCreateLink = False
+    
+        if templateshddcopyPath.exists():
+            log.info(f"There is already a template hdd copy at {templateshddcopyPath}.")
+            doMoveFolder = False
+            
+        if doMoveFolder:
+            # move template folder to hdd template mirror
+            self.fs.moveFileTree(
+                source="saves.games.savegame.templates", 
+                destination="saves.gamesmirror.savegametemplate", 
+                info=f"Moving Templates back to HDD. If your savegame is big already, this can take a while"
+                )
+            log.info(f"Moved templates from {savegametemplatesPath} to {templateshddcopyPath}")
+        
+        if doCreateLink:
+            # create link from savegame back to hdd template mirror
+            self.fs.createJointpoint(link=savegametemplatesPath, linkTarget=templateshddcopyPath)
 
     def mountRamdrive(self, driveLetter, driveSize):
         """
         mounts a ramdrive as driveLetter with driveSize with osfmount, will call a subprocess for this
         requires osfmount to be available at the path and admin privileges
         """
-        osfMount = self.config.paths.osfmount
-        # osfMount = checkAndGetOsfMountPath()
+        osfMount = self.checkAndGetOsfMountPath()
         cmd = [osfMount]
         args = f"-a -t vm -m {driveLetter} -o format:ntfs:'Ramdisk',logical -s {driveSize}"
         cmd.extend(args.split(" "))
@@ -108,7 +132,7 @@ class EsmRamdiskManager:
         """
         returns True if there is a drive mounted as 'driveLetter' and it is a osfmount ramdrive.
         """
-        osfMount = self.config.paths.osfmount
+        osfMount = self.checkAndGetOsfMountPath()
         cmd = [osfMount, "-l", "-m", str(driveLetter)]
         log.info(f"Executing {cmd}. This will require admin privileges")
         process = subprocess.run(cmd, capture_output=True, shell=True)
@@ -119,27 +143,32 @@ class EsmRamdiskManager:
         except subprocess.CalledProcessError:
             log.debug(f"No osf mounted ramdrive found as {driveLetter}")
             return False
+        
+    def checkAndGetOsfMountPath(self):
+        """
+        returns the path to osfmount, making sure the target file exists. raises a exception if it doesn't, since we won't be able to continue without it.
+        """
+        osfMount = self.config.paths.osfmount
+        if Path(osfMount).exists(): 
+            return osfMount
+        raise RequirementsNotFulfilledError(f"osfmount not found in the configured path at {osfMount}. Please make sure it is installed and the configuration points to it.")
 
     def syncMirrorToRam(self):
         """
         syncs the mirror to ram once
         """
         # the target should be the hardlink to ramdisk at this point, so we'll use the link as target
-        self.fs.copyFileTree("saves.gamesmirror.savegamemirror", "saves.games.savegame",
-                             f"Mirror copying savegame from hdd mirror to ramdisk")
+        self.fs.copyFileTree("saves.gamesmirror.savegamemirror", "saves.games.savegame")
 
     def syncRamToMirror(self):
         """
         syncs the ram to mirror once
         """
         # the source should be the hardlink to ramdisk at this point, so we'll use the link as target
-        self.fs.copyFileTree("saves.games.savegame", "saves.gamesmirror.savegamemirror",
-                             f"Mirror copying savegame from ramdisk to hdd mirror")
+        self.fs.copyFileTree("saves.games.savegame", "saves.gamesmirror.savegamemirror")
 
     def uninstall(self):
         """
-        reverts the changes made by the install, basically moving the savegame back to its original place
+        reverts the changes made by the install, basically moving the savegame back to its original place, removing the mirror
         """
         raise NotImplementedError("not implemented yet")
-       
-

@@ -1,9 +1,15 @@
 general:
-  debugMode: True
-  allowMultpleServerInstances: True
+  #debugMode: True
+  debugMode: False
+  externalizeTemplates: True
+
+ramdisk:
+  drive: "T"
+  size: "5G"
 
 server:
   dedicatedYaml: 'esm-dedicated.yaml'
+  savegame: 'EsmTestDediGame'
   #startMode: 'direct'
   startMode: 'launcher'
   gfxMode: True
@@ -11,19 +17,23 @@ server:
     maxStartupTimeout: 15
 
 paths:
-  install: 'D:/EGS/Empyrion/'
-  osfmount: ''
-  peazip: ''
+  install: 'D:\EGS\Empyrion\esm\test\empyrion'
+  osfmount: 'C:\Users\Nutzer\Programme\OSFMount\osfmount.com'
+  peazip: 'C:\Program Files\PeaZip\res\bin\7z\7z.exe'
   epmremoteclient: ''
 
 foldernames:
   saves: 'Saves'
   games: 'Games'
-  backups: 'Backup'
+  backup: 'Backup'
+  templates: 'Templates'
+  backupmirrors: 'BackupMirrors'
+  backupmirrorprefix: 'rollingBackup_'
   logs: 'Logs'
-  dedicatedServer: 'DedicatedServer'
+  dedicatedserver: 'DedicatedServer'
   gamesmirror: 'GamesMirror'
-  savegame: 'EsmDediGame'
+  savegamemirrorpostfix: '_Mirror'
+  savegametemplatepostfix: '_Templates'
 
 filenames:
   globaldb: 'global.db'
@@ -31,3 +41,9 @@ filenames:
   chatlines: 'hamster_sync_lines.txt'
   dedicatedExe: 'EmpyrionDedicated.exe'
   launcherExe: 'EmpyrionLauncher.exe'
+
+robocopy:
+  encoding: 'ansi' #depending on the shell used, it may be necessary to change this to ansi, utf-8, cp1252 or something. This will be passed to subprocess.run(...encoding=...)
+  options:
+    move: "/MOVE /E /np /ns /nc /nfl /ndl /mt /r:10 /w:10 /unicode"
+    copy: "/MIR  /np /ns /nc /nfl /ndl /mt /r:10 /w:10 /unicode"

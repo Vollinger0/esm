@@ -2,3 +2,6 @@
 [tool.pytest.ini_options]
 testpaths = ["test"]
 pythonpath = ["src"]
+log_cli = true
+# log_cli_level = logging.DEBUG
+log_cli_level = 10

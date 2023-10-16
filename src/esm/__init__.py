@@ -21,5 +21,11 @@ class NoSaveGameFoundException(Exception):
 class SaveGameMirrorExistsException(Exception):
     pass
 
+class NoSaveGameMirrorFoundException(Exception):
+    pass
+
 class AdminRequiredException(Exception):
+    pass
+
+class RequirementsNotFulfilledError(Exception):
     pass
