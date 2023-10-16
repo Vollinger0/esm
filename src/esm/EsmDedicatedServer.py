@@ -7,9 +7,11 @@ import psutil
 import re
 from pathlib import Path, PurePath
 from datetime import datetime
-from esm import RequirementsNotFulfilledError, isDebugMode
+from esm import AdminRequiredException, RequirementsNotFulfilledError
 from esm.EsmConfigService import EsmConfigService
+from esm.FsTools import FsTools
 from esm.ServiceRegistry import Service, ServiceRegistry
+from esm.Tools import isDebugMode
 
 log = logging.getLogger(__name__)
 
@@ -52,6 +54,8 @@ class EsmDedicatedServer:
 
         If the server started successfully, the psutil process is returned.
         """
+        self.assertEnoughFreeDiskspace()
+
         if (self.startMode == StartMode.DIRECT):
             log.debug(f"startMode is {StartMode.DIRECT}")
             return self.startServerDirectMode()
@@ -279,4 +283,19 @@ class EsmDedicatedServer:
             return self.process.wait(timeout=timeout)
         else:
             raise Exception("process info does not exist, did you forget to start the server?")
-        
+    
+    def assertEnoughFreeDiskspace(self):
+        """
+        make sure there is enough space on the drive where the savegame resides, raise an error if not
+        """
+        driveToCheck = None
+        if self.config.general.useRamdisk:
+            driveToCheck = Path(f"{self.config.ramdisk.drive}:")
+        else:
+            driveToCheck = Path(self.config.paths.install).drive
+
+        minimumSpaceHuman = self.config.server.minDiskSpaceForStartup
+        if not FsTools.hasEnoughFreeDiskSpace(driveToCheck, minimumSpaceHuman):
+            log.error(f"The drive {driveToCheck} has not enough free disk space, the minimum required to start up is configured to be {minimumSpaceHuman}")
+            raise AdminRequiredException("Space on the drive is running out, will not start up the server to prevent savegame corruption")
+        return True

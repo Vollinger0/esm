@@ -35,7 +35,7 @@ class test_EsmFileSystem(unittest.TestCase):
         path = esmfs.getPathTo("ramdisk.savegame")
         self.assertEqual("R:/EsmDediGame", path)
 
-    def test_createJointPoint(self):
+    def test_createHardLink(self):
         esmConfig = EsmConfigService(configFilePath="esm-config.yaml")
         esmfs = EsmFileSystem(config=esmConfig)
         target = Path("test-linktarget")
@@ -45,7 +45,7 @@ class test_EsmFileSystem(unittest.TestCase):
         self.cleanTestFolders(target, link)
         
         target.mkdir()
-        esmfs.createJointpoint(linkPath=link, linkTargetPath=target)
+        esmfs.createHardLink(linkPath=link, linkTargetPath=target)
 
         self.assertTrue(target.exists())
         self.assertTrue(link.exists())

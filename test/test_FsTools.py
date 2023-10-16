@@ -175,4 +175,26 @@ class test_FsTools(unittest.TestCase):
     #     # clean up
     #     self.cleanTestFolders(target, link)
 
+    def test_realToHumanFileSize(self):
+        self.assertR2H(1234, "1.2K")
+        self.assertH2R("1.2K", 1228)
+        self.assertR2H(1132432, "1.1M")
+        self.assertH2R("1.1M", 1153433)
+        self.assertR2H(36345435, "34.7M")
+        self.assertH2R("36.3M", 38063308)
+        self.assertR2H(3634235435, "3.4G")
+        self.assertH2R("3.6G", 3865470566)
+        self.assertR2H(23634235435, "22.0G")
+        self.assertH2R("23.6G", 25340307046)
 
+    def assertR2H(self, integer, string):
+        actual = FsTools.realToHumanFileSize(integer)
+        self.assertEqual(string, actual)
+
+    def assertH2R(self, string, integer):
+        actual = FsTools.humanToRealFileSize(string)
+        self.assertEqual(integer, actual)
+
+    def test_hasEnoughFreeDiskSpace(self):
+        self.assertTrue(FsTools.hasEnoughFreeDiskSpace("C:", "1M"))
+        self.assertFalse(FsTools.hasEnoughFreeDiskSpace("C:", "1P")) # "should be enough for everybody "
