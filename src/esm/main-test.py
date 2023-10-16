@@ -110,15 +110,15 @@ esm = EsmMain(caller=__file__,
 log.debug("Start of script")
 log.debug(f"Logging to: {esm.logFile}")
 
+#testInstallFromSteam()
 #testRamdiskPrepare()
 #testRamdiskSetup()
 #testStartStopServerNoTry()
 #testStartStopServer()
 #testStartServerWithSynchronizer()
+#testUpdateGame()
 #testBackup()
 #testStaticBackup()
-#testInstallFromSteam()
-#testUpdateGame()
 #testDeleteAll()
 
 log.info(f"Script finished successfully. Check the logfile ({esm.logFile}) if you missed something. Bye!")

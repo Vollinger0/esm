@@ -46,7 +46,7 @@ class EsmDedicatedServer:
     @cached_property
     def startMode(self) -> StartMode:
         return StartMode(self.config.server.startMode)
-
+    
     def startServer(self):
         """
         Start the server with the configured mode.
@@ -54,6 +54,7 @@ class EsmDedicatedServer:
 
         If the server started successfully, the psutil process is returned.
         """
+        self.assertRamdiskExists()
         self.assertEnoughFreeDiskspace()
 
         if (self.startMode == StartMode.DIRECT):
@@ -226,7 +227,7 @@ class EsmDedicatedServer:
         """
         sends a "saveandexit $stoptimeout" to the server via epmremoteclient, then waits for the server process to stop before returning.
         """
-        log.warn("This might not work, if the server is not ready to accept commands yet (e.g. on startup)")
+        log.warning("This might not work, if the server is not ready to accept commands yet (e.g. on startup)")
         self.sendExit(stoptimeout)
         self.waitForEnd(timeout)
 
@@ -301,3 +302,15 @@ class EsmDedicatedServer:
             log.error(f"The drive {driveToCheck} has not enough free disk space, the minimum required to start up is configured to be {minimumSpaceHuman}")
             raise AdminRequiredException("Space on the drive is running out, will not start up the server to prevent savegame corruption")
         return True
+    
+    def assertRamdiskExists(self):
+        """
+        make sure the ramdisk exists if ramdisk is enabled. Does only check for drive letter, not driver itself.
+        """
+        ramdiskEnabled = self.config.general.useRamdisk
+        if ramdiskEnabled:
+            ramdiskDrive = Path(f"{self.config.ramdisk.drive}:")
+            if ramdiskDrive.exists():
+                return True
+            else:
+                raise AdminRequiredException(f"Ramdisk is enabled but it does not exist as drive {ramdiskDrive}. Make sure to run the ramdisk setup first!")

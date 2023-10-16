@@ -72,8 +72,8 @@ class EsmBackupService:
             linkList = ",".join(map(str,deletedLinks))
             log.info(f"Removed now deprecated hardlinks: {linkList}")
 
-        log.info(f"Creating link to latest backup as '{linkPath}' -> '{targetBackupFolder}'")
         linkPath = self.createBackupLink(targetBackupFolder)
+        log.info(f"Created link to latest backup as '{linkPath}' -> '{targetBackupFolder}'")
         elapsedTime = getElapsedTime(start)
         log.info(f"Creating rolling backup done, time needed: {elapsedTime}")
 

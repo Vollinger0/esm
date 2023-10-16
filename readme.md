@@ -23,12 +23,11 @@
 [x] usecase: update game
 [x] usecase: install game
 [x] usecase: delete savegame, including tool data, potential mod data too, add extensions like for the backup
+[x] change delete functions so that the path has to be at least 3 levels deep before deleting anything?
+[x] change delete functions so that it maintains a list and the user is asked at the end.
 
 ### WIP
 [+] debugmode
-[ ] make sure FsTools works on a virtual FS in debugmode?
-[ ] change delete functions so that it maintains a list and the user is asked at the end.
-[ ] change delete functions so that the path has to be at least 3 levels deep before deleting anything and may not be outside the install dir?
 [ ] add proper cli - use the click library to extend the scripts with command line tools
 
 ### later
