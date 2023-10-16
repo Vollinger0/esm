@@ -220,15 +220,19 @@ class EsmDedicatedServer:
     def sendExit(self, timeout=0):
         """
         sends a "saveandexit $timeout" to the server via the epmremoteclient and returns immediately. 
-        You need to check if the server stopped successfully via isRunning() or just call waitForStop()
+        You need to check if the server stopped successfully via the other methods
         """
         # use the epmremoteclient and send a 'saveandexit x' where x is the timeout in minutes. a 0 will stop it immediately.
         epmrc = self.getEpmRemoteClientPath()
-        cmd = [epmrc, "run",  "-q", f"saveandexit {timeout}"]
+        cmd = [epmrc, "run", "-q", f"saveandexit {timeout}"]
+        if isDebugMode(self.config):
+            cmd = [epmrc, "run", f"saveandexit {timeout}"]
         log.debug(f"executing {cmd}")
         process = subprocess.run(cmd)
         log.debug(f"process returned: {process}")
         # this returns when epmrc ends, not the server!
+        if process.returncode > 0:
+            log.error(f"error executing the epm client: stdout: \n{process.stdout}\n, stderr: \n{process.stderr}\n")
 
     def sendExitAndWait(self, timeout=15, stoptimeout=0):
         """

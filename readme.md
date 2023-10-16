@@ -14,6 +14,7 @@
 ### WIP
 [+] debugmode
 [+] usecase: delete savegame
+[+] when useRamdisk is enabled, enable checks for its file structure, when its not, do not start use the synchronizer (of course)
 
 ### later
 [ ] use the click library to extend the scripts with command line tools
@@ -35,3 +36,4 @@
 [ ] create separate windows-gui thingy that resides in the taskbar or similar and provides a shortcut to the cli tool.
    ** probably with wxPython
 [ ] adapt config to dedicated.yaml, especially when paths change. probably as a sanity check implementation
+[ ] tool: deletes the "discovered by" flags (potentially also for wipes/purges)

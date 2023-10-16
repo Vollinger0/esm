@@ -1,5 +1,7 @@
+from threading import Thread
 import time
 import logging
+from halo import Halo
 from pathlib import Path
 from esm import NoSaveGameFoundException, SaveGameMirrorExistsException, UserAbortedException
 from esm.EsmMain import EsmMain
@@ -62,12 +64,35 @@ def testSetup():
 
 def testStartServerWithSynchronizer():
     log.debug("starting server")
+    # with Halo(text='Starting', spinner='dots'):
     esm.startServer()
-    log.debug("server started, waiting 5 minutes")
-    time.sleep(300)
-    log.debug("stopping server")
-    esm.stopServer()
+    log.debug(f"server started")
+
+    # start a separate thread that will send a stop signal to the server after some time.
+    def task():
+        waittime = 60
+        log.debug(f"task started, waiting {waittime} seconds")
+        time.sleep(waittime)
+        log.debug("task sending exit to server")
+        esm.dedicatedServer.sendExit()
+        log.debug("task finished ")
+    thread = Thread(target=task, daemon=True)
+    thread.start()
+
+    # with Halo(text='Waiting', spinner='dots', placement='right'):
+    esm.waitForEnd()
+    
+    #log.debug("waiting for synchronizer to stop")
+    #thread.join()
+    if esm.dedicatedServer.isRunning():
+        log.debug("stopping server")
+        # with Halo(text='Stopping', spinner='dots'):
+        esm.stopServer()
     log.debug("server stopped")
+
+def test():
+    esm.startServer()
+    esm.stopServer()
 
 ######################################################
 ## main code start
@@ -86,5 +111,7 @@ log.debug(f"Logging to: {esm.logFile}")
 #testStartStopServerNoTry()
 #testStartStopServer()
 #testStartServerWithSynchronizer()
+test()
+
 
 log.info(f"Script finished successfully. Check the logfile ({esm.logFile}) if you missed something. Bye!")
