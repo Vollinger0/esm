@@ -93,4 +93,31 @@ class EsmMain:
             self.fileStructure.quickDelete(savegameMirrorPath)
             return True
         return False
+    
+    def startServer(self):
+        """
+        Will start the server and the ramdisk synchronizer
+        """
+        # start the synchronizer
+        syncInterval = self.config.ramdisk.synchronizeramtohddinterval
+        if syncInterval>0:
+            log.info(f"Starting ram2mirror synchronizer with interval {syncInterval}")
+            self.ramdiskManager.startSynchronizer(syncInterval)
+        
+        # start the server
+        log.info(f"Starting the dedicated server")
+        return self.dedicatedServer.startServer()
+
+    def stopServer(self):
+        """
+        Will stop the synchronizer, then stop the server and do a last sync from ram 2 mirror
+        """
+        # stop synchronizer
+        self.ramdiskManager.stopSynchronizer()
+
+        # stop server
+        self.dedicatedServer.sendExitRetryAndWait()
+
+        # sync ram to mirror
+        self.ramdiskManager.syncRamToMirror()
 

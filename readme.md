@@ -8,17 +8,16 @@
 [x] usecase: install ramdisk
 [x] usecase: server reboot
 [x] use pathlib instead of os.path wherever possible
+[x] implement regular ram2mirror sync
+[x] usecase: stop gameserver properly
 
 ### WIP
 [+] debugmode
-[+] implement regular ram2mirror sync
-[+] implement regular mirror2ram sync
 [+] usecase: delete savegame
 
 ### later
 [ ] use the click library to extend the scripts with command line tools
-[ ] offer some kind of interactive mode for different stuff
-[ ] usecase: stop gameserver properly
+[ ] offer some kind of better interactive mode for different stuff
 [ ] usecase: create incremental backup
 [ ] usecase: create manual static backup
 [ ] usecase: update gameserver
