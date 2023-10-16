@@ -1,4 +1,5 @@
 general:
+  #debugMode: True
   debugMode: False
   #allowMultpleServerInstances: True
   externalizeTemplates: True
@@ -20,13 +21,18 @@ server:
     maxStartupTimeout: 15 # max amount of time in seconds to find the dedicated exe after calling the launcher.
 
 backups:
-  amount: 4
+  amount: 4 # amount of rolling mirror backups to keep
+  marker: 'esm_this_is_the_latest_backup' # filename used for the marker that marks as backup as being the latest.
+  additionalBackupPaths: # add a list of full paths to source files or directories to backup additionally. Those will all end up in the folder "Additional" in the backup.
+    - 'D:\EGS\Empyrion\esm\esm-config.yaml' # our own configuration
+    - 'D:\EGS\Empyrion\Content\Mods\EncryptoidModPack' # the modpacks database
 
 paths:
   install: 'D:\EGS\Empyrion\'
   osfmount: 'C:\Users\Nutzer\Programme\OSFMount\osfmount.com'
   peazip: 'C:\Program Files\PeaZip\res\bin\7z\7z.exe'
   epmremoteclient: 'D:\EGS\Empyrion\EmpyrionPrime.RemoteClient.Console.exe'
+  eah: 'D:\EGS\Empyrion\DedicatedServer\EmpyrionAdminHelper'
 
 foldernames:
   saves: 'Saves'

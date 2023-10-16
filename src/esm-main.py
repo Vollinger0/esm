@@ -63,29 +63,24 @@ def testSetup():
 
 def testStartServerWithSynchronizer():
     log.debug("starting server")
-    # with Halo(text='Starting', spinner='dots'):
     esm.startServer()
     log.debug(f"server started")
 
     # start a separate thread that will send a stop signal to the server after some time.
     def task():
-        waittime = 60
-        log.debug(f"task started, waiting {waittime} seconds")
+        waittime = 75
+        log.debug(f"task started, waiting {waittime} seconds before trying to stop the server.")
         time.sleep(waittime)
         log.debug("task sending exit to server")
-        esm.dedicatedServer.sendExit()
+        esm.dedicatedServer.sendExitAndWait()
         log.debug("task finished ")
     thread = Thread(target=task, daemon=True)
     thread.start()
 
-    # with Halo(text='Waiting', spinner='dots', placement='right'):
     esm.waitForEnd()
     
-    #log.debug("waiting for synchronizer to stop")
-    #thread.join()
     if esm.dedicatedServer.isRunning():
         log.debug("stopping server")
-        # with Halo(text='Stopping', spinner='dots'):
         esm.stopServer()
     log.debug("server stopped")
 
@@ -111,7 +106,8 @@ log.debug(f"Logging to: {esm.logFile}")
 #testSetup()
 #testStartStopServerNoTry()
 #testStartStopServer()
-#testStartServerWithSynchronizer()
+testStartServerWithSynchronizer()
 #test()
+#testBackup()
 
 log.info(f"Script finished successfully. Check the logfile ({esm.logFile}) if you missed something. Bye!")

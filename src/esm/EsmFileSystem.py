@@ -108,20 +108,26 @@ class EsmFileSystem:
         """
         moves a complete filetree from source to destination using robocopy
         """
-        self.executeRobocopy(sourceDotPath, destinationDotPath, info, "move")
+        self.executeRobocopyDotPaths(sourceDotPath, destinationDotPath, info, "move")
 
     def copyFileTree(self, sourceDotPath, destinationDotPath, info=None):
         """
         copies a complete filetree from source to destination using robocopy
         """
-        self.executeRobocopy(sourceDotPath, destinationDotPath, info, "copy")
+        self.executeRobocopyDotPaths(sourceDotPath, destinationDotPath, info, "copy")
 
-    def executeRobocopy(self, sourceDotPath, destinationDotPath, info=None, operation="copy"):
+    def executeRobocopyDotPaths(self, sourceDotPath, destinationDotPath, info=None, operation="copy"):
         """
         executes a robocopy command for the given operation
         """
         sourcePath = self.getAbsolutePathTo(sourceDotPath)
         destinationPath = self.getAbsolutePathTo(destinationDotPath)
+        self.executeRobocopy(sourcePath=sourcePath, destinationPath=destinationPath, info=info, operation=operation)
+
+    def executeRobocopy(self, sourcePath, destinationPath, info=None, operation="copy"):
+        """
+        executes a robocopy command for the given operation
+        """
         if info is not None: 
             log.info(info)
         log.debug(f"will {operation} from '{sourcePath}' -> '{destinationPath}'")

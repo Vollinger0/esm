@@ -3,7 +3,7 @@ import logging
 from pathlib import Path
 import time
 from esm import AdminRequiredException, askUser
-from esm.EsmBackupManager import EsmBackupManager
+from esm.EsmBackupService import EsmBackupService
 from esm.EsmFileSystem import EsmFileSystem
 from esm.EsmLogger import EsmLogger
 from esm.EsmConfigService import EsmConfigService
@@ -121,20 +121,20 @@ class EsmMain:
         create a backup of the savegame using the rolling mirror backup system
         """
         log.info("creating rolling backup")
-        self.backupManager.createRollingBackup()
+        self.backupService.createRollingBackup()
 
     @cached_property
-    def backupManager(self):
-        return ServiceRegistry.get(EsmBackupManager)
+    def backupService(self):
+        return ServiceRegistry.get(EsmBackupService)
 
     @cached_property    
-    def ramdiskManager(self):
+    def ramdiskManager(self) -> EsmRamdiskManager:
         return ServiceRegistry.get(EsmRamdiskManager)
     
     @cached_property
-    def dedicatedServer(self):
+    def dedicatedServer(self) -> EsmDedicatedServer:
         return ServiceRegistry.get(EsmDedicatedServer)
     
     @cached_property
-    def fileSystem(self):
+    def fileSystem(self) -> EsmFileSystem:
         return ServiceRegistry.get(EsmFileSystem)

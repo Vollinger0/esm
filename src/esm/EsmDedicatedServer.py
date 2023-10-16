@@ -31,17 +31,18 @@ class EsmDedicatedServer:
     def __init__(self, config=None):
         if config:
             self.config = config
+        self.process = None
 
     @cached_property
     def config(self) -> EsmConfigService:
         return ServiceRegistry.get(EsmConfigService)
     
     @cached_property
-    def gfxMode(self):
+    def gfxMode(self) -> GfxMode:
         return GfxMode(self.config.server.gfxMode)
     
     @cached_property
-    def startMode(self):
+    def startMode(self) -> StartMode:
         return StartMode(self.config.server.startMode)
 
     def startServer(self):
