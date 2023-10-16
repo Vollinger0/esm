@@ -1,24 +1,26 @@
 import logging
 from pathlib import Path
 from shutil import rmtree
-import sys
 import unittest
-from esm import EsmLogger
-from esm.EsmConfig import EsmConfig
+from esm.EsmMain import EsmMain
+from esm.EsmConfigService import EsmConfigService
 from esm.EsmDedicatedServer import EsmDedicatedServer
 from esm.EsmFileSystem import EsmFileSystem
 from esm.EsmRamdiskManager import EsmRamdiskManager
 from esm.FsTools import FsTools
+from esm.ServiceRegistry import ServiceRegistry
 
 log = logging.getLogger(__name__)
 
 class test_EsmRamdiskManager(unittest.TestCase):
 
     def test_install(self):
-        self.config = EsmConfig.fromConfigFile("test/esm-test-config.yaml")
+        # ServiceRegistry.register(EsmMain(installDir="test", configFileName="esm-test-config.yaml"))
+        ServiceRegistry.register(EsmMain)
+        self.config = EsmConfigService(configFilePath="test/esm-test-config.yaml")
         self.fs = EsmFileSystem(self.config)
-        self.ds = EsmDedicatedServer.withConfig(self.config)
-        self.rdm = EsmRamdiskManager(self.config, dedicatedServer=self.ds)
+        self.ds = EsmDedicatedServer(self.config)
+        self.rdm = EsmRamdiskManager(config=self.config, dedicatedServer=self.ds, fileSystem=self.fs)
 
         # prepare folders
         self.createTestFileSystem()
@@ -38,10 +40,11 @@ class test_EsmRamdiskManager(unittest.TestCase):
 
     @unittest.skip("only execute this manually, since it requires admin privileges and will pop up that window for the user.")
     def test_setup(self):
-        self.config = EsmConfig.fromConfigFile("test/esm-test-config.yaml")
+        ServiceRegistry.register(EsmMain)
+        self.config = EsmConfigService(configFilePath="test/esm-test-config.yaml")
         self.fs = EsmFileSystem(self.config)
-        self.ds = EsmDedicatedServer.withConfig(self.config)
-        self.rdm = EsmRamdiskManager(self.config, dedicatedServer=self.ds)
+        self.ds = EsmDedicatedServer(self.config)
+        self.rdm = EsmRamdiskManager(config=self.config, dedicatedServer=self.ds, fileSystem=self.fs)
 
         # prepare folders
         self.createTestFileSystem()
@@ -60,12 +63,12 @@ class test_EsmRamdiskManager(unittest.TestCase):
         ramdiskSavegame = self.fs.getAbsolutePathTo("ramdisk.savegame", prefixInstallDir=False)
         self.assertTrue(ramdiskSavegame.exists())
         self.assertTrue(savegamePath.exists())
-        self.assertTrue(FsTools.isHardLink(linkPath=savegamePath))
+        self.assertTrue(FsTools.isHardLink(savegamePath))
         self.assertTrue(savegameMirror.exists())
 
         # check externalizeTemplate worked
         savegameTemplates = self.fs.getAbsolutePathTo("saves.games.savegame.templates")
-        self.assertTrue(FsTools.isHardLink(linkPath=savegameTemplates))
+        self.assertTrue(FsTools.isHardLink(savegameTemplates))
         templateshddcopy = self.fs.getAbsolutePathTo("saves.gamesmirror.savegametemplate")
         self.assertTrue(templateshddcopy.exists())
 

@@ -2,17 +2,17 @@ import logging
 import os
 from pathlib import Path
 import unittest
-from esm.EsmConfig import EsmConfig
+from esm.EsmConfigService import EsmConfigService
 
 from esm.EsmFileSystem import EsmFileSystem
 from esm.FsTools import FsTools
 
 log = logging.getLogger(__name__)
 
-class test_EsmFileStructure(unittest.TestCase):
+class test_EsmFileSystem(unittest.TestCase):
 
     def test_walkablePathTree(self):
-        esmConfig = EsmConfig.fromConfigFile("esm-config.yaml")
+        esmConfig = EsmConfigService(configFilePath="esm-config.yaml")
         esmfs = EsmFileSystem(config=esmConfig)
         log.debug(f"esmfs: {esmfs}")
         log.debug(f"esmfs.structure: {esmfs.structure}")
@@ -36,7 +36,7 @@ class test_EsmFileStructure(unittest.TestCase):
         self.assertEqual("R:/EsmDediGame", path)
 
     def test_createJointPoint(self):
-        esmConfig = EsmConfig.fromConfigFile("esm-config.yaml")
+        esmConfig = EsmConfigService(configFilePath="esm-config.yaml")
         esmfs = EsmFileSystem(config=esmConfig)
         target = Path("test-linktarget")
         link = Path("test-link")

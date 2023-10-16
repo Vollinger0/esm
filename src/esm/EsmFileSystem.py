@@ -1,63 +1,74 @@
 import logging
-from pathlib import Path
-import shutil
 import dotsi
-
+from functools import cached_property
+from pathlib import Path
 from esm import isDebugMode, robocopy
+from esm.EsmConfigService import EsmConfigService
 from esm.FsTools import FsTools
+from esm.ServiceRegistry import Service, ServiceRegistry
 
 log = logging.getLogger(__name__)
 
+@Service
 class EsmFileSystem:
+
     """
     Represents the filesystem with the relevant bits that we manage
 
     allows to decorate this with convenient functions and operations, aswell as resolve
     them according to the configuration automatically
     """
-    def __init__(self, config):
-        self.config = config
-        self.readFromConfig(config)
+    def __init__(self, config=None):
+        if config:
+            self.config = config
 
-    def readFromConfig(self, conf):
+    @cached_property
+    def config(self):
+        return ServiceRegistry.get(EsmConfigService)
+    
+    @cached_property
+    def structure(self):
+        return self.getStructureFromConfig(self.config)
+
+    def getStructureFromConfig(self, config):
         """
         read the config info about folders and filenames, and populate the filestructure
         """
         dotPathStructure = {
             "ramdisk": {
-                "_parent": f"{conf.ramdisk.drive}:",
-                "savegame": conf.server.savegame
+                "_parent": f"{config.ramdisk.drive}:",
+                "savegame": config.server.savegame
             },
             "backup": {
-                "_parent": conf.foldernames.backup,
-                "backupmirrors": conf.foldernames.backupmirrors,
-                "backupmirrorprefix": conf.foldernames.backupmirrorprefix
+                "_parent": config.foldernames.backup,
+                "backupmirrors": config.foldernames.backupmirrors,
+                "backupmirrorprefix": config.foldernames.backupmirrorprefix
             },
             "dedicatedserver": {
-                "_parent": conf.foldernames.dedicatedserver
+                "_parent": config.foldernames.dedicatedserver
             },
             "logs" : {
-                "_parent": conf.foldernames.logs
+                "_parent": config.foldernames.logs
             },
             "saves": {
-                "_parent": conf.foldernames.saves, 
+                "_parent": config.foldernames.saves, 
                 "cache": "Cache",
                 "games": {
-                    "_parent": conf.foldernames.games,
+                    "_parent": config.foldernames.games,
                     "savegame": {
-                        "_parent": conf.server.savegame,
-                        "templates": conf.foldernames.templates
+                        "_parent": config.server.savegame,
+                        "templates": config.foldernames.templates
                     }
                 },
                 "gamesmirror": {
-                    "_parent": conf.foldernames.gamesmirror,
-                    "savegamemirror": f"{conf.server.savegame}{conf.foldernames.savegamemirrorpostfix}",
-                    "savegametemplate": f"{conf.server.savegame}{conf.foldernames.savegametemplatepostfix}"
+                    "_parent": config.foldernames.gamesmirror,
+                    "savegamemirror": f"{config.server.savegame}{config.foldernames.savegamemirrorpostfix}",
+                    "savegametemplate": f"{config.server.savegame}{config.foldernames.savegametemplatepostfix}"
                 }
             }
         }
         # put all in a dot-navigatable dict
-        self.structure = dotsi.Dict(dotPathStructure)
+        return dotsi.Dict(dotPathStructure)
 
     def getAbsolutePathTo(self, dotPath, prefixInstallDir=True):
         """
@@ -76,7 +87,7 @@ class EsmFileSystem:
         if tree is None:
             tree = self.structure
         if index is None:
-            index=0
+            index = 0
         if segments is None:
             segments = []
         if parts is None:

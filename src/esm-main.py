@@ -1,7 +1,6 @@
 from threading import Thread
 import time
 import logging
-from halo import Halo
 from pathlib import Path
 from esm import NoSaveGameFoundException, SaveGameMirrorExistsException, UserAbortedException
 from esm.EsmMain import EsmMain
@@ -101,9 +100,8 @@ def testBackup():
 ## main code start
 ######################################################
 # initialize config and logging
-esm = EsmMain(installDir=Path(".."),
-              caller=__file__,
-              configFileName="esm/esm-config.yaml"
+esm = EsmMain(caller=__file__,
+              configFileName="esm-config.yaml"
               )
 
 log.debug("Start of script")
