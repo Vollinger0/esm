@@ -1,17 +1,16 @@
 ## ESM - Empyrion Server Manager
 
 
-
 ## TODOS:
 ### done
 [x] usecase: start up gameserver
 [x] usecase: kill gameserver (via sigterm)
 [x] usecase: install ramdisk
+[x] usecase: server reboot
+[x] use pathlib instead of os.path wherever possible
 
 ### WIP
-[+] usecase: server reboot
 [+] debugmode
-[+] use pathlib instead of os.path wherever possible
 [+] implement regular ram2mirror sync
 [+] implement regular mirror2ram sync
 [+] usecase: delete savegame
