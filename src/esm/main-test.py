@@ -92,7 +92,7 @@ log.debug("Start of script")
 log.debug(f"Logging to: {esm.logFile}")
 
 #testInstallFromSteam()
-testRamdiskPrepare()
+#testRamdiskPrepare()
 #testRamdiskSetup()
 #testStartStopServerNoTry()
 #testStartStopServer()

@@ -57,12 +57,16 @@ class EsmFileSystem:
                     "_parent": config.foldernames.games,
                     "savegame": {
                         "_parent": config.server.savegame,
-                        "templates": config.foldernames.templates
+                        "templates": config.foldernames.templates,
+                        "globaldb": config.filenames.globaldb
                     }
                 },
                 "gamesmirror": {
                     "_parent": config.foldernames.gamesmirror,
-                    "savegamemirror": f"{config.server.savegame}{config.foldernames.savegamemirrorpostfix}",
+                    "savegamemirror": {
+                        "_parent": f"{config.server.savegame}{config.foldernames.savegamemirrorpostfix}",
+                        "globaldb": config.filenames.globaldb
+                    },
                     "savegametemplate": f"{config.server.savegame}{config.foldernames.savegametemplatepostfix}"
                 }
             }

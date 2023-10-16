@@ -27,6 +27,15 @@ class test_EsmFileSystem(unittest.TestCase):
         path = esmfs.getPathTo("saves")
         self.assertEqual("Saves", path)
 
+        path = esmfs.getPathTo("saves.games.savegame.templates")
+        self.assertEqual("Saves/Games/EsmDediGame/Templates", path)
+
+        path = esmfs.getPathTo("saves.games.savegame.globaldb")
+        self.assertEqual("Saves/Games/EsmDediGame/global.db", path)
+
+        path = esmfs.getPathTo("saves.gamesmirror.savegamemirror.globaldb")
+        self.assertEqual("Saves/GamesMirror/EsmDediGame_Mirror/global.db", path)
+
         path = esmfs.getPathTo("saves.gamesmirror.savegamemirror")
         self.assertEqual("Saves/GamesMirror/EsmDediGame_Mirror", path)
 
