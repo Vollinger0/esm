@@ -26,7 +26,7 @@ backups:
   marker: 'esm_this_is_the_latest_backup' # filename used for the marker that marks as backup as being the latest.
   additionalBackupPaths: 
     # list of full paths to source files or directories to backup additionally. Those will all end up in the folder "Additional" in the backup.
-    - 'D:\EGS\Empyrion\esm\esm-config.yaml' # our own configuration
+    - 'D:\EGS\Empyrion\esm\esm-base-config.yaml' # our own configuration
     - 'D:\EGS\Empyrion\Content\Mods\EncryptoidModPack' # the whole modpack
   staticBackupPeaZipOptions: "a -tzip -mtp=0 -mm=Deflate64 -mmt=on -mx1 -mfb=32 -mpass=1 -sccUTF-8 -mcu=on -mem=AES256 -bb0 -bse0 -bsp2" #make sure to use the fastest compression options
   minDiskSpaceForStaticBackup: 500M # if disk space on the drive with the backups has less free space than this, do not create a backup. gnu notation.
@@ -76,9 +76,12 @@ foldernames:
 filenames:
   globaldb: 'global.db'
   buildNumber: 'BuildNumber.txt'
-  #chatlines: 'hamster_sync_lines.txt'
   dedicatedExe: 'EmpyrionDedicated.exe'
   launcherExe: 'EmpyrionLauncher.exe'
+
+communication:
+  synceventname: 'Hamster'
+  synceventsfile: 'hamster_sync_lines.csv' #should contain a csv file with two columns, each containing the first and second sentence. The first will be used when starting a sync, the secnd when its finished.
 
 robocopy:
   encoding: 'ansi' #depending on the shell used, it may be necessary to change this to ansi, utf-8, cp1252 or something. This will be passed to subprocess.run(...encoding=...)

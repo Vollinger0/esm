@@ -15,12 +15,10 @@ log = logging.getLogger(__name__)
 class test_EsmRamdiskManager(unittest.TestCase):
 
     def test_install(self):
-        # ServiceRegistry.register(EsmMain(installDir="test", configFileName="esm-test-config.yaml"))
         ServiceRegistry.register(EsmMain)
         self.config = EsmConfigService(configFilePath="test/esm-test-config.yaml")
         self.fs = EsmFileSystem(self.config)
-        self.ds = EsmDedicatedServer(self.config)
-        self.rdm = EsmRamdiskManager(config=self.config, dedicatedServer=self.ds, fileSystem=self.fs)
+        self.rdm = EsmRamdiskManager(config=self.config, fileSystem=self.fs)
 
         # prepare folders
         self.createTestFileSystem()
@@ -43,8 +41,7 @@ class test_EsmRamdiskManager(unittest.TestCase):
         ServiceRegistry.register(EsmMain)
         self.config = EsmConfigService(configFilePath="test/esm-test-config.yaml")
         self.fs = EsmFileSystem(self.config)
-        self.ds = EsmDedicatedServer(self.config)
-        self.rdm = EsmRamdiskManager(config=self.config, dedicatedServer=self.ds, fileSystem=self.fs)
+        self.rdm = EsmRamdiskManager(config=self.config, fileSystem=self.fs)
 
         # prepare folders
         self.createTestFileSystem()
@@ -95,8 +92,7 @@ class test_EsmRamdiskManager(unittest.TestCase):
         ServiceRegistry.register(EsmMain)
         self.config = EsmConfigService(configFilePath="test/esm-test-config.yaml")
         self.fs = EsmFileSystem(self.config)
-        self.ds = EsmDedicatedServer(self.config)
-        self.rdm = EsmRamdiskManager(config=self.config, dedicatedServer=self.ds, fileSystem=self.fs)
+        self.rdm = EsmRamdiskManager(config=self.config, fileSystem=self.fs)
 
         driveLetter = self.config.ramdisk.drive
         driveSize = self.config.ramdisk.size

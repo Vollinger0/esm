@@ -1,6 +1,8 @@
 import logging
 
 class EsmLogger:
+    """provides facilities for logging, currently just a setup method
+    """
 
     @staticmethod 
     def setUpLogging(logFile, fileLogLevel=logging.DEBUG, streamLogLevel=logging.DEBUG):

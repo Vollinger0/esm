@@ -69,3 +69,20 @@ class Timer:
     def __exit__(self, exc_type, exc_value, traceback):
         self.elapsedTime = getElapsedTime(self.start)
 
+def mergeDicts(a: dict, b: dict, path=[], logOverwrites=False, allowOverwrites=True):
+    """
+    deep merges dict b into dict a, will mutate dict a in the process. same keys will be overwritten by default.
+    """
+    for key in b:
+        if key in a:
+            if isinstance(a[key], dict) and isinstance(b[key], dict):
+                mergeDicts(a[key], b[key], path + [str(key)])
+            elif a[key] != b[key]:
+                if logOverwrites:
+                    print(f"overwritten a[key] with b[key]: key: {key}, old value: {a[key]}, new value: {b[key]}")
+                if not allowOverwrites:
+                    raise Exception('Conflict at ' + '.'.join(path + [str(key)]))
+                a[key] = b[key]
+        else:
+            a[key] = b[key]
+    return a    
