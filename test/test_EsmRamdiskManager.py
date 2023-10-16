@@ -8,7 +8,7 @@ from esm.EsmConfig import EsmConfig
 from esm.EsmDedicatedServer import EsmDedicatedServer
 from esm.EsmFileSystem import EsmFileSystem
 from esm.EsmRamdiskManager import EsmRamdiskManager
-from esm.Jointpoint import Jointpoint
+from esm.FsTools import FsTools
 
 log = logging.getLogger(__name__)
 
@@ -60,12 +60,12 @@ class test_EsmRamdiskManager(unittest.TestCase):
         ramdiskSavegame = self.fs.getAbsolutePathTo("ramdisk.savegame", prefixInstallDir=False)
         self.assertTrue(ramdiskSavegame.exists())
         self.assertTrue(savegamePath.exists())
-        self.assertTrue(Jointpoint.isHardLink(linkPath=savegamePath))
+        self.assertTrue(FsTools.isHardLink(linkPath=savegamePath))
         self.assertTrue(savegameMirror.exists())
 
         # check externalizeTemplate worked
         savegameTemplates = self.fs.getAbsolutePathTo("saves.games.savegame.templates")
-        self.assertTrue(Jointpoint.isHardLink(linkPath=savegameTemplates))
+        self.assertTrue(FsTools.isHardLink(linkPath=savegameTemplates))
         templateshddcopy = self.fs.getAbsolutePathTo("saves.gamesmirror.savegametemplate")
         self.assertTrue(templateshddcopy.exists())
 
@@ -79,11 +79,10 @@ class test_EsmRamdiskManager(unittest.TestCase):
         self.createFile(self.config.filenames.buildNumber, "4243 ")
 
     def createDir(self, dir):
-        dir = self.fs.getAbsolutePathTo(dir)
-        dir.mkdir(parents=True, exist_ok=True)
+        dirPath = self.fs.getAbsolutePathTo(dir)
+        FsTools.createDir(dirPath)
 
     def createFile(self, fileName, content):
         filePath = Path(f"{self.config.paths.install}/{fileName}").absolute()
-        with open(filePath, "w") as file:
-            print(content, file=file)
+        FsTools.createFile(filePath, content=content)
 

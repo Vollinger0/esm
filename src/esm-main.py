@@ -94,6 +94,9 @@ def test():
     esm.startServer()
     esm.stopServer()
 
+def testBackup():
+    esm.createBackup()
+
 ######################################################
 ## main code start
 ######################################################
@@ -112,6 +115,5 @@ log.debug(f"Logging to: {esm.logFile}")
 #testStartStopServer()
 #testStartServerWithSynchronizer()
 #test()
-
 
 log.info(f"Script finished successfully. Check the logfile ({esm.logFile}) if you missed something. Bye!")

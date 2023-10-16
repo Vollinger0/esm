@@ -4,7 +4,7 @@ from pathlib import Path
 import subprocess
 import unittest
 from esm.EsmConfig import EsmConfig
-from esm.Jointpoint import Jointpoint
+from esm.FsTools import FsTools
 
 log = logging.getLogger(__name__)
 
@@ -20,7 +20,7 @@ class test_Jointpoint(unittest.TestCase):
         self.assertFalse(link.exists())
         
         target.mkdir()
-        Jointpoint.create(linkPath=link, targetPath=target)
+        FsTools.createLink(linkPath=link, targetPath=target)
         
         self.assertTrue(target.exists())
         self.assertTrue(link.exists())
@@ -39,12 +39,12 @@ class test_Jointpoint(unittest.TestCase):
         self.assertFalse(link.exists())
         
         target.mkdir()
-        Jointpoint.create(linkPath=link, targetPath=target)
+        FsTools.createLink(linkPath=link, targetPath=target)
         
         self.assertTrue(target.exists())
         self.assertTrue(link.exists())
 
-        Jointpoint.delete(link)
+        FsTools.deleteLink(link)
 
         self.assertTrue(target.exists())
         self.assertFalse(link.exists())
@@ -63,13 +63,13 @@ class test_Jointpoint(unittest.TestCase):
         self.assertFalse(link.exists())
         
         target.mkdir()
-        Jointpoint.create(linkPath=link, targetPath=target)
+        FsTools.createLink(linkPath=link, targetPath=target)
         
         self.assertTrue(target.exists())
         self.assertTrue(link.exists())
 
-        resultlink = Jointpoint.isHardLink(link)
-        resultdir = Jointpoint.isHardLink(target)
+        resultlink = FsTools.isHardLink(link)
+        resultdir = FsTools.isHardLink(target)
 
         self.assertTrue(resultlink)
         self.assertFalse(resultdir)

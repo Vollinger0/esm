@@ -4,6 +4,7 @@ import time
 from halo import Halo
 from psutil import TimeoutExpired
 from esm import AdminRequiredException, askUser
+from esm.EsmBackupManager import EsmBackupManager
 from esm.EsmFileSystem import EsmFileSystem
 from esm.EsmLogger import EsmLogger
 from esm.EsmConfig import EsmConfig
@@ -24,20 +25,25 @@ class EsmMain:
         configFilePath = Path(f"{installDir}/{configFileName}").absolute()
         self.config = self.createEsmConfig(configFilePath)
 
+        # create instances
+        self.dedicatedServer = self.createDedicatedServer()
+        self.fileSystem = self.createEsmFileSystem()
+        self.ramdiskManager = self.createEsmRamdiskManager(self.dedicatedServer)
+        self.backupManager = self.createBackupManager()
+
         # extend the config with some context information
         contextMap = {
                     'installDir': installDir,
                     'configFileName': configFileName,
                     'caller': caller,
                     'logFile': self.logFile,
-                    'configFilePath': configFilePath
+                    'configFilePath': configFilePath,
+                    'dedicatedserver': self.dedicatedServer,
+                    'filesystem': self.fileSystem,
+                    'ramdiskmanager': self.ramdiskManager,
+                    'backupmanager': self.backupManager
                 }
         self.config.context.update(contextMap)
-
-        # create instances
-        self.dedicatedServer = self.createDedicatedServer()
-        self.fileStructure = self.createEsmFileStructure()
-        self.ramdiskManager = self.createEsmRamdiskManager(self.dedicatedServer)
 
     def createEsmConfig(self, configFilePath):
         return EsmConfig.fromConfigFile(configFilePath)
@@ -45,11 +51,14 @@ class EsmMain:
     def createDedicatedServer(self):
         return EsmDedicatedServer.withConfig(self.config)
     
-    def createEsmFileStructure(self):
+    def createEsmFileSystem(self):
         return EsmFileSystem(self.config)
     
     def createEsmRamdiskManager(self, dedicatedServer):
         return EsmRamdiskManager(self.config, dedicatedServer)
+    
+    def createBackupManager(self):
+        return EsmBackupManager(self.config)
     
     def askUserToCreateNewSavegame(self):
         if askUser("Do you want to create a new savegame? [yes/no] ", "yes"):
@@ -73,8 +82,9 @@ class EsmMain:
                 # give the server some time to start and create the new savegame before we try stopping it again
                 time.sleep(self.config.server.startUpSleepTime)
                 try:
-                    # use the epmclient to check when the server is up and send a saveandexit from there.
+                    # try to tell the server to shut down and wait for it
                     newEsm.sendExitRetryAndWait()
+                    return True
                 except TimeoutError as ex:
                     log.error(f"could not stop server while trying to create a new savegame. Something's wrong")
                     raise AdminRequiredException("could not stop server while trying to create a new savegame.")
@@ -82,14 +92,15 @@ class EsmMain:
                 log.info(f"Server didn't start: {ex}")
         else:
             log.info("Create a new savegame yourself then, you can always start this installation again.")
+        return False
 
     def askUserToDeleteOldSavegameMirror(self):
         """
-        ask user if he wants to the delete the old savegame mirror and do that if yes        
+        ask user if he wants to the delete the old savegame mirror and do that if so
         """
-        savegameMirrorPath = self.fileStructure.getAbsolutePathTo("saves.gamesmirror.savegamemirror")
+        savegameMirrorPath = self.fileSystem.getAbsolutePathTo("saves.gamesmirror.savegamemirror")
         if askUser(f"Delete old savegame mirror at {savegameMirrorPath}? [yes/no] ", "yes"):
-            self.fileStructure.quickDelete(savegameMirrorPath)
+            self.fileSystem.delete(savegameMirrorPath)
             return True
         return False
     
@@ -130,3 +141,9 @@ class EsmMain:
         log.info("Starting final ram to mirror sync after shutdown")
         self.ramdiskManager.syncRamToMirror()
 
+    def createBackup(self):
+        """
+        create a backup of the savegame using the rolling mirror backup system
+        """
+        log.info("creating rolling backup")
+        self.backupManager.createRollingBackup()
