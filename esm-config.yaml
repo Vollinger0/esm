@@ -24,11 +24,23 @@ server:
 backups:
   amount: 4 # amount of rolling mirror backups to keep
   marker: 'esm_this_is_the_latest_backup' # filename used for the marker that marks as backup as being the latest.
-  additionalBackupPaths: # add a list of full paths to source files or directories to backup additionally. Those will all end up in the folder "Additional" in the backup.
+  additionalBackupPaths: 
+    # list of full paths to source files or directories to backup additionally. Those will all end up in the folder "Additional" in the backup.
     - 'D:\EGS\Empyrion\esm\esm-config.yaml' # our own configuration
-    - 'D:\EGS\Empyrion\Content\Mods\EncryptoidModPack' # the modpacks database
+    - 'D:\EGS\Empyrion\Content\Mods\EncryptoidModPack' # the whole modpack
   staticBackupPeaZipOptions: "a -tzip -mtp=0 -mm=Deflate64 -mmt=on -mx1 -mfb=32 -mpass=1 -sccUTF-8 -mcu=on -mem=AES256 -bb0 -bse0 -bsp2" #make sure to use the fastest compression options
   minDiskSpaceForStaticBackup: 500M # if disk space on the drive with the backups has less free space than this, do not create a backup. gnu notation.
+
+updates: 
+  additional:
+    # additional stuff to copy when doing an esm-update action. 
+    # If a path is relative, it will be assumed to be relative to the installation path.
+    # if dst is not a directory, a directory with that name will be created and used as target for the source.
+    # if src is a directory, it will be copied recursively into the target folder.
+    # existing files/directories in the target will be overwritten!
+    - {src: 'D:\EGS\Empyrion\test.txt', dst: 'esm'}
+    #- {src: 'D:\EGS\Empyrion\test.txt', dst: 'content\configuration'}
+    #- {src: 'D:\EGS\Empyrion\test.txt', dst: 'D:\temp'}
 
 paths:
   install: 'D:\EGS\Empyrion\'
@@ -36,6 +48,7 @@ paths:
   peazip: 'C:\Program Files\PeaZip\res\bin\7z\7z.exe'
   epmremoteclient: 'D:\EGS\Empyrion\EmpyrionPrime.RemoteClient.Console.exe'
   eah: 'D:\EGS\Empyrion\DedicatedServer\EmpyrionAdminHelper'
+  steamcmd: 'D:\EGS\steamcmd.exe'
 
 foldernames:
   saves: 'Saves'

@@ -312,7 +312,6 @@ class EsmBackupService:
         # on test: 250MB savegame -> 5 seconds, 34MB
         # on test: 500MB savegame -> 9 seconds, 66MB
         # "%zipCmdPath%" a -t7z -m0=Deflate -mmt=on -mx1 -mfb=32 -mpass=1 -ms=8m -mqs=on -sccUTF-8 -bb0 -bse0 -bsp2 "-w%backupDirPath%" "%backupDirPath%\%backupZipName%" "!backupDir!" >>%zipLogfile%
-        pass
 
     def getPeaZipPath(self):
         """
