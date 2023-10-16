@@ -3,8 +3,8 @@ general:
   debugMode: False
   # allowMultpleServerInstances: True
   externalizeTemplates: True
-  # useRamdisk: True
-  useRamdisk: False
+  useRamdisk: True
+  #useRamdisk: False
 
 ramdisk:
   drive: "R:"

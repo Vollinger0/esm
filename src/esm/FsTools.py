@@ -99,11 +99,11 @@ class FsTools:
             log.warn(f"prevented delete of path {targetPath} since it has a depth lower than {FsTools.MIN_PATH_DEPTH_FOR_DELETE}")
             raise SecurityException(f"prevented delete of path {targetPath} since it has a depth lower than {FsTools.MIN_PATH_DEPTH_FOR_DELETE}")
 
-        cmd = ["del", "/f", "/q", "/s", targetPath]
+        cmd = ["del", "/F", "/Q", "/S", targetPath]
         log.debug(f"executing {cmd}")
         process = subprocess.run(cmd, shell=True)
         log.debug(f"process returned: {process}")
-        cmd = ["rmdir", "/s", "/q", targetPath]
+        cmd = ["rmdir", "/S", "/Q", targetPath]
         log.debug(f"executing {cmd}")
         process = subprocess.run(cmd, shell=True)
         log.debug(f"process returned: {process}")

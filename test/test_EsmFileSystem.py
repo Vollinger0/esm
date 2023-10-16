@@ -86,7 +86,7 @@ class test_EsmFileSystem(unittest.TestCase):
         paths = FsTools.resolveGlobs(["pattern_test/foo/*.txt"])
         for path in paths:
             log.debug(f"would delete {path}")
-            esmfs.delete(path)
+            esmfs.markForDelete(path)
             esmfs.commitDelete("yes")
 
         for entry in [dir1, file3]:
@@ -111,8 +111,8 @@ class test_EsmFileSystem(unittest.TestCase):
         for entry in [dir1, file1, file2, file3]:
             self.assertTrue(entry.exists())
 
-        esmfs.delete(dir1)
-        esmfs.delete(file2)
+        esmfs.markForDelete(dir1)
+        esmfs.markForDelete(file2)
 
         for entry in [dir1, file1, file2, file3]:
             self.assertTrue(entry.exists())

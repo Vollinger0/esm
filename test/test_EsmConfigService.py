@@ -24,21 +24,21 @@ class test_EsmConfigService(unittest.TestCase):
     def test_loadsCustomPath(self):
         config = EsmConfigService(configFilePath="test/esm-test-config.yaml")
         self.assertEqual(config.backups.amount, 4)
-        self.assertEqual(config.ramdisk.drive, "T")
+        self.assertEqual(config.ramdisk.drive, "T:")
 
     def test_loadFromRegistry(self):
         instance = EsmConfigService(configFilePath="test/esm-test-config.yaml")
         ServiceRegistry.register(instance)
         config = ServiceRegistry.get(EsmConfigService)
         self.assertEqual(config.backups.amount, 4)
-        self.assertEqual(config.ramdisk.drive, "T")
+        self.assertEqual(config.ramdisk.drive, "T:")
 
     def test_containsContext(self):
         configFilePath="test/esm-test-config.yaml"
         config = EsmConfigService(configFilePath=configFilePath)
         self.assertEqual(config.context.configFilePath, configFilePath)
         self.assertEqual(config.backups.amount, 4)
-        self.assertEqual(config.ramdisk.drive, "T")
+        self.assertEqual(config.ramdisk.drive, "T:")
 
     def test_containsMoreContext(self):
         configFilePath="test/esm-test-config.yaml"
@@ -51,4 +51,4 @@ class test_EsmConfigService(unittest.TestCase):
         self.assertEqual(config.context.foo, "bar")
         self.assertEqual(config.context.baz, 42)
         self.assertEqual(config.backups.amount, 4)
-        self.assertEqual(config.ramdisk.drive, "T")
+        self.assertEqual(config.ramdisk.drive, "T:")
