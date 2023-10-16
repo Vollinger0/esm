@@ -323,9 +323,10 @@ class test_FsTools(unittest.TestCase):
         self.assertListEqual(sorted(expected), sorted(result))
 
     def test_pathContainsSubPath(self):
-        path1 = Path("d:/egs/empyrion")
-        path2 = Path("d:/egs/empyrion/esm")
-        path3 = Path("d:/egs/")
+        thisPath = Path(".").resolve()
+        path1 = Path(f"{thisPath}/")
+        path2 = Path(f"{thisPath}/esm")
+        path3 = thisPath.parent
         path4 = Path("esm/test")
         path5 = Path("../../")
         path6 = Path("..")
@@ -336,8 +337,7 @@ class test_FsTools(unittest.TestCase):
         self.assertFalse(FsTools.pathContainsSubPath(path=path1, subPath=path3))
         self.assertTrue(FsTools.pathContainsSubPath(path=path1, subPath=path4))
         self.assertFalse(FsTools.pathContainsSubPath(path=path1, subPath=path5))
-        # should this be false?
-        self.assertTrue(FsTools.pathContainsSubPath(path=path1, subPath=path6))
+        self.assertFalse(FsTools.pathContainsSubPath(path=path1, subPath=path6))
         self.assertTrue(FsTools.pathContainsSubPath(path=path1, subPath=path7))
 
     def test_deleteSafetyMeasures(self):
