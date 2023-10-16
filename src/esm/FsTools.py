@@ -9,7 +9,7 @@ from pathlib import Path
 
 import humanize
 
-from esm import SecurityException
+from esm import SafetyException
 
 log = logging.getLogger(__name__)
 
@@ -86,7 +86,7 @@ class FsTools:
         """
         if len(Path(targetPath).resolve().parts) < FsTools.MIN_PATH_DEPTH_FOR_DELETE:
             log.warn(f"prevented delete of path {targetPath} since it has a depth lower than {FsTools.MIN_PATH_DEPTH_FOR_DELETE}")
-            raise SecurityException(f"prevented delete of path {targetPath} since it has a depth lower than {FsTools.MIN_PATH_DEPTH_FOR_DELETE}")
+            raise SafetyException(f"prevented delete of path {targetPath} since it has a depth lower than {FsTools.MIN_PATH_DEPTH_FOR_DELETE}")
 
         shutil.rmtree(ignore_errors=True, path=targetPath)
     
@@ -97,7 +97,7 @@ class FsTools:
         """
         if len(Path(targetPath).resolve().parts) < FsTools.MIN_PATH_DEPTH_FOR_DELETE:
             log.warn(f"prevented delete of path {targetPath} since it has a depth lower than {FsTools.MIN_PATH_DEPTH_FOR_DELETE}")
-            raise SecurityException(f"prevented delete of path {targetPath} since it has a depth lower than {FsTools.MIN_PATH_DEPTH_FOR_DELETE}")
+            raise SafetyException(f"prevented delete of path {targetPath} since it has a depth lower than {FsTools.MIN_PATH_DEPTH_FOR_DELETE}")
 
         cmd = ["del", "/F", "/Q", "/S", targetPath]
         log.debug(f"executing {cmd}")
@@ -121,7 +121,7 @@ class FsTools:
     def deleteDir(dirPath: Path, recursive=False):
         if len(Path(dirPath).parts) < FsTools.MIN_PATH_DEPTH_FOR_DELETE:
             log.warning(f"prevented delete of path {dirPath} since it has a depth lower than {FsTools.MIN_PATH_DEPTH_FOR_DELETE}")
-            raise SecurityException(f"prevented delete of path {dirPath} since it has a depth lower than {FsTools.MIN_PATH_DEPTH_FOR_DELETE}")
+            raise SafetyException(f"prevented delete of path {dirPath} since it has a depth lower than {FsTools.MIN_PATH_DEPTH_FOR_DELETE}")
         
         if dirPath.exists():
             if recursive:

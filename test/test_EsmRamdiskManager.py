@@ -79,6 +79,7 @@ class test_EsmRamdiskManager(unittest.TestCase):
             rmtree(self.config.paths.install)
 
         self.createDir("saves.games.savegame")
+        self.fs.getAbsolutePathTo("saves.games.savegame.globaldb").write_text("blabla")
         self.createFile(self.config.filenames.buildNumber, "4243 ")
 
     def createDir(self, dir):

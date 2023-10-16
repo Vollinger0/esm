@@ -4,7 +4,7 @@ import subprocess
 import time
 from pathlib import Path
 from threading import Event, Thread
-from esm import AdminRequiredException, NoSaveGameFoundException, NoSaveGameMirrorFoundException, RequirementsNotFulfilledError, SaveGameMirrorExistsException
+from esm import AdminRequiredException, NoSaveGameFoundException, NoSaveGameMirrorFoundException, RequirementsNotFulfilledError, NoSaveGameMirrorFoundException, SaveGameFoundException
 from esm.EsmConfigService import EsmConfigService
 from esm.EsmDedicatedServer import EsmDedicatedServer
 from esm.EsmFileSystem import EsmFileSystem
@@ -53,21 +53,21 @@ class EsmRamdiskManager:
             log.error("Ramdisk usage is disabled in the configuration, can not prepare for ramdisk usage when it is disabled.")
             raise AdminRequiredException("Ramdisk usage is disabled in the configuration, can not prepare for ramdisk usage when it is disabled.")
 
-        savegameFolderPath = self.fileSystem.getAbsolutePathTo("saves.games.savegame")
+        savegameExists, savegameFolderPath = self.existsSavegame()
         # check that there is a savegame
-        if Path(savegameFolderPath).exists():
+        if savegameExists:
             log.debug(f"Savegame exists at '{savegameFolderPath}'")
         else:
             log.error(f"Savegame does not exist at '{savegameFolderPath}'. Either the configuration is wrong or you may want to create one.")
             raise NoSaveGameFoundException(f"no savegame found at {savegameFolderPath}")
 
-        savegameMirrorFolderPath = self.fileSystem.getAbsolutePathTo("saves.gamesmirror.savegamemirror")
+        mirrorExists, mirrorFolderPath = self.existsMirror()
         # check that there is no savegame mirror
-        if not Path(savegameMirrorFolderPath).exists():
-            log.debug(f"{savegameMirrorFolderPath} does not exist yet")
+        if not mirrorExists:
+            log.debug(f"{mirrorFolderPath} does not exist yet")
         else:
-            log.error(f"Savegame mirror does exist already at '{savegameMirrorFolderPath}'. Either the configuration is wrong or this has been installed already, or the folder needs to be deleted.")
-            raise SaveGameMirrorExistsException(f"savegame mirror at '{savegameMirrorFolderPath}' already exists.")
+            log.error(f"Savegame mirror does exist already at '{mirrorFolderPath}'. Either the configuration is wrong or this has been installed already, or the folder needs to be deleted.")
+            raise NoSaveGameMirrorFoundException(f"savegame mirror at '{mirrorFolderPath}' already exists.")
 
         # move the savegame to the hddmirror folder
         self.fileSystem.moveFileTree("saves.games.savegame", "saves.gamesmirror.savegamemirror", 
@@ -85,7 +85,7 @@ class EsmRamdiskManager:
         if ramdiskDrive.exists(): 
             log.info(f"{ramdiskDrive} already exists as a drive, assuming this is our ramdrive. If its not, please use another drive letter in the configuration.")
         else:
-            log.debug(f"{ramdiskDrive} does not exist")
+            log.info(f"{ramdiskDrive} does not exist")
             self.mountRamdrive(ramdiskDrive, ramdiskSize)
 
         # create the link savegame -> ramdisk
@@ -103,47 +103,49 @@ class EsmRamdiskManager:
         if self.config.general.externalizeTemplates==True:
             self.externalizeTemplates()
         else:
-            log.info("externalizing templates is disabled. If you have a huge savegame, consider enabling this to reduce ramdisk usage.")
+            log.warning("externalizing templates is disabled. If you have a huge savegame, consider enabling this to reduce ramdisk usage.")
 
         # sync the mirror to the ramdisk
-        savegamemirror = self.fileSystem.getAbsolutePathTo("saves.gamesmirror.savegamemirror")
-        if not savegamemirror.exists():
-            raise NoSaveGameMirrorFoundException("f{savegamemirror} does not exist! Is the configuration correct? Did you call the install action before calling the setup?")
-        log.info("Syncing mirror 2 ram")
-        self.syncMirrorToRam()
+        mirrorExists, mirrorPath = self.existsMirror()
+        if not mirrorExists:
+            raise NoSaveGameMirrorFoundException(f"{mirrorPath} does not exist! Is the configuration correct? Did you call the install action before calling the setup?")
+        log.info("Syncing mirror to ram")
+        with Timer() as timer:
+            self.syncMirrorToRam()
+        log.info(f"Syncing mirror to ram took {timer.elapsedTime}.")
         log.info("Setup completed, you may now start the server")
 
     def externalizeTemplates(self):
         """
         will move the savegame template folder from the ram back to the hdd, in a separate mirror folder and create a hardlink
         """
-        log.info(f"Externalizing Templates folder to hdd")
-        savegametemplatesPath = self.fileSystem.getAbsolutePathTo("saves.games.savegame.templates")
-        templateshddcopyPath = self.fileSystem.getAbsolutePathTo("saves.gamesmirror.savegametemplate")
+        savegameTemplatesPath = self.fileSystem.getAbsolutePathTo("saves.games.savegame.templates")
+        mirrorTemplatesPath = self.fileSystem.getAbsolutePathTo("saves.gamesmirror.savegametemplate")
         doCreateLink = True
         doMoveFolder = True
 
-        if FsTools.isHardLink(savegametemplatesPath):
-            log.info(f"Templates folder in savegame at {savegametemplatesPath} is already a hardlink.")
+        if FsTools.isHardLink(savegameTemplatesPath):
+            log.info(f"Templates folder in savegame at {savegameTemplatesPath} is already a hardlink.")
             doCreateLink = False
     
-        if templateshddcopyPath.exists():
-            log.info(f"There is already a template hdd copy at {templateshddcopyPath}.")
+        if mirrorTemplatesPath.exists():
+            log.info(f"There is already a template mirror at {mirrorTemplatesPath}.")
             doMoveFolder = False
             
         if doMoveFolder:
+            log.info(f"Externalizing Templates folder to hdd")
             # move template folder to hdd template mirror
             with Timer() as timer:
                 self.fileSystem.moveFileTree(
                     sourceDotPath="saves.games.savegame.templates", 
                     destinationDotPath="saves.gamesmirror.savegametemplate", 
-                    info=f"Moving Templates back to HDD. If your savegame is big already, this can take a while"
+                    info=f"Moving Templates from ram to hdd. If your savegame is big already, this can take a while"
                     )
-            log.info(f"Moved templates from {savegametemplatesPath} to {templateshddcopyPath} in {timer.elapsedTime}")
+            log.info(f"Moved templates from {savegameTemplatesPath} to {mirrorTemplatesPath} in {timer.elapsedTime}")
         
         if doCreateLink:
             # create link from savegame back to hdd template mirror
-            self.fileSystem.createHardLink(linkPath=savegametemplatesPath, linkTargetPath=templateshddcopyPath)
+            self.fileSystem.createHardLink(linkPath=savegameTemplatesPath, linkTargetPath=mirrorTemplatesPath)
 
     def mountRamdrive(self, driveLetter, driveSize):
         """
@@ -198,11 +200,56 @@ class EsmRamdiskManager:
         # the source should be the hardlink to ramdisk at this point, so we'll use the link as target
         self.fileSystem.copyFileTree("saves.games.savegame", "saves.gamesmirror.savegamemirror")
 
-    def uninstall(self):
+    def uninstall(self, force=False):
         """
-        reverts the changes made by the install, basically moving the savegame back to its original place, removing the mirror
+        reverts the changes made by the prepare, basically moving the savegame back to its original place, removing the mirror
+
+        if mirror and nosave: deletelink, moveback, 
+        if mirror and save: delete mirror?
+        if nomirror and nosave: nothing to do
+        if nomirror and save: nothing to do
         """
-        raise NotImplementedError("not implemented yet")
+        if not force and self.config.general.useRamdisk:
+            log.error("Ramdisk usage is enabled in the configuration, can not uninstall the ramdisk usage when it is enabled.")
+            raise AdminRequiredException("Ramdisk usage is enabled in the configuration, can not uninstall when it is enabled.")
+
+        mirrorExists, mirrorFolderPath = self.existsMirror()
+        savegameExists, savegameFolderPath = self.existsSavegame()
+
+        if mirrorExists:
+            log.info(f"Mirror at {mirrorFolderPath} exists")
+        else:
+            log.warn(f"Mirror at {mirrorFolderPath} does not exist")
+            raise NoSaveGameMirrorFoundException(f"Mirror at {mirrorFolderPath} does not exist")
+
+        if savegameExists:
+            log.error(f"Savegame exists at '{savegameFolderPath}'")
+            raise SaveGameFoundException(f"savegame found at {savegameFolderPath}")
+        else:
+            log.info(f"No Savegame at {savegameFolderPath} found")
+
+        # check and unmount ramdrive, if its there
+        ramdiskDriveLetter = self.config.ramdisk.drive
+        if Path(ramdiskDriveLetter).exists():
+            log.info(f"Unmounting ramdisk at {ramdiskDriveLetter}.")
+            try:
+                self.unmountRamdisk(driveLetter=ramdiskDriveLetter)
+            except Exception as ex:
+                raise AdminRequiredException(f"could not unmount ramdisk {ex}")
+
+        isLink = FsTools.isHardLink(savegameFolderPath)
+        if isLink:
+            FsTools.deleteLink(savegameFolderPath)
+
+        # move the mirror to the savegame folder
+        self.fileSystem.moveFileTree("saves.gamesmirror.savegamemirror", "saves.games.savegame", 
+                            f"Moving savegamemirror to old location, this may take some time if your savegame is large!")
+        
+        # remove the template mirror if there is one
+        templateMirrorPath = self.fileSystem.getAbsolutePathTo("saves.gamesmirror.savegametemplate")
+        if templateMirrorPath.exists():
+            self.fileSystem.markForDelete(templateMirrorPath)
+            self.fileSystem.commitDelete()
     
     def startSynchronizer(self, syncInterval):
         """
@@ -259,4 +306,28 @@ class EsmRamdiskManager:
         except subprocess.CalledProcessError:
             log.debug(f"No osf mounted ramdrive found as {driveLetter} or some other error happened.")
             raise AdminRequiredException(f"could not unmount ramdrive at {driveLetter}. Please check the logs")
+
+    def existsSavegame(self, checkGlobalDb=True):
+        """
+        checks that the savegamefolder exists and optionally contains a global.db
+        returns true/false and the path of the folder as a tuple
+        """
+        savegamePath = self.fileSystem.getAbsolutePathTo("saves.games.savegame")
+        if checkGlobalDb:
+            savegameExists = self.fileSystem.existsDotPath("saves.games.savegame.globaldb")
+            return savegameExists, savegamePath
+        else:
+            return savegamePath.exists(), savegamePath
+            
+    def existsMirror(self, checkGlobalDb=True):
+        """
+        checks that the savegamemirror exists and optionally contains a global.db
+        returns true/false and the path of the folder as a tuple
+        """
+        mirrorPath = self.fileSystem.getAbsolutePathTo("saves.gamesmirror.savegamemirror")
+        if checkGlobalDb:
+            mirrorExists = self.fileSystem.existsDotPath("saves.gamesmirror.savegamemirror.globaldb")
+            return mirrorExists, mirrorPath
+        else:
+            return mirrorPath.exists(), mirrorPath
 

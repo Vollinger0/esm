@@ -1,7 +1,10 @@
+class SaveGameFoundException(Exception):
+    pass
+
 class NoSaveGameFoundException(Exception):
     pass
 
-class SaveGameMirrorExistsException(Exception):
+class SaveGameMirrorFoundException(Exception):
     pass
 
 class NoSaveGameMirrorFoundException(Exception):
@@ -22,5 +25,5 @@ class ServiceNotFoundError(Exception):
 class ServerNeedsToBeStopped(Exception):
     pass
 
-class SecurityException(Exception):
+class SafetyException(Exception):
     pass

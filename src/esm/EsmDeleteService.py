@@ -49,7 +49,7 @@ class EsmDeleteService:
         if self.config.general.useRamdisk:
             # just unmount the ramdisk, if it exists.
             ramdiskDriveLetter = self.config.ramdisk.drive
-            if Path(f"{ramdiskDriveLetter}:").exists():
+            if Path(ramdiskDriveLetter).exists():
                 log.info(f"Unmounting ramdisk at {ramdiskDriveLetter}.")
                 try:
                     self.ramdiskManager.unmountRamdisk(driveLetter=ramdiskDriveLetter)

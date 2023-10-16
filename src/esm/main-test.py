@@ -41,6 +41,9 @@ def testRamdiskPrepare():
 def testRamdiskSetup():
     esm.ramdiskSetup()  
 
+def testRamdiskUninstall():
+    esm.ramdiskUninstall(force=True)
+
 def testStartServerWithSynchronizer():
     log.debug("starting server")
     esm.startServer()
@@ -88,12 +91,13 @@ esm = EsmMain(caller=__file__,
               configFileName="esm-config.yaml"
               )
 
-log.debug("Start of script")
+log.debug(f"Script {__file__} started")
 log.debug(f"Logging to: {esm.logFile}")
 
 #testInstallFromSteam()
 #testRamdiskPrepare()
 #testRamdiskSetup()
+#testRamdiskUninstall()
 #testStartStopServerNoTry()
 #testStartStopServer()
 #testStartServerWithSynchronizer()

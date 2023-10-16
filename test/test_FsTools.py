@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 import shutil
 import unittest
-from esm import SecurityException
+from esm import SafetyException
 from esm.FsTools import FsTools
 
 log = logging.getLogger(__name__)
@@ -348,7 +348,7 @@ class test_FsTools(unittest.TestCase):
         # this should work.        
         FsTools.deleteDir(moep)
 
-        with self.assertRaises(SecurityException):
+        with self.assertRaises(SafetyException):
             # this should not work.        
             FsTools.deleteDir(foo)
 

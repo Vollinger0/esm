@@ -8,7 +8,7 @@ log = logging.getLogger(__name__)
 class LogContext:
     def __enter__(self):
         self.esm = ServiceRegistry.get(EsmMain)
-        log.debug("Start of script")
+        log.debug(f"Script started")
         log.debug(f"Logging to: {self.esm.logFile}")
         log.debug(f"Using config file: {self.esm.configFilePath}")
 
@@ -43,11 +43,15 @@ def ramdiskSetup():
         esm.ramdiskSetup()
     
 @cli.command(name="ramdisk-uninstall", short_help="reverts the changes done by ramdisk-prepare.")
-def ramdiskUninstall():
+@click.option("--force", is_flag=True, default=False, help="force uninstall even if the configuration says to use a ramdisk")
+def ramdiskUninstall(force):
     """Reverts the changes done by ramdisk-prepare, moving the savegame back to its original location. Use this if you don't want to run the game on a ramdisk any more."""
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)
-        esm.ramdiskUninstall()
+        try:
+            esm.ramdiskUninstall(force=force)
+        except Exception as ex:
+            log.error(f"Error trying to uninstall: {ex}")
 
 @cli.command(name="server-start", short_help="starts the server")
 def startServer():

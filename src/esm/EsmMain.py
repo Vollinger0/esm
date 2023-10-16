@@ -2,7 +2,7 @@ from functools import cached_property
 import logging
 from pathlib import Path
 import time
-from esm import AdminRequiredException, NoSaveGameFoundException, SaveGameMirrorExistsException, UserAbortedException
+from esm import AdminRequiredException, NoSaveGameFoundException, NoSaveGameMirrorFoundException, UserAbortedException
 from esm.EsmBackupService import EsmBackupService
 from esm.EsmDeleteService import EsmDeleteService
 from esm.EsmFileSystem import EsmFileSystem
@@ -219,8 +219,48 @@ class EsmMain:
                     raise UserAbortedException("User does not want to create a new savegame")
 
     def ramdiskSetup(self):
-        raise NotImplementedError()
+        """
+        Sets up the ramdisk and all links to and from it respectively.
+        """
+        self.ramdiskManager.setup()
 
-    def ramdiskUninstall(self):
-        raise NotImplementedError()
-    
+    def ramdiskUninstall(self, force=False):
+        """
+        Checks existence of savegame and mirror, offers the user the possibility to fix that, then proceeds to revert the ramdisk-prepare and -setup stuff
+        
+        if mirror and savegame: delete savegame, move mirror
+        if mirror and nosavegame: move mirror
+        if nomirror and savegame:  do nothing
+        if nomirror and nosavegame: do nothing
+        """
+        if not force and self.config.general.useRamdisk:
+            log.error("Ramdisk usage is enabled in the configuration, can not uninstall the ramdisk usage when it is enabled.")
+            raise AdminRequiredException("Ramdisk usage is enabled in the configuration, can not uninstall when it is enabled.")
+        if force:
+            log.warning("Forcing uninstall even though the configuration is set to not use a ramdisk")
+
+        mirrorExists = self.fileSystem.existsDotPath("saves.gamesmirror.savegamemirror.globaldb")
+        mirrorPath = self.fileSystem.getAbsolutePathTo("saves.gamesmirror.savegamemirror")
+        savegameExists = self.fileSystem.existsDotPath("saves.games.savegame.globaldb")
+        savegamePath = self.fileSystem.getAbsolutePathTo("saves.games.savegame")
+
+        if mirrorExists:
+            if savegameExists:
+                log.info(f"A savegame already exists at {savegamePath}. The ramdisk stuff is either already uninstalled, there is a configuration error or the savegame needs to be deleted.")
+                if askUser(f"Delete old savegame at {savegamePath}? [yes/no] ", "yes"):
+                    self.fileSystem.markForDelete(savegamePath)
+                    self.fileSystem.commitDelete()
+                    self.ramdiskManager.uninstall(force)
+                else:
+                    log.warning("Can not uninstall the file system as long as a savegame already exists. Maybe we don't need to uninstall?")
+                    raise UserAbortedException("User does not want to delete the savegame")
+            else:
+                log.info(f"A savegame mirror exists at {mirrorPath} and no savegame exists at {savegamePath}")
+                self.ramdiskManager.uninstall(force)
+        else:
+            if savegameExists:
+                log.info(f"Savegame exists and no mirror exists. There file system is already ready to be used without a ramdisk.")
+                return False
+            else:
+                log.info(f"No savegame exists at {savegamePath}. This is either a configuration error or none exists. You might need to create a new one later.")
+                return False
