@@ -82,7 +82,6 @@ class FsTools:
             else:
                 dirPath.rmdir()
 
-
     @staticmethod
     def createFileWithContent(filePath, content):
         with open(filePath, "w") as file:

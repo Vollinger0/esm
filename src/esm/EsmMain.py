@@ -17,6 +17,21 @@ class EsmMain:
     """
     Main esm class, manages all the other modules, config, etc.
     """
+    @cached_property
+    def backupService(self) -> EsmBackupService:
+        return ServiceRegistry.get(EsmBackupService)
+
+    @cached_property    
+    def ramdiskManager(self) -> EsmRamdiskManager:
+        return ServiceRegistry.get(EsmRamdiskManager)
+    
+    @cached_property
+    def dedicatedServer(self) -> EsmDedicatedServer:
+        return ServiceRegistry.get(EsmDedicatedServer)
+    
+    @cached_property
+    def fileSystem(self) -> EsmFileSystem:
+        return ServiceRegistry.get(EsmFileSystem)
 
     def __init__(self, configFileName, caller=__name__):
         self.configFilename = configFileName
@@ -122,19 +137,3 @@ class EsmMain:
         """
         log.info("creating rolling backup")
         self.backupService.createRollingBackup()
-
-    @cached_property
-    def backupService(self):
-        return ServiceRegistry.get(EsmBackupService)
-
-    @cached_property    
-    def ramdiskManager(self) -> EsmRamdiskManager:
-        return ServiceRegistry.get(EsmRamdiskManager)
-    
-    @cached_property
-    def dedicatedServer(self) -> EsmDedicatedServer:
-        return ServiceRegistry.get(EsmDedicatedServer)
-    
-    @cached_property
-    def fileSystem(self) -> EsmFileSystem:
-        return ServiceRegistry.get(EsmFileSystem)
