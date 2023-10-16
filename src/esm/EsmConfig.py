@@ -5,7 +5,10 @@ import logging
 #log = logging.getLogger(__name__)
 
 """
-Contains all the relevant config for esm, backed by a yaml file. Extended to be a dotsi dictionary that can be accessed directly with the dot-notation.
+Contains all the relevant config for esm, backed by a yaml file. 
+Contains also the context of the application, where you can store and read any runtime info you want.
+
+Extended to be a dotsi dictionary that can be accessed directly with the dot-notation.
 """
 class EsmConfig:
 

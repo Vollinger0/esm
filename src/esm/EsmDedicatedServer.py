@@ -210,6 +210,10 @@ class EsmDedicatedServer:
     def getConfiguredStartMode(self):
         return self.getStartModeByString(self.startMode)
     
+    def stop(self, timeout):
+        # TODO: use the epmremoteclientn and send a 'saveandexit x' where x is the timeout in minutes. a 0 will stop it immediately.
+        raise NotImplementedError("not implemented yet")
+    
     def kill(self):
         if self.process:
             log.info(f"Will send the server process {self.process.pid} the kill signal")

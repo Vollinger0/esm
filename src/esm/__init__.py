@@ -7,13 +7,12 @@ def isDebugMode(config):
 
 def askUser(question, answerForTrue):
     """
-    asks the user for input
+    asks the user for input, returns true if the answer was 'answerForTrue'
     """
     log.debug(f"asking for user input: {question}")
     answer = input(question).lower()
     log.debug(f"user answered with {answer}")
     return answer==answerForTrue
-
 
 
 class NoSaveGameFoundException(Exception):

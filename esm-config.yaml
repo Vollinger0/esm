@@ -1,6 +1,7 @@
 general:
   debugMode: False
-  allowMultpleServerInstances: True
+  #allowMultpleServerInstances: True
+  externalizeTemplates: True
 
 ramdisk:
   drive: "R"
@@ -16,9 +17,9 @@ server:
     maxStartupTimeout: 15
 
 paths:
-  install: 'D:/EGS/Empyrion/'
-  osfmount: ''
-  peazip: ''
+  install: 'D:\EGS\Empyrion\'
+  osfmount: 'C:\Users\Nutzer\Programme\OSFMount\osfmount.com'
+  peazip: 'C:\Program Files\PeaZip\res\bin\7z\7z.exe'
   epmremoteclient: ''
 
 foldernames:
