@@ -1,0 +1,9 @@
+app:
+  name: My Custom App Config
+
+overwrite:
+  this:
+    nested:
+      - newvalue2
+
+onlyInCustom: foo  

@@ -52,3 +52,26 @@ class test_EsmConfigService(unittest.TestCase):
         self.assertEqual(config.context.baz, 42)
         self.assertEqual(config.backups.amount, 4)
         self.assertEqual(config.ramdisk.drive, "T:")
+
+    def test_loadingCustomConfig(self):
+        configFile = Path("./test/test.yaml").absolute()
+        config = EsmConfigService(configFilePath=configFile)
+        self.assertEqual(config.app.name, "My App")
+        self.assertIsNone(config.onlyInCustom)
+        self.assertEqual(config.onlyInBase, "bar")
+        self.assertListEqual(config.overwrite.this.nested, ["value1", "value2", "value3"])
+        self.assertEqual(config.context.configFilePath, configFile)
+        with self.assertRaises(KeyError):
+            self.assertIsNone(config.context.customConfigFilePath, configFile)
+
+        # now with custom config overwriting the base config
+        configFile = Path("./test/test.yaml").absolute()
+        customFile = Path("./test/custom.yaml").absolute()
+        config = EsmConfigService(configFilePath=configFile, customConfigFilePath=customFile)
+        self.assertEqual(config.app.name, "My Custom App Config")
+        self.assertEqual(config.onlyInCustom, "foo")
+        self.assertEqual(config.onlyInBase, "bar")
+        self.assertListEqual(config.overwrite.this.nested, ["newvalue2"])
+
+        self.assertEqual(config.context.configFilePath, configFile)
+        self.assertEqual(config.context.customConfigFilePath, customFile)

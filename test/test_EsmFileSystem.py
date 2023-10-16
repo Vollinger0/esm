@@ -13,7 +13,7 @@ log = logging.getLogger(__name__)
 class test_EsmFileSystem(unittest.TestCase):
 
     def test_walkablePathTree(self):
-        esmConfig = EsmConfigService(configFilePath="esm-config.yaml")
+        esmConfig = EsmConfigService(configFilePath="esm-base-config.yaml")
         esmfs = EsmFileSystem(config=esmConfig)
         log.debug(f"esmfs: {esmfs}")
         log.debug(f"esmfs.structure: {esmfs.structure}")
@@ -46,7 +46,7 @@ class test_EsmFileSystem(unittest.TestCase):
         self.assertEqual("R:/EsmDediGame", path)
 
     def test_createHardLink(self):
-        esmConfig = EsmConfigService(configFilePath="esm-config.yaml")
+        esmConfig = EsmConfigService(configFilePath="esm-base-config.yaml")
         esmfs = EsmFileSystem(config=esmConfig)
         target = Path("test-linktarget")
         link = Path("test-link")
@@ -77,7 +77,7 @@ class test_EsmFileSystem(unittest.TestCase):
 
     # @unittest.skip("this is too dangerous to keep yet, FSTools need to make sure it doesn't delete too much!")
     def test_deleteByPattern(self):
-        esmConfig = EsmConfigService(configFilePath="esm-config.yaml")
+        esmConfig = EsmConfigService(configFilePath="esm-base-config.yaml")
         esmfs = EsmFileSystem(config=esmConfig)
         FsTools.quickDelete("pattern_test")
 
@@ -106,7 +106,7 @@ class test_EsmFileSystem(unittest.TestCase):
         FsTools.quickDelete("pattern_test")
 
     def test_deleteAndCommit(self):
-        esmConfig = EsmConfigService(configFilePath="esm-config.yaml")
+        esmConfig = EsmConfigService(configFilePath="esm-base-config.yaml")
         esmfs = EsmFileSystem(config=esmConfig)
         FsTools.quickDelete("delete_test")
 

@@ -20,3 +20,13 @@ numbers:
     - 1.1
     - 2.2
     - 3.3
+
+overwrite:
+  this:
+    nested:
+      - value1
+      - value2
+      - value3
+      
+onlyInBase: bar
+  

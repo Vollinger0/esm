@@ -26,15 +26,13 @@
 [x] change delete functions so that the path has to be at least 3 levels deep before deleting anything?
 [x] change delete functions so that it maintains a list and the user is asked at the end.
 [x] usecase: deinstall ramdisk
-
+[x] add proper cli - use the click library to extend the scripts with command line tools
+[x] debugmode
 
 ### WIP
-[+] debugmode
-[+] add proper cli - use the click library to extend the scripts with command line tools
-
+[+] split the config in a "basic" config, an custom config that overwrites the basic config.
 
 ### later
-[ ] split the config in a "basic" config, an expert config, and add support for more (config for the wipe-tool e.g.)
 [+] when useRamdisk is enabled, enable checks for its file structure, when its not, do not start use the synchronizer (of course)
 [ ] offer some kind of better interactive mode for different stuff
 [ ] implement allowMultpleServerInstances switch. Once enabled, do not check for running instances of the game before starting, do not start if startmode is set to direct, etc.

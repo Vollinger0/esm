@@ -93,8 +93,9 @@ def testStartAndWait():
 ## main code start
 ######################################################
 # initialize config and logging
-esm = EsmMain(caller=__file__,
-              configFileName="esm-config.yaml"
+esm = EsmMain(caller="esm-test",
+              configFileName="esm-config.yaml",
+              customConfigFileName="esm-custom-config.yaml",              
               )
 
 log.debug(f"Script {__file__} started")
@@ -107,7 +108,7 @@ log.debug(f"Logging to: {esm.logFile}")
 #testStartStopServerNoTry()
 #testStartStopServer()
 #testStartServerWithSynchronizer()
-testStartAndWait()
+#testStartAndWait()
 #testUpdateGame()
 #testBackup()
 #testStaticBackup()

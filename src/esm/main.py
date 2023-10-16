@@ -11,7 +11,10 @@ class LogContext:
         self.esm = ServiceRegistry.get(EsmMain)
         log.debug(f"Script started")
         log.debug(f"Logging to: {self.esm.logFile}")
-        log.debug(f"Using config file: {self.esm.configFilePath}")
+        if self.esm.customConfigFileName:
+            log.debug(f"Using base config file: {self.esm.configFilePath} and custom config: {self.esm.customConfigFilePath}")
+        else:
+            log.debug(f"Using base config file: {self.esm.configFilePath}")
 
     def __exit__(self, exc_type, exc_value, traceback):
         log.info(f"Script finished. Check the logfile ({self.esm.logFile}) if you missed something. Bye!")
@@ -20,15 +23,18 @@ class LogContext:
 #@click.option('--log', default="esm", short_help='logfile name, .log will be appended', show_default=True)
 @click.group(epilog='Brought to you by hamster, coffee and pancake symphatisants')
 @click.option('-v', '--verbose', is_flag=True, help='set loglevel on console to DEBUG')
-def cli(verbose):
+@click.option('-c', '--config', default="esm-custom-config.yaml", metavar='<file>', show_default=True, help="set the custom config file to use")
+def cli(verbose, config):
     """ 
     ESM, the Empyrion Server Manager - will help you set up an optional ramdisk, run the server, do rolling backups and other things efficiently.
     Optimized for speed to be used for busy servers with huge savegames.
+
+    Make sure to check the configuration before running stuff.
     """
     if verbose:
-        init(streamLogLevel=logging.DEBUG)
+        init(streamLogLevel=logging.DEBUG, customConfig=config)
     else:
-        init(streamLogLevel=logging.INFO)
+        init(streamLogLevel=logging.INFO, customConfig=config)
 
 @cli.command(name="ramdisk-prepare", short_help="prepares the file system for ramdisk setup")
 def ramdiskPrepare():
@@ -134,9 +140,10 @@ def getEsm():
 def start():
     cli()
 
-def init(fileLogLevel=logging.DEBUG, streamLogLevel=logging.INFO):
+def init(fileLogLevel=logging.DEBUG, streamLogLevel=logging.INFO, customConfig="esm-custom-config.yaml"):
     esm = EsmMain(caller="esm",
-                configFileName="esm-config.yaml",
+                configFileName="esm-base-config.yaml",
+                customConfigFileName=customConfig,
                 fileLogLevel=fileLogLevel,
                 streamLogLevel=streamLogLevel
                 )

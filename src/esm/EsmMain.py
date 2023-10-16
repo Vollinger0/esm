@@ -44,8 +44,9 @@ class EsmMain:
     def deleteService(self) -> EsmDeleteService:
         return ServiceRegistry.get(EsmDeleteService)
 
-    def __init__(self, configFileName, caller=__name__, fileLogLevel=logging.DEBUG, streamLogLevel=logging.DEBUG):
+    def __init__(self, configFileName, customConfigFileName=None, caller=__name__, fileLogLevel=logging.DEBUG, streamLogLevel=logging.DEBUG):
         self.configFilename = configFileName
+        self.customConfigFileName = customConfigFileName
         self.caller = caller
 
         # set up logging
@@ -53,13 +54,16 @@ class EsmMain:
         EsmLogger.setUpLogging(self.logFile, fileLogLevel=fileLogLevel, streamLogLevel=streamLogLevel)
 
         # set up config
-        self.configFilePath = Path(configFileName).absolute()
+        self.configFilePath = Path(configFileName).absolute().resolve()
         context = {           
             'configFilePath': self.configFilePath,
             'logFile': self.logFile,
             'caller': self.caller
-        }            
-        self.config = ServiceRegistry.register(EsmConfigService(configFilePath=self.configFilePath, context=context))
+        }
+        if customConfigFileName:
+            self.customConfigFilePath = Path(customConfigFileName).absolute().resolve()
+            context.update({'customConfigFilePath': self.customConfigFilePath})
+        self.config = ServiceRegistry.register(EsmConfigService(configFilePath=self.configFilePath, customConfigFilePath=customConfigFileName, context=context))
 
         # in debug mode, monkey patch all functions that may alter the file system or execute other programs.
         if isDebugMode(self.config):
