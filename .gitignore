@@ -1,5 +1,6 @@
 esm-main.log
 esm-main_robocopy.log
 esm_robocopy.log
+test.log
 __pycache__/
 *.pyc

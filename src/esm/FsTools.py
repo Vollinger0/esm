@@ -153,16 +153,16 @@ class FsTools:
     @staticmethod
     def hasEnoughFreeDiskSpace(driveToCheck, minimumSpaceHuman):
         """
-        checks if given drive has enough free space, returns True if yes, otherwise False
+        checks if given drive has enough free space, returns a tuple with True if yes, otherwise False
+        The returned tuple is (bool, freeSpace, freeSpaceHuman)
         """
         minimumSpace = FsTools.humanToRealFileSize(minimumSpaceHuman)
         freeSpace = shutil.disk_usage(path=driveToCheck).free
         freeSpaceHuman = FsTools.realToHumanFileSize(freeSpace)
-        log.debug(f"Free space on drive {driveToCheck} is {freeSpaceHuman}. Configured minimum is {minimumSpaceHuman}")
         if freeSpace < minimumSpace:
-            return False
+            return False, freeSpace, freeSpaceHuman
         else:
-            return True
+            return True, freeSpace, freeSpaceHuman
 
     @staticmethod        
     def isGlobPattern(path):

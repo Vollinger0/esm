@@ -14,53 +14,13 @@ log.debug("Start of script")
 log.debug(f"Logging to: {esm.logFile}")
 log.debug(f"debugging is: {esm.config.general.debugMode}")
 
-def resolve_paths(paths, parent_directory="."):
-    resolved_paths = []
-
-    # Convert parent_directory to an absolute path
-    parent_directory = Path(parent_directory).absolute()
-
-    for path in paths:
-        # Check if the path is an absolute path
-        if Path(path).absolute():
-            # Expand glob patterns and append to the resolved_paths list
-            resolved_paths.extend(glob(path))
-        else:
-            # Resolve relative paths, expand glob patterns, and append to the resolved_paths list
-            absolute_path = Path(parent_directory).absolute().joinpath(path)
-            resolved_paths.extend(glob(absolute_path))
-
-    return resolved_paths
+def testMultipleReturnValues():
+    return "Hello", 43, "world"
 
 
-userentries = [
-    "d:/egs/empyrion/test.txt",
-    "d:/egs/empyrion/*.txt",
-    "foo/bar/baz.txt",
-    "foo/bar/*.txt"
-    ]
+test1 = testMultipleReturnValues()
+test2, test22, test23 = testMultipleReturnValues()
 
-parent = Path(".").absolute()
-
-entries = []
-
-for entry in userentries:
-    log.debug(f"entry: {entry}")
-
-    if Path(entry).absolute():
-        if FsTools.isGlobPattern(entry):
-            entries.extend(glob(entry))
-        else:
-            entries.append(entry)
-    else:
-        if FsTools.isGlobPattern(entry):
-            entries.extend(glob(entry))
-        else:
-            entries.append(Path(parent).joinpath(entry))
-            
-log.debug(f"entries {entries}")
-
-test = resolve_paths(userentries)
-log.debug(f"test: {test}")
-
+log.debug(f"test1 {test1}")
+log.debug(f"test2 {test2}, test22 {test22}, test23 {test23}")
 

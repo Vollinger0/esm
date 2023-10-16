@@ -246,6 +246,9 @@ class EsmBackupService:
         create a static backup to zip, this will use the latest rolling backup mirror as source.
         """
         latestBackupNumber = self.getPreviousBackupNumber()
+        if latestBackupNumber is None:
+            log.error("Could not find the latest backup, this means the rolling backups do either not exist or are not valid. Please create a rolling backup first!")
+            raise AdminRequiredException("Could not create static backup, since there is no valid latest rolling backup to use. Please create a backup first.")
         latestBackupFolder = self.getRollingBackupFolder(latestBackupNumber)
 
         staticBackupFileName = self.getStaticBackupFileName()
@@ -329,6 +332,8 @@ class EsmBackupService:
         """
         drive = self.fileSystem.getAbsolutePathTo("backup").drive
         minimum = self.config.backups.minDiskSpaceForStaticBackup
-        if not FsTools.hasEnoughFreeDiskSpace(drive, minimum):
+        hasSpace, freeSpace, freeSpaceHuman = FsTools.hasEnoughFreeDiskSpace(drive, minimum)
+        log.debug(f"Free space on drive {drive} is {freeSpaceHuman}. Configured minimum to create a backup is {minimum}")
+        if not hasSpace:
             log.error(f"The drive {drive} has not enough free disk space, the minimum required to create a static backup is configured to be {minimum}")
             raise AdminRequiredException("Space on the drive is running out, will not create a static backup")
