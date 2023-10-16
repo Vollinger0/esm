@@ -37,7 +37,9 @@ def ramdiskPrepare():
 
 @cli.command(name="ramdisk-setup", short_help="sets up the ramdisk")
 def ramdiskSetup():
-    """Sets up the ramdisk - this will actually mount it and copy the hdd mirror to it. Use this after a server reboot before starting the server."""
+    """Sets up the ramdisk - this will actually mount it and copy the hdd mirror to it. Use this after a server reboot before starting the server.
+    This might need admin privileges, so prepare to confirm the elevated privileges prompt from windows.
+    """
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)
         esm.ramdiskSetup()
@@ -45,7 +47,9 @@ def ramdiskSetup():
 @cli.command(name="ramdisk-uninstall", short_help="reverts the changes done by ramdisk-prepare.")
 @click.option("--force", is_flag=True, default=False, help="force uninstall even if the configuration says to use a ramdisk")
 def ramdiskUninstall(force):
-    """Reverts the changes done by ramdisk-prepare, moving the savegame back to its original location. Use this if you don't want to run the game on a ramdisk any more."""
+    """Reverts the changes done by ramdisk-prepare, moving the savegame back to its original location. Use this if you don't want to run the game on a ramdisk any more.
+    This might need admin privileges, so prepare to confirm the elevated privileges prompt from windows.
+    """
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)
         try:
@@ -70,11 +74,49 @@ def stopServer():
         except TimeoutError as ex:
             log.error(f"Could not stop server, it is probably not running at all. {ex}")
 
+@cli.command(name="backup-create", short_help="creates a blazing fast rolling backup")
+def createBackup():
+    """Creates a new rolling mirror backup from the savegame mirror, can be done while the server is running if it is in ramdisk mode."""
+    with LogContext():
+        esm = ServiceRegistry.get(EsmMain)
+        esm.createBackup()
+
+@cli.command(name="backup-static-create", short_help="creates a static zipped backup")
+def createStaticBackup():
+    """Creates a new static and zipped backup of the latest rolling backup. Can be done while the server is running if it is in ramdisk mode."""
+    with LogContext():
+        esm = ServiceRegistry.get(EsmMain)
+        esm.createStaticBackup()
+
+@cli.command(name="game-install", short_help="installs the Empyrion Galactic Survival Dedicated Server via steam")
+def installGame():
+    """Installs the game via steam using the configured paths."""
+    with LogContext():
+        esm = ServiceRegistry.get(EsmMain)
+        esm.installGame()
+
+@cli.command(name="game-update", short_help="updates the via steam and executes additional commands")
+def updateGame():
+    """Updates the game via steam and executes the additional copy tasks listed in the configuration"""
+    with LogContext():
+        esm = ServiceRegistry.get(EsmMain)
+        esm.updateGame()
+
+@cli.command(name="delete-all", short_help="deletes everything related to the currently configured savegame interactively")
+def deleteAll():
+    """Deletes the savegame, all the related rolling backups, all eah data, logs and executes all configured delete tasks to be able to start a fresh new savegame.
+    This uses delete operations that are optimized for maximum speed and efficiency, which you'll need to delete millions of files.
+    """
+    with LogContext():
+        esm = ServiceRegistry.get(EsmMain)
+        esm.deleteAll()
+
 @cli.command(short_help="just a test!")
 def test():
     """long help text """
-    with LogContext():    
-        log.info("Hi!")
+    with LogContext():
+        esm = ServiceRegistry.get(EsmMain)
+        log.info(f"Hi! {esm}")
 
 def getEsm():
     return ServiceRegistry.get(EsmMain)

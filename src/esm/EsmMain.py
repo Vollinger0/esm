@@ -2,7 +2,7 @@ from functools import cached_property
 import logging
 from pathlib import Path
 import time
-from esm import AdminRequiredException, NoSaveGameFoundException, NoSaveGameMirrorFoundException, UserAbortedException
+from esm import AdminRequiredException, UserAbortedException
 from esm.EsmBackupService import EsmBackupService
 from esm.EsmDeleteService import EsmDeleteService
 from esm.EsmFileSystem import EsmFileSystem
@@ -161,7 +161,7 @@ class EsmMain:
     
     def deleteAll(self):
         """
-        Deletes the savegame, the related rolling backups, all ehh data, logs etc.
+        Deletes the savegame, the related rolling backups, all eah data, logs etc.
         
         Asks user if he's sure and offers to create a static backup first.
         """
