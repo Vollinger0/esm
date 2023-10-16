@@ -5,7 +5,7 @@ import unittest
 from esm.EsmConfig import EsmConfig
 
 from esm.EsmFileSystem import EsmFileSystem
-from esm.Jointpoint import Jointpoint
+from esm.FsTools import FsTools
 
 log = logging.getLogger(__name__)
 
@@ -49,8 +49,8 @@ class test_EsmFileStructure(unittest.TestCase):
 
         self.assertTrue(target.exists())
         self.assertTrue(link.exists())
-        self.assertTrue(Jointpoint.isHardLink(link))
-        self.assertFalse(Jointpoint.isHardLink(target))
+        self.assertTrue(FsTools.isHardLink(link))
+        self.assertFalse(FsTools.isHardLink(target))
 
         # clean up
         self.cleanTestFolders(target, link)

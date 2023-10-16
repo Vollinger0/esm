@@ -5,7 +5,7 @@ from threading import Event, Thread
 import time
 from esm import NoSaveGameFoundException, NoSaveGameMirrorFoundException, RequirementsNotFulfilledError, SaveGameMirrorExistsException
 from esm.EsmFileSystem import EsmFileSystem
-from esm.Jointpoint import Jointpoint
+from esm.FsTools import FsTools
 
 log = logging.getLogger(__name__)
 
@@ -78,7 +78,7 @@ class EsmRamdiskManager:
         linkTarget = self.fs.getAbsolutePathTo("ramdisk.savegame", prefixInstallDir=False)
         if not linkTarget.exists():
             linkTarget.mkdir()
-        if Jointpoint.isHardLink(link):
+        if FsTools.isHardLink(link):
             log.debug(f"{link} exists and is already a hardlink")
         else:
             self.fs.createJointpoint(link, linkTarget)
@@ -108,7 +108,7 @@ class EsmRamdiskManager:
         doCreateLink = True
         doMoveFolder = True
 
-        if Jointpoint.isHardLink(savegametemplatesPath):
+        if FsTools.isHardLink(savegametemplatesPath):
             log.info(f"Templates folder in savegame at {savegametemplatesPath} is already a hardlink.")
             doCreateLink = False
     

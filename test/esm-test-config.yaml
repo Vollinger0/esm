@@ -1,11 +1,14 @@
 general:
   #debugMode: True
   debugMode: False
+  #allowMultpleServerInstances: True
   externalizeTemplates: True
+  useRamdisk: True
 
 ramdisk:
   drive: "T"
   size: "5G"
+  synchronizeramtohddinterval: 60 # interval in seconds at which to do a ram2hdd sync for the savegame. if interval=0 the sync will be disabled! Recommended to leave at 3600 (1h)
 
 server:
   dedicatedYaml: 'esm-dedicated.yaml'
@@ -13,8 +16,12 @@ server:
   #startMode: 'direct'
   startMode: 'launcher'
   gfxMode: True
+  startUpSleepTime: 15 # min amount of time in seconds to wait for a server start up before we try doing anything with it
   launcher:
     maxStartupTimeout: 15
+
+backups:
+  amount: 4
 
 paths:
   install: 'D:\EGS\Empyrion\esm\test\empyrion'

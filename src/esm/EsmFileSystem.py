@@ -4,7 +4,7 @@ import shutil
 import dotsi
 
 from esm import isDebugMode, robocopy
-from esm.Jointpoint import Jointpoint
+from esm.FsTools import FsTools
 
 log = logging.getLogger(__name__)
 
@@ -38,7 +38,6 @@ class EsmFileSystem:
             },
             "logs" : {
                 "_parent": conf.foldernames.logs
-
             },
             "saves": {
                 "_parent": conf.foldernames.saves, 
@@ -137,12 +136,12 @@ class EsmFileSystem:
         creates a jointpoint from given source to given destination
         """
         log.info(f"Creating link from {linkPath} -> {linkTargetPath}")
-        Jointpoint.create(linkPath, linkTargetPath)
+        FsTools.createLink(linkPath, linkTargetPath)
 
-    def quickDelete(self, targetPath):
+    def delete(self, targetPath):
         """
         quickly delete a folder and all its content
         """
         log.debug(f"deleting {targetPath} with shutil.rmtree")
-        shutil.rmtree(ignore_errors=True, path=targetPath)
+        FsTools.quickDelete(targetPath)
         log.debug(f"done deleting")

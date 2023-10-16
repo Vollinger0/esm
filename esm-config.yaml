@@ -19,6 +19,9 @@ server:
   launcher:
     maxStartupTimeout: 15 # max amount of time in seconds to find the dedicated exe after calling the launcher.
 
+backups:
+  amount: 4
+
 paths:
   install: 'D:\EGS\Empyrion\'
   osfmount: 'C:\Users\Nutzer\Programme\OSFMount\osfmount.com'
@@ -41,7 +44,7 @@ foldernames:
 filenames:
   globaldb: 'global.db'
   buildNumber: 'BuildNumber.txt'
-  chatlines: 'hamster_sync_lines.txt'
+  #chatlines: 'hamster_sync_lines.txt'
   dedicatedExe: 'EmpyrionDedicated.exe'
   launcherExe: 'EmpyrionLauncher.exe'
 
