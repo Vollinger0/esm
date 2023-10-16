@@ -3,6 +3,7 @@ import os
 from pathlib import Path
 import shutil
 import unittest
+from esm import SecurityException
 from esm.FsTools import FsTools
 
 log = logging.getLogger(__name__)
@@ -320,3 +321,36 @@ class test_FsTools(unittest.TestCase):
         for entry in deglobbedEntries:
             result.append(str(entry).lower())
         self.assertListEqual(sorted(expected), sorted(result))
+
+    def test_pathContainsSubPath(self):
+        path1 = Path("d:/egs/empyrion")
+        path2 = Path("d:/egs/empyrion/esm")
+        path3 = Path("d:/egs/")
+        path4 = Path("esm/test")
+        path5 = Path("../../")
+        path6 = Path("..")
+        path7 = Path(".")
+
+        self.assertTrue(FsTools.pathContainsSubPath(path=path1, subPath=path1))
+        self.assertTrue(FsTools.pathContainsSubPath(path=path1, subPath=path2))
+        self.assertFalse(FsTools.pathContainsSubPath(path=path1, subPath=path3))
+        self.assertTrue(FsTools.pathContainsSubPath(path=path1, subPath=path4))
+        self.assertFalse(FsTools.pathContainsSubPath(path=path1, subPath=path5))
+        # should this be false?
+        self.assertTrue(FsTools.pathContainsSubPath(path=path1, subPath=path6))
+        self.assertTrue(FsTools.pathContainsSubPath(path=path1, subPath=path7))
+
+    def test_deleteSafetyMeasures(self):
+        moep = Path(r"D:\foo_bar_baz\bla\moep")
+        foo = Path(r"D:\foo_bar_baz")
+        moep.mkdir(exist_ok=True, parents=True)
+
+        # this should work.        
+        FsTools.deleteDir(moep)
+
+        with self.assertRaises(SecurityException):
+            # this should not work.        
+            FsTools.deleteDir(foo)
+
+        # actually delete unsafely :D
+        shutil.rmtree(foo)
