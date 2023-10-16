@@ -23,11 +23,11 @@ class EsmFileSystem:
             self.config = config
 
     @cached_property
-    def config(self):
+    def config(self) -> EsmConfigService:
         return ServiceRegistry.get(EsmConfigService)
     
     @cached_property
-    def structure(self):
+    def structure(self) -> dotsi.Dict:
         return self.getStructureFromConfig(self.config)
 
     def getStructureFromConfig(self, config):
