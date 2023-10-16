@@ -10,26 +10,26 @@ class Jointpoint:
     represents hardlink/jointpoint in the file system
     """
     @staticmethod
-    def create(link, target):
+    def create(linkPath, targetPath):
         """
         create a windows hardlink (jointpoint) as link to the linktarget using mklink
         """
         # looks like none of the python-libararies can do this without running into problems
         # calling the shell command works flawlessly...
-        return subprocess.run(f"mklink /H /J {link} {target}", capture_output=True, shell=True)
+        return subprocess.run(f"mklink /H /J {linkPath} {targetPath}", capture_output=True, shell=True)
 
     @staticmethod
-    def delete(link):
-        linkPath = Path(link)
+    def delete(linkPath):
+        linkPath = Path(linkPath)
         if linkPath.is_dir:
             linkPath.rmdir()
         else:
             linkPath.unlink(missing_ok=True)
 
     @staticmethod
-    def isHardLink(link):
+    def isHardLink(linkPath):
         try:
-            if os.readlink(link):
+            if os.readlink(linkPath):
                 return True
             else:
                 return False

@@ -4,7 +4,7 @@ import time
 from halo import Halo
 from psutil import TimeoutExpired
 from esm import AdminRequiredException, askUser
-from esm.EsmFileStructure import EsmFileStructure
+from esm.EsmFileSystem import EsmFileSystem
 from esm.EsmLogger import EsmLogger
 from esm.EsmConfig import EsmConfig
 from esm.EsmDedicatedServer import EsmDedicatedServer
@@ -46,7 +46,7 @@ class EsmMain:
         return EsmDedicatedServer.withConfig(self.config)
     
     def createEsmFileStructure(self):
-        return EsmFileStructure(self.config)
+        return EsmFileSystem(self.config)
     
     def createEsmRamdiskManager(self, dedicatedServer):
         return EsmRamdiskManager(self.config, dedicatedServer)

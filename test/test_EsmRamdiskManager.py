@@ -6,7 +6,7 @@ import unittest
 from esm import EsmLogger
 from esm.EsmConfig import EsmConfig
 from esm.EsmDedicatedServer import EsmDedicatedServer
-from esm.EsmFileStructure import EsmFileStructure
+from esm.EsmFileSystem import EsmFileSystem
 from esm.EsmRamdiskManager import EsmRamdiskManager
 from esm.Jointpoint import Jointpoint
 
@@ -16,7 +16,7 @@ class test_EsmRamdiskManager(unittest.TestCase):
 
     def test_install(self):
         self.config = EsmConfig.fromConfigFile("test/esm-test-config.yaml")
-        self.fs = EsmFileStructure(self.config)
+        self.fs = EsmFileSystem(self.config)
         self.ds = EsmDedicatedServer.withConfig(self.config)
         self.rdm = EsmRamdiskManager(self.config, dedicatedServer=self.ds)
 
@@ -39,7 +39,7 @@ class test_EsmRamdiskManager(unittest.TestCase):
     @unittest.skip("only execute this manually, since it requires admin privileges and will pop up that window for the user.")
     def test_setup(self):
         self.config = EsmConfig.fromConfigFile("test/esm-test-config.yaml")
-        self.fs = EsmFileStructure(self.config)
+        self.fs = EsmFileSystem(self.config)
         self.ds = EsmDedicatedServer.withConfig(self.config)
         self.rdm = EsmRamdiskManager(self.config, dedicatedServer=self.ds)
 
@@ -60,12 +60,12 @@ class test_EsmRamdiskManager(unittest.TestCase):
         ramdiskSavegame = self.fs.getAbsolutePathTo("ramdisk.savegame", prefixInstallDir=False)
         self.assertTrue(ramdiskSavegame.exists())
         self.assertTrue(savegamePath.exists())
-        self.assertTrue(Jointpoint.isHardLink(link=savegamePath))
+        self.assertTrue(Jointpoint.isHardLink(linkPath=savegamePath))
         self.assertTrue(savegameMirror.exists())
 
         # check externalizeTemplate worked
         savegameTemplates = self.fs.getAbsolutePathTo("saves.games.savegame.templates")
-        self.assertTrue(Jointpoint.isHardLink(link=savegameTemplates))
+        self.assertTrue(Jointpoint.isHardLink(linkPath=savegameTemplates))
         templateshddcopy = self.fs.getAbsolutePathTo("saves.gamesmirror.savegametemplate")
         self.assertTrue(templateshddcopy.exists())
 

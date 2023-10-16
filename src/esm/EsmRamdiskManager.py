@@ -4,7 +4,7 @@ import subprocess
 from threading import Event, Thread
 import time
 from esm import NoSaveGameFoundException, NoSaveGameMirrorFoundException, RequirementsNotFulfilledError, SaveGameMirrorExistsException
-from esm.EsmFileStructure import EsmFileStructure
+from esm.EsmFileSystem import EsmFileSystem
 from esm.Jointpoint import Jointpoint
 
 log = logging.getLogger(__name__)
@@ -19,7 +19,7 @@ class EsmRamdiskManager:
         self.dedicatedServer = dedicatedServer
         self.synchronizerShutdownEvent = None
         self.synchronizerThread = None
-        self.fs = EsmFileStructure(config)
+        self.fs = EsmFileSystem(config)
 
     def install(self):
         """
@@ -119,15 +119,15 @@ class EsmRamdiskManager:
         if doMoveFolder:
             # move template folder to hdd template mirror
             self.fs.moveFileTree(
-                source="saves.games.savegame.templates", 
-                destination="saves.gamesmirror.savegametemplate", 
+                sourceDotPath="saves.games.savegame.templates", 
+                destinationDotPath="saves.gamesmirror.savegametemplate", 
                 info=f"Moving Templates back to HDD. If your savegame is big already, this can take a while"
                 )
             log.info(f"Moved templates from {savegametemplatesPath} to {templateshddcopyPath}")
         
         if doCreateLink:
             # create link from savegame back to hdd template mirror
-            self.fs.createJointpoint(link=savegametemplatesPath, linkTarget=templateshddcopyPath)
+            self.fs.createJointpoint(linkPath=savegametemplatesPath, linkTargetPath=templateshddcopyPath)
 
     def mountRamdrive(self, driveLetter, driveSize):
         """
