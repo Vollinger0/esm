@@ -11,6 +11,10 @@ server:
   savegame: 'EsmDediGame'
   gfxMode: True
 
+ramdisk:
+  size: "1G"
+  synchronizeRamToMirrorInterval: 30 
+
 backups:
   additionalBackupPaths: 
     # list of full paths to source files or directories to backup additionally. Those will all end up in the folder "Additional" in the backup.
@@ -29,16 +33,14 @@ updates:
     #- {src: 'D:\EGS\Empyrion\test.txt', dst: 'D:\temp'}
 
 deletes:
-  additionalDeletes:
-    # add paths to files/directories that shall be deleted additionally to the savegame, like mod data, etc.. This accepts filesystem globbing (wildcards) like *.dat or similar.
+  additionalDeletes: # additional paths of stuff to delete when using the "deleteall" command
+    # paths to files/directories could point to like mod data, etc.. This accepts filesystem globbing (wildcards) like *.dat or similar.
     # if a path is relative, it will be assumed to be relative to the installation path.
     - 'test.txt'
     # - 'Content\Mods\EncryptoidModPack\Mods\AdminTetherport\Database'
 
-
 galaxy:
-  #faction Territory Definitions (look up their definitions in the file "$scenario/Content/Configuration/GalaxyConfig.ecf" of your scenario)
-  territories:
+  territories: #faction Territory Definitions (look up their definitions in the file "$scenario/Content/Configuration/GalaxyConfig.ecf" of your scenario)
     - faction: "blade"
       center-x: 155
       center-y: 10

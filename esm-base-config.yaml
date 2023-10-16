@@ -43,11 +43,11 @@ updates:
     #- {src: 'D:\EGS\Empyrion\test.txt', dst: 'D:\temp'}
 
 deletes:
-  backupGameLogs: True # backup all game logs
-  backupEahLogs: True  # backup all eah logs
-  backupEsmLogs: True  # backup all esm logs
-  additionalDeletes:
-    # add paths to files/directories that shall be deleted additionally to the savegame, like mod data, etc.. This accepts filesystem globbing (wildcards) like *.dat or similar.
+  backupGameLogs: True # backup all game logs on deleteall command?
+  backupEahLogs: True  # backup all eah logs on deleteall command?
+  backupEsmLogs: True  # backup all esm logs on deleteall command?
+  additionalDeletes: # additional paths of stuff to delete when using the "deleteall" command
+    # paths to files/directories could point to like mod data, etc.. This accepts filesystem globbing (wildcards) like *.dat or similar.
     # if a path is relative, it will be assumed to be relative to the installation path.
     - 'test.txt'
     # - 'Content\Mods\EncryptoidModPack\Mods\AdminTetherport\Database'

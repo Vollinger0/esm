@@ -36,11 +36,13 @@
 [x] implement server-callback with epmremoteclient
 
 ### WIP
-
+[ ] tool: deletes the "discovered by" flags (potentially also for wipes/purges)
 
 ### later
+[ ] wipes from the wipetool should appear in cb:wipes? Do i need to alter EAHs database too?
+[ ] usecase: purge galaxy
 [ ] add more epmclient functions, especially the sync event announcements. needs more work from notoats.
-[ ] make sure the script only runs one? probably by opening up a port, that way there's no need for cleanups.
+[ ] make sure the script only runs once? probably by opening up a port, that way there's no need for cleanups.
 [ ] interactive mode for wipe galaxy tool
 [+] when useRamdisk is enabled, enable checks for its file structure, when its not, do not start use the synchronizer (of course)
 [ ] offer some kind of better interactive mode for different stuff
@@ -49,10 +51,7 @@
 [ ] implement warning/talkback to server chat for syncs, backups probably even random stuff with funny hamster sentences.
 [ ] integrity check: checks if things fit together (e.g. dedicated.yaml config), our own config when running multiple instances, etc.
     * or adapt config to dedicated.yaml, especially when paths change. probably as a sanity check implementation
-[ ] wipes from the wipetool should appear in cb:wipes? Do i need to alter EAHs database too?
 [+] create separate windows-gui thingy that resides in the taskbar or similar and provides a shortcut to the cli tool.
 
 ### optional
-[ ] usecase: purge galaxy
-[ ] tool: deletes the "discovered by" flags (potentially also for wipes/purges)
 [-] usecase: create configuration? => probably not needed. the custom config covers our needs.
