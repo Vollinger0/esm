@@ -1,9 +1,5 @@
-from glob import glob
 import logging
-from pathlib import Path
-
 from esm.EsmMain import EsmMain
-from esm.FsTools import FsTools
 
 esm = EsmMain(caller=__file__,
               configFileName="esm-config.yaml"
@@ -23,4 +19,3 @@ test2, test22, test23 = testMultipleReturnValues()
 
 log.debug(f"test1 {test1}")
 log.debug(f"test2 {test2}, test22 {test22}, test23 {test23}")
-

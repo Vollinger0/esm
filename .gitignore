@@ -1,6 +1,8 @@
-esm-main.log
-esm-main_robocopy.log
+main.log
+esm.log
 esm_robocopy.log
 test.log
 __pycache__/
 *.pyc
+.venv
+src/esm.egg-info

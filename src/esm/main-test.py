@@ -119,6 +119,6 @@ log.debug(f"Logging to: {esm.logFile}")
 #testStaticBackup()
 #testInstallFromSteam()
 #testUpdateGame()
-testDeleteAll()
+#testDeleteAll()
 
 log.info(f"Script finished successfully. Check the logfile ({esm.logFile}) if you missed something. Bye!")
