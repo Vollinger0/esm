@@ -35,9 +35,10 @@
 [x] re-mount option for when ramdisk size has to be updated or ramdisk is down for some reason.
 
 ### WIP
-[ ] implement server-callback with epmremoteclient
+[+] implement server-callback with epmremoteclient
 
 ### later
+[ ] make sure the script only runs one? probably by opening up a port, that way there's no need for cleanups.
 [ ] interactive mode for wipe galaxy tool
 [+] when useRamdisk is enabled, enable checks for its file structure, when its not, do not start use the synchronizer (of course)
 [ ] offer some kind of better interactive mode for different stuff

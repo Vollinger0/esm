@@ -2,7 +2,7 @@ from functools import cached_property
 import logging
 from pathlib import Path
 import time
-from esm import AdminRequiredException, UserAbortedException, WrongParameterError
+from esm import AdminRequiredException, ServerNeedsToBeStopped, UserAbortedException, WrongParameterError
 from esm.DataTypes import Territory, WipeType
 from esm.EsmBackupService import EsmBackupService
 from esm.EsmDeleteService import EsmDeleteService
@@ -49,6 +49,10 @@ class EsmMain:
     @cached_property    
     def wipeService(self) -> EsmWipeService:
         return ServiceRegistry.get(EsmWipeService)
+    
+    @cached_property
+    def config(self) -> EsmConfigService:
+        return ServiceRegistry.get(EsmConfigService)
 
     def __init__(self, configFileName="esm-base-config.yaml", customConfigFileName="esm-custom-config.yaml", caller=__name__, fileLogLevel=logging.DEBUG, streamLogLevel=logging.DEBUG):
         self.configFilename = configFileName
@@ -61,18 +65,18 @@ class EsmMain:
 
         # set up config
         self.configFilePath = Path(configFileName).absolute().resolve()
+        self.customConfigFilePath = Path(customConfigFileName).absolute().resolve()
         context = {           
             'configFilePath': self.configFilePath,
+            'customConfigFileName': self.customConfigFilePath,
             'logFile': self.logFile,
             'caller': self.caller
         }
-        if customConfigFileName:
-            self.customConfigFilePath = Path(customConfigFileName).absolute().resolve()
-            context.update({'customConfigFilePath': self.customConfigFilePath})
-        self.config = ServiceRegistry.register(EsmConfigService(configFilePath=self.configFilePath, customConfigFilePath=customConfigFileName, context=context))
+        esmConfig = EsmConfigService(configFilePath=self.configFilePath, customConfigFilePath=self.customConfigFilePath, context=context)
+        ServiceRegistry.register(esmConfig)
 
         # in debug mode, monkey patch all functions that may alter the file system or execute other programs.
-        if isDebugMode(self.config):
+        if isDebugMode(esmConfig):
             monkeyPatchAllFSFunctionsForDebugMode()
         
     def createNewSavegame(self):
@@ -106,8 +110,12 @@ class EsmMain:
 
     def startServer(self):
         """
-        Will start the server (and the ramdisk synchronizer, if ramdisk is enabled)
+        Will start the server (and the ramdisk synchronizer, if ramdisk is enabled). Function returns once the server has been started.
         """
+        if self.dedicatedServer.isRunning():
+            log.warning("A server is already running!")
+            return
+
         if self.config.general.useRamdisk:
             syncInterval = self.config.ramdisk.synchronizeRamToMirrorInterval
             if syncInterval>0:
@@ -155,7 +163,7 @@ class EsmMain:
         """
         log.info(f"Starting server")
         self.startServer()
-        log.info(f"Server started. Waiting for it to shut down.")
+        log.info(f"Server started. Waiting until it shut down or stopped existing.")
         self.waitForEnd()
         log.info(f"Server shut down. Executing shutdown tasks.")
         self.onShutdown()
@@ -169,7 +177,7 @@ class EsmMain:
         log.info(f"Trying to stop the server by sending the saveandexit command.")
         success = self.dedicatedServer.sendExitRetryAndWait(interval=self.config.server.sendExitInterval, additionalTimeout=self.config.server.sendExitTimeout)
         if success:
-            log.info(f"Server shut down")
+            log.info(f"Server shut down or not running any more.")
 
     def createBackup(self):
         """
@@ -223,6 +231,9 @@ class EsmMain:
         if nomirror and savegame:  do prepare
         if nomirror and nosavegame: create new, do prepare
         """
+        if self.dedicatedServer.isRunning():
+            raise ServerNeedsToBeStopped("Can not execute ramdisk prepare if the server is running. Please stop it first.")
+
         mirrorExists, mirrorPath = self.ramdiskManager.existsMirror()
         savegameExists, savegamePath = self.ramdiskManager.existsSavegame()
 
@@ -257,6 +268,9 @@ class EsmMain:
         """
         Sets up the ramdisk and all links to and from it respectively.
         """
+        if self.dedicatedServer.isRunning():
+            raise ServerNeedsToBeStopped("Can not execute ramdisk setup if the server is running. Please stop it first.")
+
         self.ramdiskManager.setup()
 
     def ramdiskUninstall(self, force=False):
@@ -268,6 +282,9 @@ class EsmMain:
         if nomirror and savegame:  do nothing
         if nomirror and nosavegame: do nothing
         """
+        if self.dedicatedServer.isRunning():
+            raise ServerNeedsToBeStopped("Can not execute ramdisk uninstall if the server is running. Please stop it first.")
+
         if not force and self.config.general.useRamdisk:
             log.error("Ramdisk usage is enabled in the configuration, can not uninstall the ramdisk usage when it is enabled.")
             raise AdminRequiredException("Ramdisk usage is enabled in the configuration, can not uninstall when it is enabled.")
@@ -306,6 +323,9 @@ class EsmMain:
         Takes about a minute to wipe 50k playfields on a 30GB savegame. 
         Comparison: EAH's "wipe empty playfield" function takes 36hs and does not take into account terrain placeables.
         """
+        if nodrymode and self.dedicatedServer.isRunning():
+            raise ServerNeedsToBeStopped("Can not execute wipe empty playfields with --nodrymode if the server is running. Please stop it first.")
+
         if dbLocation is None:
             dbLocation = self.fileSystem.getAbsolutePathTo("saves.games.savegame.globaldb")
         else:
@@ -333,8 +353,11 @@ class EsmMain:
 
     def ramdiskRemount(self):
         """
-        just unmounts and mounts the ramdisk again. Can be used when the ramdisk size configuration changed. Will just unmount and call the setip.
+        just unmounts and mounts the ramdisk again. Can be used when the ramdisk size configuration changed. Will just unmount and call the setup.
         """
+        if self.dedicatedServer.isRunning():
+            raise ServerNeedsToBeStopped("Can not remount the ramdrive if the server is running. Please stop it first.")
+
         if not self.config.general.useRamdisk:
             log.error("Ramdisk usage is disabled in the configuration, remount the ramdisk if its not enabled.")
             raise AdminRequiredException("Ramdisk usage is disabled in the configuration, remount the ramdisk if its not enabled.")

@@ -6,11 +6,10 @@ from pathlib import Path
 from threading import Event, Thread
 from esm import AdminRequiredException, NoSaveGameFoundException, NoSaveGameMirrorFoundException, RequirementsNotFulfilledError, NoSaveGameMirrorFoundException, SaveGameFoundException
 from esm.EsmConfigService import EsmConfigService
-from esm.EsmDedicatedServer import EsmDedicatedServer
 from esm.EsmFileSystem import EsmFileSystem
 from esm.FsTools import FsTools
 from esm.ServiceRegistry import Service, ServiceRegistry
-from esm.Tools import Timer, getElapsedTime, getTimer
+from esm.Tools import Timer
 
 log = logging.getLogger(__name__)
 
@@ -20,11 +19,9 @@ class EsmRamdiskManager:
     class that manages anything related to the ramdisk, that includes install, setup, deinstall, syncs and so on.
     
     """
-    def __init__(self, config=None, dedicatedServer=None, fileSystem=None):
+    def __init__(self, config=None, fileSystem=None):
         if config:
             self.config = config
-        if dedicatedServer:
-            self.dedicatedServer = dedicatedServer
         if fileSystem:
             self.fileSystem = fileSystem
 
@@ -34,10 +31,6 @@ class EsmRamdiskManager:
     @cached_property
     def config(self) -> EsmConfigService:
         return ServiceRegistry.get(EsmConfigService)
-
-    @cached_property        
-    def dedicatedServer(self) -> EsmDedicatedServer:
-        return ServiceRegistry.get(EsmDedicatedServer)
 
     @cached_property
     def fileSystem(self) -> EsmFileSystem:
@@ -331,3 +324,17 @@ class EsmRamdiskManager:
         else:
             return mirrorPath.exists(), mirrorPath
 
+    def existsRamdisk(self, raiseException=True):
+        """
+        make sure the ramdisk exists if ramdisk is enabled. Does only check for drive letter, not driver itself.
+        """
+        ramdiskEnabled = self.config.general.useRamdisk
+        if ramdiskEnabled:
+            ramdiskDrive = Path(self.config.ramdisk.drive)
+            if ramdiskDrive.exists():
+                return True
+            else:
+                if raiseException:
+                    raise AdminRequiredException(f"Ramdisk is enabled but it does not exist as drive {ramdiskDrive}. Make sure to run the ramdisk setup first!")
+                else:
+                    return False

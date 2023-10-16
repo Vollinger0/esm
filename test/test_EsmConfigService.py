@@ -65,13 +65,21 @@ class test_EsmConfigService(unittest.TestCase):
             self.assertIsNone(config.context.customConfigFilePath, configFile)
 
         # now with custom config overwriting the base config
-        configFile = Path("./test/test.yaml").absolute()
-        customFile = Path("./test/custom.yaml").absolute()
-        config = EsmConfigService(configFilePath=configFile, customConfigFilePath=customFile)
-        self.assertEqual(config.app.name, "My Custom App Config")
-        self.assertEqual(config.onlyInCustom, "foo")
-        self.assertEqual(config.onlyInBase, "bar")
-        self.assertListEqual(config.overwrite.this.nested, ["newvalue2"])
+        newConfigFile = Path("./test/test.yaml").absolute()
+        newCustomFile = Path("./test/custom.yaml").absolute()
+        newConfig = EsmConfigService(configFilePath=newConfigFile, customConfigFilePath=newCustomFile)
+        self.assertEqual(newConfig.app.name, "My Custom App Config")
+        self.assertEqual(newConfig.onlyInCustom, "foo")
+        self.assertEqual(newConfig.onlyInBase, "bar")
+        self.assertListEqual(newConfig.overwrite.this.nested, ["newvalue2"])
 
-        self.assertEqual(config.context.configFilePath, configFile)
-        self.assertEqual(config.context.customConfigFilePath, customFile)
+        self.assertEqual(newConfig.context.configFilePath, configFile)
+        self.assertEqual(newConfig.context.customConfigFilePath, newCustomFile)
+
+        self.assertEqual(newConfig.app.sub_config.value1, "abc")
+        self.assertEqual(newConfig.numbers.integers, [1,2,3])
+
+    def test_loadingRealConfig(self):
+        config = EsmConfigService(configFilePath="esm-base-config.yaml", customConfigFilePath="esm-custom-config.yaml")
+        self.assertEqual(config.server.savegame, "EsmDediGame")
+        self.assertEqual(config.server.minDiskSpaceForStartup, "500M")

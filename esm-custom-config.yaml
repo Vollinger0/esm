@@ -13,7 +13,7 @@ server:
 backups:
   additionalBackupPaths: 
     # list of full paths to source files or directories to backup additionally. Those will all end up in the folder "Additional" in the backup.
-    - 'D:\EGS\Empyrion\esm\esm-config.yaml' # our own configuration
+    - 'D:\EGS\Empyrion\esm\esm-custom-config.yaml' # our own configuration
     - 'D:\EGS\Empyrion\Content\Mods\EncryptoidModPack' # the whole modpack
 
 updates: 

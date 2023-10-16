@@ -207,8 +207,11 @@ class EsmBackupService:
                 fileName = Path(sourcePath).name
                 targetFilePath = f"{targetPath}/{fileName}"
                 log.debug(f"Copying additional file from {sourcePath} -> {targetFilePath}")
-                FsTools.copyFile(source=sourcePath, destination=targetFilePath)
-    
+                if sourcePath.exists():
+                    FsTools.copyFile(source=sourcePath, destination=targetFilePath)
+                else:
+                    log.warn(f"Configured source at {sourcePath} does not exist.")
+
     def createBackupLink(self, targetBackupFolder):
         """
         create the symlink in the parent backup folder to the rolling backup, returns its path

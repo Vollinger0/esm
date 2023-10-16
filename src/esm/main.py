@@ -97,7 +97,7 @@ def startServer():
         esm = ServiceRegistry.get(EsmMain)
         start = getTimer()
         esm.startServerAndWait()
-        log.info(f"Server shut down after {getElapsedTime(start)}")
+        log.info(f"Server was running for {getElapsedTime(start)} and has stopped now.")
 
 
 @cli.command(name="server-stop", short_help="shuts down a running server")
@@ -195,6 +195,7 @@ def test():
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)
         log.info(f"Hi! {esm}")
+        log.info(f"savegame will be {esm.config.server.savegame}")
 
 
 def getEsm():
