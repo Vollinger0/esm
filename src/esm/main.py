@@ -126,6 +126,25 @@ def deleteAll():
         esm = ServiceRegistry.get(EsmMain)
         esm.deleteAll()
 
+@cli.command(name="wipe-empty-playfields", short_help="wipes empty playfields for a given territory or galaxy-wide")
+@click.option('--dblocation', metavar='file', help="location of database file to be used optionally with --dryode")
+@click.option('--territory', help="territory to wipe")
+@click.option('--wipetype', help="wipe type")
+@click.option('--drymode', is_flag=True, default=True, show_default=True, help="set to False to actually execute the wipe on the disk")
+def wipeEmptyPlayfields(dblocation, territory, wipetype, drymode):
+    """Will wipe playfields without players, player owned structures, terrain placeables for a given territory or galaxy wide.
+    This requires the server to be shut down, since it needs access to the current state of the savegame and the filesystem.
+    This feature is equivalent to EAH's "wipe empty playfields" feature, but takes only 1 minute for a 30GB savegame, compared to 36hs of EAH, and also considers terrain placeables (which get wiped in EAH)
+    
+    Defaults to use a dry mode, so the results are only written to a file for you to check.
+
+    If you use the dry mode just to see how it works, you may aswell define a different savegame database with the corresponding option.
+    """
+    with LogContext():
+        esm = ServiceRegistry.get(EsmMain)
+        esm.wipeEmptyPlayfields(dbLocation=dblocation, territory=territory, wipeType=wipetype, dryMode=drymode)
+
+
 @cli.command(short_help="for development purposes")
 def test():
     """used for development purposes"""

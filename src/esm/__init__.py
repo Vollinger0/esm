@@ -27,3 +27,6 @@ class ServerNeedsToBeStopped(Exception):
 
 class SafetyException(Exception):
     pass
+
+class WrongParameterError(Exception):
+    pass
