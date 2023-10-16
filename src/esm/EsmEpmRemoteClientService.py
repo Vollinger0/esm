@@ -52,8 +52,9 @@ class EsmEpmRemoteClientService:
     def sayOnServer(self, name, message):
         """
         sends a "say 'message'" to the server via the epmremoteclient and returns immediately. 
-        You need to check if the server stopped successfully via the other methods
         returns the completed process of the remote client.
+
+        Unluckily, this is currently only a server message.
         """
         # use the epmremoteclient and send a 'say "message"'
         epmrc = self.getEpmRemoteClientPath()

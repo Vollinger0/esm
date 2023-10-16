@@ -293,6 +293,9 @@ class EsmDedicatedServer:
         self.waitForEnd(timeout)
 
     def isRunning(self):
+        """
+        returns true if the server process is still running. if for some reason the process is unknown, will look for it in the process list.
+        """
         if not self.process:
             self.process = self.findDedicatedExeProcess()
             if not self.process:
@@ -300,6 +303,9 @@ class EsmDedicatedServer:
         return self.process.is_running()
         
     def waitForEnd(self, timeout=60):
+        """
+        basically the same as #isRunning(), but this wait until the found process waits or exit with after a timeout
+        """
         if not self.process:
             self.process = self.findDedicatedExeProcess()
             if not self.process:
