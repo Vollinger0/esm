@@ -88,6 +88,10 @@ def testStartAndWait():
     esm.startServerAndWait()
     log.info(f"Server shut down after {getElapsedTime(start)}")
 
+def testClearDiscoveredBy():
+    esm.wipeService.clearDiscoveredByInfoForSolarSystems()
+
+
 
 ######################################################
 ## main code start
@@ -113,5 +117,6 @@ log.debug(f"Logging to: {esm.logFile}")
 #testBackup()
 #testStaticBackup()
 #testDeleteAll()
+testClearDiscoveredBy()
 
 log.info(f"Script finished successfully. Check the logfile ({esm.logFile}) if you missed something. Bye!")

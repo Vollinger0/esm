@@ -210,7 +210,7 @@ class EsmBackupService:
                 if sourcePath.exists():
                     FsTools.copyFile(source=sourcePath, destination=targetFilePath)
                 else:
-                    log.warn(f"Configured source at {sourcePath} does not exist.")
+                    log.warn(f"Configured additional backup source at {sourcePath} does not exist.")
 
     def createBackupLink(self, targetBackupFolder):
         """

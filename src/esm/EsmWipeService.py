@@ -3,6 +3,7 @@ import logging
 from math import sqrt
 from pathlib import Path
 from typing import List
+from esm import WrongParameterError
 from esm.DataTypes import Playfield, SolarSystem, Territory, WipeType
 from esm.EsmConfigService import EsmConfigService
 from esm.EsmDatabaseWrapper import EsmDatabaseWrapper
@@ -76,13 +77,9 @@ class EsmWipeService:
         """
         creates a csv with the playfields that would have been wiped, to verify the results if needed, or whatever.        
         """
-        csvFilename = Path(f"esm-wipe_{territory}_{wipeType}.csv")
+        csvFilename = Path(f"esm-wipe_{territory}_{wipeType}.csv").absolute()
         log.info(f"Will output the list of playfields that would have been wiped as '{csvFilename}'")
-        with open(csvFilename, 'w') as file:
-            file.write("playfield_id,playfield_name,system_id,system_name\n")
-            for playfield in playfields:
-                file.write(f"{playfield.pfid},{playfield.name},{playfield.ssid},{playfield.starName}\n")
-        log.info("CSV file written. Nothing was changed in the current savegame. Please remember that this list gets instantly outdated once players play the game.")
+        self.printListOfPlayfieldsAsCSV(csvFilename=csvFilename, playfields=playfields)
 
     def getAvailableTerritories(self) -> List[Territory]:
         """
@@ -120,3 +117,42 @@ class EsmWipeService:
         # calculate distance of given star to center of the custom territory. if its bigger than its radiuis, we assume its outside.
         distance = sqrt(((solarsystem.x - customTerritory.x)**2) + ((solarsystem.y - customTerritory.y)**2) + ((solarsystem.z - customTerritory.z)**2))
         return (distance <= customTerritory.radius)
+
+    def clearDiscoveredByInfoForSolarSystems(self, solarsystems: List[SolarSystem], nodrymode, database=None, dbLocation=None):
+        """
+        clears the discoveredbyInfo for the solarsystems, by resolving the list of playfields first.
+        """
+        if database is None:
+            if dbLocation is None:
+                raise WrongParameterError("neither database nor dblocation was provided to access the database")
+            database = EsmDatabaseWrapper(dbLocation)
+        # get the list of playfields for the solarsystems
+        playfields = database.retrieveDiscoveredPlayfieldsForSolarSystems(solarsystems);
+        return self.clearDiscoveredByInfoForPlayfields(playfields, nodrymode, database=database)
+        
+    def clearDiscoveredByInfoForPlayfields(self, playfields: List[Playfield], nodrymode, database=None, dbLocation=None):
+        """
+        clears the discoveredbyInfo for the given playfields
+        """
+        if database is None:
+            if dbLocation is None:
+                raise WrongParameterError("neither database nor dblocation was provided to access the database")
+            database = EsmDatabaseWrapper(dbLocation)
+        if nodrymode:
+            log.debug("will delete given playfields from the discovered playfields table")
+            database.deleteFromDiscoveredPlayfields(playfields=playfields)
+            database.closeDbConnection()
+        else:
+            csvFilename = Path(f"esm-cleardiscoveredby.csv").absolute()
+            log.info(f"Will output the list of playfields whose discoverd by info would have been cleared '{csvFilename}'")
+            self.printListOfPlayfieldsAsCSV(csvFilename=csvFilename, playfields=playfields)
+    
+    def printListOfPlayfieldsAsCSV(self, csvFilename, playfields):
+        """
+        creates a csv with the given playfields that would have been altered, to verify the results if needed, or whatever.
+        """
+        with open(csvFilename, 'w') as file:
+            file.write("playfield_id,playfield_name,system_id,system_name\n")
+            for playfield in playfields:
+                file.write(f"{playfield.pfid},{playfield.name},{playfield.ssid},{playfield.starName}\n")
+        log.info("CSV file written. Nothing was changed in the current savegame. Please remember that this list gets instantly outdated once players play the game.")

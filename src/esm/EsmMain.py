@@ -380,3 +380,24 @@ class EsmMain:
         
         log.info("Calling ramdisk setup to mount it again with the current configuration and sync the savegame again.")
         self.ramdiskSetup()
+
+    def clearDiscoveredByInfos(self, dblocation, nodrymode, inputFile=None, inputNames=None):
+        """
+        resolves the given system- and playfieldnames from the file or the names array and clears the discovered by info for these.
+        """
+        names = []
+        if inputNames:
+            names.extend(inputNames)
+        if inputFile:
+            inputFilePath = Path(inputFile).resolve()
+            if inputFilePath.exists():
+                with open(inputFilePath, "r") as file:
+                    names.extend(file.readlines())
+            else:
+                raise WrongParameterError(f"input file at '{inputFilePath}' not found")
+
+        log.info(f"Clearing discovered by infos for {len(names)} names.")
+        #playfieldNames, systemNames = self.extractSystemAndPlayfieldNames(names)
+
+    def extractSystemAndPlayfieldNames(self,names):
+        pass
