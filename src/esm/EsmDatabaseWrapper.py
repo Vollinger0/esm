@@ -35,10 +35,10 @@ class EsmDatabaseWrapper:
             self.dbConnectString = f"file:/{self.getGameDbPath().as_posix()}?mode={mode}"
         return self.dbConnectString
     
-    def getGameDbConnection(self) -> sqlite3.Connection:
+    def getGameDbConnection(self, mode="ro") -> sqlite3.Connection:
         if not self.dbConnection:
             log.debug(f"Opening game database at {self.gameDbPath}")
-            dbConnectString = self.getGameDbString()
+            dbConnectString = self.getGameDbString(mode)
             log.debug(f"using database connect string {dbConnectString}")
             self.dbConnection = sqlite3.connect(dbConnectString, uri=True)
         return self.dbConnection
@@ -49,9 +49,9 @@ class EsmDatabaseWrapper:
             self.dbConnection.close()
             self.dbConnection = None
 
-    def getGameDbCursor(self):
+    def getGameDbCursor(self, mode="ro"):
         if not self.gameDbCursor:
-            connection = self.getGameDbConnection()
+            connection = self.getGameDbConnection(mode)
             self.gameDbCursor = connection.cursor()
         return self.gameDbCursor
 

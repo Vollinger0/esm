@@ -3,6 +3,7 @@ import logging
 from pathlib import Path
 import time
 from esm import AdminRequiredException, ServerNeedsToBeStopped, UserAbortedException, WrongParameterError
+from esm import Tools
 from esm.DataTypes import Territory, WipeType
 from esm.EsmBackupService import EsmBackupService
 from esm.EsmDeleteService import EsmDeleteService
@@ -381,9 +382,10 @@ class EsmMain:
         log.info("Calling ramdisk setup to mount it again with the current configuration and sync the savegame again.")
         self.ramdiskSetup()
 
-    def clearDiscoveredByInfos(self, dblocation, nodrymode, inputFile=None, inputNames=None):
+    def clearDiscoveredByInfos(self, dbLocation, nodrymode, inputFile=None, inputNames=None):
         """
-        resolves the given system- and playfieldnames from the file or the names array and clears the discovered by info for these.
+        resolves the given system- and playfieldnames from the file or the names array and clears the discovered by info for these completely
+        The game saves an entry for every player, even if it was discovered before, so this tool will delete them all so it goes back to "Undiscovered".
         """
         names = []
         if inputNames:
@@ -395,9 +397,14 @@ class EsmMain:
                     names.extend(file.readlines())
             else:
                 raise WrongParameterError(f"input file at '{inputFilePath}' not found")
-
+            
+        if dbLocation is None:
+            dbLocation = self.fileSystem.getAbsolutePathTo("saves.games.savegame.globaldb")
+        else:
+            dbLocationPath = Path(dbLocation).resolve()
+            if dbLocationPath.exists():
+                dbLocation = str(dbLocationPath)
+            else:
+                raise WrongParameterError(f"DbLocation '{dbLocation}' is not a valid database location path.")
         log.info(f"Clearing discovered by infos for {len(names)} names.")
-        #playfieldNames, systemNames = self.extractSystemAndPlayfieldNames(names)
-
-    def extractSystemAndPlayfieldNames(self,names):
-        pass
+        self.wipeService.clearDiscoveredByInfo(dbLocation=dbLocation, names=names, nodrymode=nodrymode)
