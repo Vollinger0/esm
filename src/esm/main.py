@@ -116,7 +116,7 @@ def stopServer():
             log.error(f"Could not stop server. Is it running at all? {ex}")
 
 
-@cli.command(name="server-resume", short_help="resumes execution if the gameserver is still running")
+@cli.command(name="server-resume", short_help="resumes execution of the script if the gameserver is still running")
 def resumeServer():
     """Looks for a running server and restarts inner processes accordingly (e.g. the ram synchronizer). Will end when the server shuts down, just like server-start."""
     with LogContext():
