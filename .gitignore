@@ -12,3 +12,4 @@ src/esm.egg-info
 esm.egg-info
 build/
 esm-cleardiscoveredby.csv
+namelist_s6.txt
