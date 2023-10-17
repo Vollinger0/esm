@@ -1,10 +1,11 @@
 import logging
 import click
+from halo import Halo
 from esm import WrongParameterError
 from esm.DataTypes import Territory, WipeType
 from esm.ServiceRegistry import ServiceRegistry
 from esm.EsmMain import EsmMain
-from esm.Tools import getElapsedTime, getTimer, isDebugMode
+from esm.Tools import getElapsedTime, getTimer
 
 log = logging.getLogger(__name__)
 
@@ -96,7 +97,9 @@ def startServer():
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)
         start = getTimer()
-        esm.startServerAndWait()
+        with Halo(text="Server running", spinner="dots") as spinner:
+            esm.startServerAndWait()
+            spinner.succeed("Server shut down")
         log.info(f"Server was running for {getElapsedTime(start)} and has stopped now.")
 
 
