@@ -83,27 +83,27 @@ class EsmDatabaseWrapper:
         return solarsystems
 
     def retrievePFsWithPlayerStructures(self) -> List[Playfield]:
-        log.debug("finding playfields with player structures")
+        log.debug("finding playfields containing player structures")
         pfsWithStructures = []
         for row in self.getGameDbCursor().execute("SELECT pfid, name FROM playfields WHERE pfid IN (SELECT e.pfid FROM Entities e INNER JOIN Structures s ON e.entityid = s.entityid WHERE (ispoi = 0) and (facid > 0) OR ((ispoi = 1) AND (etype = 3) AND (facid > 0) AND (bpname NOT LIKE '%OPV%')) OR ((ispoi = 1) AND (etype != 3) AND (facid > 0))) ORDER BY name;"):
             pfsWithStructures.append(Playfield(pfid=row[0], name=row[1]))
-        log.debug(f"playfields with player structures: {len(pfsWithStructures)}")
+        log.debug(f"playfields containing player structures: {len(pfsWithStructures)}")
         return pfsWithStructures
 
     def retrievePFsWithPlaceables(self) -> List[Playfield]:
-        log.debug("finding playfields with terrain placeables")
+        log.debug("finding playfields containing terrain placeables")
         pfsWithPlaceables = []
         for row in self.getGameDbCursor().execute("SELECT distinct playfields.pfid, playfields.name from TerrainPlaceables LEFT JOIN playfields ON TerrainPlaceables.pfid = playfields.pfid;"):
             pfsWithPlaceables.append(Playfield(pfid=row[0], name=row[1]))
-        log.debug(f"playfields with terrain placeables: {len(pfsWithPlaceables)}")
+        log.debug(f"playfields containing terrain placeables: {len(pfsWithPlaceables)}")
         return pfsWithPlaceables
 
     def retrievePFsWithPlayers(self) -> List[Playfield]:
-        log.debug("finding playfields with players on them")
+        log.debug("finding playfields containing players")
         pfsWithPlayers = []
         for row in self.getGameDbCursor().execute("select playfields.pfid, playfields.name from Entities LEFT JOIN playfields ON Entities.pfid = playfields.pfid WHERE Entities.etype = 1;"):
             pfsWithPlayers.append(Playfield(pfid=row[0], name=row[1]))
-        log.debug(f"playfields with players on them: {len(pfsWithPlayers)}")
+        log.debug(f"playfields containing players: {len(pfsWithPlayers)}")
         return pfsWithPlayers
 
     def retrieveAllNonEmptyPlayfields(self) -> List[Playfield]:
@@ -138,14 +138,14 @@ class EsmDatabaseWrapper:
 
         # do the deletions in batches, to avoid memory usage and performance issues.
         for i in range(0, len(pfIds), batchSize):
-            pfIdBatch = pfIds[i:i+batchSize]        
+            pfIdBatch = pfIds[i:i+batchSize]
+            log.debug(f"deleting batch {i}-{i+batchSize} with {len(pfIdBatch)} pfids")
             query = "DELETE FROM DiscoveredPlayfields WHERE pfid IN ({})".format(','.join(['?'] * len(pfIdBatch)))
             cursor.execute(query, pfIdBatch)
+            log.debug(f"deleted {cursor.rowcount} entries from DiscoveredPlayfields")
 
         connection = self.getGameDbConnection()
         connection.commit()
-        log.debug(f"deleted {cursor.rowcount} entries from DiscoveredPlayfields")
-
 
     def retrieveSolarsystemsByName(self, solarsystemNames: List[str]) -> List[SolarSystem]:
         """return a list of solar systems which match the given names"""

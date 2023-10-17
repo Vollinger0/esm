@@ -3,7 +3,6 @@ import logging
 from pathlib import Path
 import time
 from esm import AdminRequiredException, ServerNeedsToBeStopped, UserAbortedException, WrongParameterError
-from esm import Tools
 from esm.DataTypes import Territory, WipeType
 from esm.EsmBackupService import EsmBackupService
 from esm.EsmDeleteService import EsmDeleteService
@@ -21,7 +20,10 @@ log = logging.getLogger(__name__)
 
 class EsmMain:
     """
-    Main esm class, manages all the other modules, config, etc.
+    main esm class, manages all the other modules, config, tools etc.
+
+    this will also handle any user input and exceptions, so the service classes can focus on the task to be solved.
+    make sure that no delegate actually asks the user for input.
     """
     @cached_property
     def backupService(self) -> EsmBackupService:
@@ -316,7 +318,7 @@ class EsmMain:
                 log.info(f"No savegame exists at {savegamePath}. This is either a configuration error or none exists. You might need to create a new one later.")
                 return False
             
-    def wipeEmptyPlayfields(self, dbLocation=None, wipeType=None, territory=None, nodrymode=False):
+    def wipeEmptyPlayfields(self, dbLocation=None, wipeType=None, territory=None, nodrymode=False, nocleardiscoveredby=False):
         """
         Wipes all defined playfields with the defined wipetype, filtering out any playfield that has a player, player owned structure or terrain placeable on it.
 
@@ -343,14 +345,14 @@ class EsmMain:
         else:
             raise WrongParameterError(f"Territory '{territory}' not valid, must be one of: {Territory.GALAXY} or {atn}")
 
-        wtl = list(map(lambda x: x.value.val, list(WipeType)))
+        wtl = WipeType.valueList()
         if wipeType and wipeType in wtl:
             log.debug(f"valid wipetype selected '{wipeType}'")
         else:
             raise WrongParameterError(f"Wipe type '{wipeType}' not valid, must be one of: {wtl}")
         
-        log.info(f"Calling wipe empty playfields for dbLocation: '{dbLocation}' territory '{territory}', wipeType '{wipeType}' and nodrymode '{nodrymode}'")
-        self.wipeService.wipeEmptyPlayfields(dbLocation, territory, wipeType, nodrymode)
+        log.info(f"Calling wipe empty playfields for dbLocation: '{dbLocation}' territory '{territory}', wipeType '{wipeType}', nodrymode '{nodrymode}', nocleardiscoveredby '{nocleardiscoveredby}'")
+        self.wipeService.wipeEmptyPlayfields(dbLocation, territory, WipeType.byName(wipeType), nodrymode, nocleardiscoveredby)
 
     def ramdiskRemount(self):
         """

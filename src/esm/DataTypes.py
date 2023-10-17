@@ -46,7 +46,11 @@ class Playfield:
     def __hash__(self):
         return hash(self.pfid)
     
-WipeTypeInfo = namedtuple("WipeTypeInfo", ["val", "desc"])
+class WipeTypeInfo:
+    def __init__(self, name: str, description: str) -> None:
+        self.name = name
+        self.description = description
+
 class WipeType(Enum):
     """
     contains the available wipe types
@@ -60,5 +64,9 @@ class WipeType(Enum):
     @staticmethod
     def byName(name):
         for wt in list(WipeType):
-            if wt.value.val == name:
+            if wt.value.name == name:
                 return wt
+            
+    @staticmethod
+    def valueList():
+        return list(map(lambda x: x.value.name, list(WipeType)))

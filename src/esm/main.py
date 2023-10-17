@@ -24,7 +24,9 @@ class LogContext:
         log.info(f"Script finished. Check the logfile ({self.esm.logFile}) if you missed something. Bye!")
 
 #
-#  start of cli (click) configuration for the script. see https://click.palletsprojects.com/ for help
+# start of cli (click) configuration for the script. see https://click.palletsprojects.com/ for help
+#
+# this file is the main cli interface and entry point for the script and module.
 #
 @click.group(epilog='Brought to you by hamster, coffee and pancake symphatisants')
 @click.option('-v', '--verbose', is_flag=True, help='set loglevel on console to DEBUG')
@@ -159,11 +161,12 @@ def deleteAll():
 @cli.command(name="tool-wipe-empty-playfields", short_help="wipes empty playfields for a given territory or galaxy-wide")
 @click.option('--dblocation', metavar='file', help="location of database file to be used in dry mode. Defaults to use the current savegames DB")
 @click.option('--territory', help=f"territory to wipe, use {Territory.GALAXY} for the whole galaxy or any of the configured ones")
-@click.option('--wipetype', help=f"wipe type, one of: {list(map(lambda x: x.value.val, list(WipeType)))}")
+@click.option('--wipetype', help=f"wipe type, one of: {WipeType.valueList()}")
+@click.option('--nocleardiscoveredby', is_flag=True, help="If set, will *not* clear the discovered by infos from the wiped playfields")
 @click.option('--nodrymode', is_flag=True, help="set to actually execute the wipe on the disk. A custom --dblocation will be ignored!")
 @click.option('--showtypes', is_flag=True, help=f"show the supported wipetypes")
 @click.option('--showterritories', is_flag=True, help=f"show the configured territories")
-def wipeEmptyPlayfields(dblocation, territory, wipetype, nodrymode, showtypes, showterritories):
+def wipeEmptyPlayfields(dblocation, territory, wipetype, nodrymode, showtypes, showterritories, nocleardiscoveredby):
     """Will wipe playfields without players, player owned structures, terrain placeables for a given territory or the whole galaxy.
     This requires the server to be shut down, since it needs access to the current state of the savegame and the filesystem.
     This feature is similar to EAH's "wipe empty playfields" feature, but also considers terrain placeables (which get wiped in EAH).
@@ -184,10 +187,10 @@ def wipeEmptyPlayfields(dblocation, territory, wipetype, nodrymode, showtypes, s
             return
 
         if nodrymode and dblocation:
-            log.error(f"--nodrymode and --dblocation can not be used together")
+            log.error(f"--nodrymode and --dblocation can not be used together for safety reasons.")
         else:
             try:
-                esm.wipeEmptyPlayfields(dbLocation=dblocation, territory=territory, wipeType=wipetype, nodrymode=nodrymode)
+                esm.wipeEmptyPlayfields(dbLocation=dblocation, territory=territory, wipeType=wipetype, nodrymode=nodrymode, nocleardiscoveredby=nocleardiscoveredby)
             except WrongParameterError as ex:
                 log.error(f"Wrong Parameters: {ex}")
 
@@ -197,7 +200,7 @@ def wipeEmptyPlayfields(dblocation, territory, wipetype, nodrymode, showtypes, s
 @click.option('--nodrymode', is_flag=True, help="set to actually execute the action on the disk")
 @click.option('-f', '--file', metavar='file', help="if this is given, use the text file as input for the system/playfield names additionally")
 @click.argument('names', nargs=-1)
-def wipeEmptyPlayfields(dblocation, nodrymode, file, names):
+def clearDiscoveredByInfos(dblocation, nodrymode, file, names):
     """This will clear the discovered-by info from given stars/playfields. Just when you want something to be "Undiscovered" again.
     If you pass a system as parameter, all the playfields in it will be de-discovered.
 

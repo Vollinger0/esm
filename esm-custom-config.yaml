@@ -10,6 +10,7 @@ server:
   dedicatedYaml: 'esm-dedicated.yaml'
   savegame: 'EsmDediGame'
   gfxMode: True
+  minDiskSpaceForStartup: 500M
 
 ramdisk:
   size: "1G"
