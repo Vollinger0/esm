@@ -1,4 +1,5 @@
 import logging
+import signal
 import click
 from halo import Halo
 from esm import WrongParameterError
@@ -10,7 +11,7 @@ from esm.Tools import getElapsedTime, getTimer
 log = logging.getLogger(__name__)
 
 class LogContext:
-    """context for cli commands to have some basic logging for troubleshooting"""
+    """context for cli commands to have some basic logging from the start"""
     def __enter__(self):
         self.esm = ServiceRegistry.get(EsmMain)
         log.debug(f"Script started")
@@ -253,6 +254,7 @@ def start():
 
 
 def init(fileLogLevel=logging.DEBUG, streamLogLevel=logging.INFO, customConfig="esm-custom-config.yaml"):
+    signal.signal(signal.SIGINT, forcedExit)
     esm = EsmMain(caller="esm",
                 configFileName="esm-base-config.yaml",
                 customConfigFileName=customConfig,
@@ -260,3 +262,8 @@ def init(fileLogLevel=logging.DEBUG, streamLogLevel=logging.INFO, customConfig="
                 streamLogLevel=streamLogLevel
                 )
     ServiceRegistry.register(esm)
+
+
+def forcedExit(*args):
+    log.warning("Script execution interrupted via SIGINT. You may resume execution via the server-resume command later")
+    exit(1)
