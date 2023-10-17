@@ -41,9 +41,10 @@
 - [x] re-mount option for when ramdisk size has to be updated or ramdisk is down for some reason.
 - [x] implement server-callback with epmremoteclient
 - [x] add some for spinner or similar when server is running, to see if the console-suspend-bug has hit again
+- [x] tool: deletes the "discovered by" flags for given systems/playfields (potentially also for wipes/purges)
 
 ### WIP
-- [+] tool: deletes the "discovered by" flags for given systems/playfields (potentially also for wipes/purges)
+- [+] feature: add the ability to delete the discovered by flag to the wipe tool
 
 ### later
 - [ ] wipes from the wipetool should appear in cb:wipes? Do i need to alter EAHs database too?

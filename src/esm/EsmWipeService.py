@@ -4,6 +4,7 @@ from math import sqrt
 from pathlib import Path
 from typing import List
 from esm import WrongParameterError
+from esm import Tools
 from esm.DataTypes import Playfield, SolarSystem, Territory, WipeType
 from esm.EsmConfigService import EsmConfigService
 from esm.EsmDatabaseWrapper import EsmDatabaseWrapper
@@ -118,17 +119,25 @@ class EsmWipeService:
         distance = sqrt(((solarsystem.x - customTerritory.x)**2) + ((solarsystem.y - customTerritory.y)**2) + ((solarsystem.z - customTerritory.z)**2))
         return (distance <= customTerritory.radius)
 
-    def clearDiscoveredByInfoForSolarSystems(self, solarsystems: List[SolarSystem], nodrymode, database=None, dbLocation=None):
+    def clearDiscoveredByInfo(self, names, nodrymode, database=None, dbLocation=None):
         """
-        clears the discoveredbyInfo for the solarsystems, by resolving the list of playfields first.
+        clears the discoveredbyInfo for playfields/systemnames given. This will resolve these first
         """
         if database is None:
             if dbLocation is None:
                 raise WrongParameterError("neither database nor dblocation was provided to access the database")
             database = EsmDatabaseWrapper(dbLocation)
         # get the list of playfields for the solarsystems
-        playfields = database.retrieveDiscoveredPlayfieldsForSolarSystems(solarsystems);
-        return self.clearDiscoveredByInfoForPlayfields(playfields, nodrymode, database=database)
+        systemNames, playfieldNames = Tools.extractSystemAndPlayfieldNames(names)
+        log.debug(f"playfield names: {len(playfieldNames)} system names: {len(systemNames)}")
+        # call this once on the db to make sure the db will be writable on the following operations.
+        database.getGameDbConnection("rw")
+        solarsystems = database.retrieveSolarsystemsByName(systemNames)
+        playfieldsByName = database.retrievePlayfieldsByName(playfieldNames)
+        playfieldsFromSolarSystems = database.retrieveDiscoveredPlayfieldsForSolarSystems(solarsystems)
+        playfields = list(set(playfieldsByName) | set(playfieldsFromSolarSystems))
+        log.info(f"Found {len(playfields)} playfields matching the systems and names given that are currently discovered.")
+        return self.clearDiscoveredByInfoForPlayfields(playfields, nodrymode, database=database, dbLocation=dbLocation)
         
     def clearDiscoveredByInfoForPlayfields(self, playfields: List[Playfield], nodrymode, database=None, dbLocation=None):
         """
@@ -139,7 +148,7 @@ class EsmWipeService:
                 raise WrongParameterError("neither database nor dblocation was provided to access the database")
             database = EsmDatabaseWrapper(dbLocation)
         if nodrymode:
-            log.debug("will delete given playfields from the discovered playfields table")
+            log.info(f"Will delete the discovered info from {len(playfields)} playfields")
             database.deleteFromDiscoveredPlayfields(playfields=playfields)
             database.closeDbConnection()
         else:

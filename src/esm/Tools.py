@@ -6,6 +6,7 @@ import traceback
 from datetime import timedelta
 from pathlib import Path
 from timeit import default_timer as timer
+from typing import List
 
 log = logging.getLogger(__name__)
 
@@ -86,3 +87,17 @@ def mergeDicts(a: dict, b: dict, path=[], logOverwrites=False, allowOverwrites=T
         else:
             a[key] = b[key]
     return a    
+
+def extractSystemAndPlayfieldNames(names: List[str]):
+    """
+    returns two lists, one with the playfields extracted from the names
+    the other ones with the system names, of the name in the list was prefixed with a "S:" or "s:"
+    """
+    playfields = []
+    solarsystems = []
+    for name in names:
+        if name.lower().startswith("s:"):
+            solarsystems.append(name[2:])
+        else:
+            playfields.append(name)
+    return solarsystems, playfields

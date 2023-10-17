@@ -169,9 +169,9 @@ def wipeEmptyPlayfields(dblocation, territory, wipetype, nodrymode, showtypes, s
     This feature is similar to EAH's "wipe empty playfields" feature, but also considers terrain placeables (which get wiped in EAH).
     This also only takes 60 seconds for a 40GB savegame. EAH needs ~37 hours.
     
-    Defaults to use a drymode, so the results are only written to a file for you to check.
-    If you use the dry mode just to see how it works, you may aswell define a different savegame database with the corresponding option.
-    when not in dry mode, you can not specify a different database to make sure you do not accidentally wipe the wrong playfields folder.
+    Defaults to use a drymode, so the results are only written to a csv file for you to check.
+    If you use the dry mode just to see how it works, you may aswell define a different savegame database.
+    When NOT in dry mode, you can NOT specify a different database to make sure you do not accidentally wipe the wrong playfields folder.
     """
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)  
@@ -191,27 +191,29 @@ def wipeEmptyPlayfields(dblocation, territory, wipetype, nodrymode, showtypes, s
             except WrongParameterError as ex:
                 log.error(f"Wrong Parameters: {ex}")
 
+
 @cli.command(name="tool-clear-discovered", short_help="clears the discovered info for systems/playields")
 @click.option('--dblocation', metavar='file', help="location of database file to be used in dry mode. Defaults to use the current savegames DB")
 @click.option('--nodrymode', is_flag=True, help="set to actually execute the wipe on the disk. A custom --dblocation will be ignored!")
 @click.option('-f', '--file', metavar='file', help="if this is given, use the file as input for the system/playfield names.")
 @click.argument('names', nargs=-1)
 def wipeEmptyPlayfields(dblocation, nodrymode, file, names):
-    """This will clear the discovered-by info from given stars/playfields. Just if you ever need to :)
+    """This will clear the discovered-by info from given stars/playfields. Just when you want something to be "Undiscovered" again.
+    If you pass a system as parameter, all the playfields in it will be de-discovered.
 
-        Defaults to use a drymode, so the results are only written to a file for you to check.
-    If you use the dry mode just to see how it works, you may aswell define a different savegame database with the corresponding option.
-    when not in dry mode, you can not specify a different database to make sure you do not accidentally wipe the wrong playfields folder.
+    Names must be the full names of the playfield, or, if it is a solar system, have the prefix "S:".
+    e.g. "S:Alpha", "S:Beta", "Dread", "UCHN Discovery" - etc.
+
+    Defaults to use a drymode, so the results are only written to a csv file for you to check.
+    If you use the dry mode just to see how it works, you may aswell define a different savegame database.
     """
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)  
         if not file and not names:
             log.error(f"neither a file nor names were provided, but at least one is required.")
-        elif nodrymode and dblocation:
-            log.error(f"--nodrymode and --dblocation can not be used together")
         else:
             try:
-                esm.clearDiscoveredByInfos(dblocation=dblocation, nodrymode=nodrymode, inputFile=file, inputNames=names)
+                esm.clearDiscoveredByInfos(dbLocation=dblocation, nodrymode=nodrymode, inputFile=file, inputNames=names)
             except WrongParameterError as ex:
                 log.error(f"Wrong Parameters: {ex}")
 

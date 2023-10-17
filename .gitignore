@@ -11,3 +11,4 @@ __pycache__/
 src/esm.egg-info
 esm.egg-info
 build/
+esm-cleardiscoveredby.csv
