@@ -156,7 +156,7 @@ def deleteAll():
         esm.deleteAll()
 
 
-@cli.command(name="wipe-empty-playfields", short_help="wipes empty playfields for a given territory or galaxy-wide")
+@cli.command(name="tool-wipe-empty-playfields", short_help="wipes empty playfields for a given territory or galaxy-wide")
 @click.option('--dblocation', metavar='file', help="location of database file to be used in dry mode. Defaults to use the current savegames DB")
 @click.option('--territory', help=f"territory to wipe, use {Territory.GALAXY} for the whole galaxy or any of the configured ones")
 @click.option('--wipetype', help=f"wipe type, one of: {list(map(lambda x: x.value.val, list(WipeType)))}")
@@ -188,6 +188,30 @@ def wipeEmptyPlayfields(dblocation, territory, wipetype, nodrymode, showtypes, s
         else:
             try:
                 esm.wipeEmptyPlayfields(dbLocation=dblocation, territory=territory, wipeType=wipetype, nodrymode=nodrymode)
+            except WrongParameterError as ex:
+                log.error(f"Wrong Parameters: {ex}")
+
+@cli.command(name="tool-clear-discovered", short_help="clears the discovered info for systems/playields")
+@click.option('--dblocation', metavar='file', help="location of database file to be used in dry mode. Defaults to use the current savegames DB")
+@click.option('--nodrymode', is_flag=True, help="set to actually execute the wipe on the disk. A custom --dblocation will be ignored!")
+@click.option('-f', '--file', metavar='file', help="if this is given, use the file as input for the system/playfield names.")
+@click.argument('names', nargs=-1)
+def wipeEmptyPlayfields(dblocation, nodrymode, file, names):
+    """This will clear the discovered-by info from given stars/playfields. Just if you ever need to :)
+
+        Defaults to use a drymode, so the results are only written to a file for you to check.
+    If you use the dry mode just to see how it works, you may aswell define a different savegame database with the corresponding option.
+    when not in dry mode, you can not specify a different database to make sure you do not accidentally wipe the wrong playfields folder.
+    """
+    with LogContext():
+        esm = ServiceRegistry.get(EsmMain)  
+        if not file and not names:
+            log.error(f"neither a file nor names were provided, but at least one is required.")
+        elif nodrymode and dblocation:
+            log.error(f"--nodrymode and --dblocation can not be used together")
+        else:
+            try:
+                esm.clearDiscoveredByInfos(dblocation=dblocation, nodrymode=nodrymode, inputFile=file, inputNames=names)
             except WrongParameterError as ex:
                 log.error(f"Wrong Parameters: {ex}")
 

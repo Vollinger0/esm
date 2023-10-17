@@ -5,7 +5,7 @@ import sqlite3
 from typing import List
 from esm.DataTypes import Playfield, SolarSystem
 from esm.EsmConfigService import EsmConfigService
-from esm.ServiceRegistry import Service, ServiceRegistry
+from esm.ServiceRegistry import ServiceRegistry
 
 log = logging.getLogger(__name__)
 
@@ -55,8 +55,9 @@ class EsmDatabaseWrapper:
             self.gameDbCursor = connection.cursor()
         return self.gameDbCursor
 
-    def retrieveDiscoveredPlayfields(self, solarsystems: List[SolarSystem]) -> List[Playfield]:
-        log.debug("getting discovered playfields")
+    def retrieveDiscoveredPlayfieldsForSolarSystems(self, solarsystems: List[SolarSystem]) -> List[Playfield]:
+        """return all playfields that are discovered and belong to the list of given solar systems"""
+        log.debug(f"getting discovered playfields for given {len(solarsystems)} solarsystems")
         ssids = []
         for solarsystem in solarsystems:
             ssids.append(solarsystem.ssid)
@@ -73,6 +74,7 @@ class EsmDatabaseWrapper:
         return discoveredPlayfields
 
     def retrieveAllSolarSystems(self) -> List[SolarSystem]:
+        """returns all solar systems"""
         solarsystems = []
         log.debug("loading solar systems")
         for row in self.getGameDbCursor().execute("SELECT name, sectorx, sectory, sectorz, ssid FROM SolarSystems ORDER BY name"):
@@ -117,10 +119,54 @@ class EsmDatabaseWrapper:
 
     def retrieveEmptyPlayfields(self, solarsystems) -> List[Playfield]:
         """this will get the empty playfields contained in the array of solarsystems"""
-        discoveredPlayfields = self.retrieveDiscoveredPlayfields(solarsystems)
+        discoveredPlayfields = self.retrieveDiscoveredPlayfieldsForSolarSystems(solarsystems)
         nonEmptyPlayfields = self.retrieveAllNonEmptyPlayfields()
 
         log.debug("filtering out non empty playfields from all discovered playfields")
         emptyPlayfields = [playfield for playfield in discoveredPlayfields if playfield not in nonEmptyPlayfields]
         log.debug(f"wipeable empty playfields: {len(emptyPlayfields)}")
         return emptyPlayfields
+    
+    def deleteFromDiscoveredPlayfields(self, playfields: List[Playfield], batchSize = 1000):
+        """ 
+        this will delete the rows from DiscoveredPlayfields for all playfields given
+        will do the deletion statements in batches
+        """
+        pfIds = list(map(lambda obj: obj.pfid, playfields))
+        log.debug(f"deleting {len(pfIds)} pfids from DiscoveredPlayfields")
+        cursor = self.getGameDbCursor()
+
+        # do the deletions in batches, to avoid memory usage and performance issues.
+        for i in range(0, len(pfIds), batchSize):
+            pfIdBatch = pfIds[i:i+batchSize]        
+            query = "DELETE FROM DiscoveredPlayfields WHERE pfid IN ({})".format(','.join(['?'] * len(pfIdBatch)))
+            cursor.execute(query, pfIdBatch)
+
+        connection = self.getGameDbConnection()
+        connection.commit()
+        log.debug(f"deleted {cursor.rowcount} entries from DiscoveredPlayfields")
+
+    def retrieveSolarsystemsByName(self, solarsystemNames: List[str]) -> List[SolarSystem]:
+        """return a list of solar systems which match the given names"""
+        # SELECT ssid, name, startype, sectorx, sectory, sectorz FROM SolarSystems WHERE name IN ("Alpha", "Beta")
+        log.debug(f"selecting solarsystems matching {len(solarsystemNames)} names")
+        cursor = self.getGameDbCursor()
+        query = "SELECT ssid, name, startype, sectorx, sectory, sectorz FROM SolarSystems WHERE name IN ({})".format(','.join(['?'] * len(solarsystemNames)))
+        solarsystems = []
+        for row in cursor.execute(query, solarsystemNames):
+            solarsystems.append(SolarSystem(ssid=row[0], name=row[1], x=row[3], y=row[4], z=row[5]))
+        log.debug(f"found {len(solarsystems)} solarsystems")
+        return solarsystems
+        
+
+    def retrievePlayfieldsByName(self, playfieldNames: List[str]) -> List[Playfield]:
+        """return a list of playfields which match the given names"""
+        # SELECT pf.pfid, pf.name, ss.ssid, ss.name FROM Playfields as pf LEFT JOIN SolarSystems AS ss ON pf.ssid=ss.ssid WHERE pf.name IN ("Gaia", "Haven", "schalala")
+        log.debug(f"selecting playfields matching {len(playfieldNames)} names")
+        cursor = self.getGameDbCursor()
+        query = "SELECT pf.pfid, pf.name, ss.ssid, ss.name FROM Playfields as pf LEFT JOIN SolarSystems AS ss ON pf.ssid=ss.ssid WHERE pf.name IN ({})".format(','.join(['?'] * len(playfieldNames)))
+        playfields = []
+        for row in cursor.execute(query, playfieldNames):
+            playfields.append(Playfield(pfid=row[0], name=row[1], ssid=row[2], starName=row[3]))
+        log.debug(f"found {len(playfields)} playfields")
+        return playfields
