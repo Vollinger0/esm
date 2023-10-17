@@ -130,8 +130,9 @@ class EsmWipeService:
         # get the list of playfields for the solarsystems
         systemNames, playfieldNames = Tools.extractSystemAndPlayfieldNames(names)
         log.debug(f"playfield names: {len(playfieldNames)} system names: {len(systemNames)}")
-        # call this once on the db to make sure the db will be writable on the following operations.
-        database.getGameDbConnection("rw")
+        if nodrymode:
+            # call this once on the db to make sure the db will be writable on the following operations.
+            database.getGameDbConnection("rw")
         playfieldsFromSolarSystems = []
         if systemNames and len(systemNames) > 0:
             solarsystems = database.retrieveSolarsystemsByName(systemNames)

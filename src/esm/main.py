@@ -195,7 +195,7 @@ def wipeEmptyPlayfields(dblocation, territory, wipetype, nodrymode, showtypes, s
 @cli.command(name="tool-clear-discovered", short_help="clears the discovered info for systems/playields")
 @click.option('--dblocation', metavar='file', help="location of database file to be used. Defaults to use the current savegames DB")
 @click.option('--nodrymode', is_flag=True, help="set to actually execute the action on the disk")
-@click.option('-f', '--file', metavar='file', help="if this is given, use the text file as input for the system/playfield names")
+@click.option('-f', '--file', metavar='file', help="if this is given, use the text file as input for the system/playfield names additionally")
 @click.argument('names', nargs=-1)
 def wipeEmptyPlayfields(dblocation, nodrymode, file, names):
     """This will clear the discovered-by info from given stars/playfields. Just when you want something to be "Undiscovered" again.
