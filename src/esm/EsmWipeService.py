@@ -29,11 +29,14 @@ class EsmWipeService:
     def fileSystem(self) -> EsmFileSystem:
         return ServiceRegistry.get(EsmFileSystem)
 
-    def wipeEmptyPlayfields(self, dbLocation, territoryString, wipeType: WipeType, nodrymode):
+    def wipeEmptyPlayfields(self, dbLocation, territoryString, wipeType: WipeType, nodrymode, nocleardiscoveredby=False):
         """
         wipe given territory with given wipetype and mode using the given db
         """
         database = EsmDatabaseWrapper(dbLocation)
+        if nodrymode and not nocleardiscoveredby:
+            # we need to open the db in rw mode
+            database.getGameDbConnection(mode="rw")
         with Timer() as timer:
             allSolarSystems = database.retrieveAllSolarSystems()
             if territoryString == Territory.GALAXY:
@@ -45,6 +48,10 @@ class EsmWipeService:
             log.info(f"The amount of stars is: {len(solarSystems)}")
             emptyPlayfields = database.retrieveEmptyPlayfields(solarSystems)
             log.info(f"The amount of empty but discovered playfields that can be wiped is: {len(emptyPlayfields)}")
+
+            if not nocleardiscoveredby and len(emptyPlayfields) > 0:
+                self.clearDiscoveredByInfoForPlayfields(playfields=emptyPlayfields, database=database, nodrymode=nodrymode, closeConnection=False, doPrint=False)
+
             database.closeDbConnection()
         log.info(f"Connection to database closed. Time elapsed reading from the database: {timer.elapsedTime}")
 
@@ -62,23 +69,26 @@ class EsmWipeService:
         actually wipe the given playfields with the wipeType.
         """
         playfieldsFolderPath = self.fileSystem.getAbsolutePathTo("saves.games.savegame.playfields")
-        log.info(f"Starting wipe for {len(playfields)} playfields with wipe type '{wipeType}' in folder '{playfieldsFolderPath}'")
+        log.info(f"Starting wipe for {len(playfields)} playfields with wipe type '{wipeType.value.name}' in folder '{playfieldsFolderPath}'")
+        wiped = 0
         with Timer() as timer:
             counter=0
             for playfield in playfields:
                 log.debug(f"wiping playfield: {playfield.name}")
-                playfieldPath = playfieldsFolderPath.joinpath(playfield.name)
-                self.createWipeInfo(playfieldPath, wipeType)
+                playfieldPath = Path(f"{playfieldsFolderPath}/{playfield.name}")
+                result = self.createWipeInfo(playfieldPath, wipeType)
+                if result: 
+                    wiped += 1
                 counter+=1
                 if counter % 1000 == 0:
                     log.info(f"processed {counter} playfields")
-        log.info(f"Done with wiping {len(playfields)} PFs in {timer.elapsedTime}! Playfields are wiped when loaded, so to actually see if something has been wiped, you have to visit a playfield.")
+        log.info(f"Done with wiping {len(playfields)} PFs in {timer.elapsedTime}, writing {wiped} files! Playfields are wiped when loaded, so to actually see if something has been wiped, you have to visit a playfield.")
 
     def printoutPlayfields(self, territory, playfields: List[Playfield], wipeType: WipeType):
         """
         creates a csv with the playfields that would have been wiped, to verify the results if needed, or whatever.        
         """
-        csvFilename = Path(f"esm-wipe_{territory}_{wipeType}.csv").absolute()
+        csvFilename = Path(f"esm-wipe_{territory}_{wipeType.value.name}.csv").absolute()
         log.info(f"Will output the list of playfields that would have been wiped as '{csvFilename}'")
         self.printListOfPlayfieldsAsCSV(csvFilename=csvFilename, playfields=playfields)
 
@@ -97,13 +107,16 @@ class EsmWipeService:
                 return ct
 
     def createWipeInfo(self, path: Path, wipeType: WipeType):
+        """create the wipeinfo at the given path, will return True if successful, false otherwise """
         if path.exists():
-            filePath = path.joinpath("/wipeinfo.txt")
+            filePath = Path(f"{path}/wipeinfo.txt")
             if filePath.exists():
-                log.debug(f"File '{str(filePath)}' already exists in the directory - will overwrite old info")
-            filePath.write_text(wipeType.value.val)
+                log.debug(f"File '{filePath}' already exists - will overwrite it")
+            filePath.write_text(data=wipeType.value.name)
+            return True
         else:
-            log.debug(f"playfield path {path} doesn't exist! If the playfield doesn't exist on the filesystem, there's no need to wipe it, since its bugged anyways.")
+            log.debug(f"playfield path '{path}' doesn't exist! If the playfield doesn't exist on the filesystem, there's no need to wipe it")
+            return False
 
     def getSolarSystemsInCustomTerritory(self, solarsystems: List[SolarSystem], customTerritory: Territory):
         log.debug(f"filtering solarsystems for custom territory: {customTerritory.name}")
@@ -119,7 +132,7 @@ class EsmWipeService:
         distance = sqrt(((solarsystem.x - customTerritory.x)**2) + ((solarsystem.y - customTerritory.y)**2) + ((solarsystem.z - customTerritory.z)**2))
         return (distance <= customTerritory.radius)
 
-    def clearDiscoveredByInfo(self, names, nodrymode, database=None, dbLocation=None):
+    def clearDiscoveredByInfo(self, names, nodrymode, database=None, dbLocation=None, closeConnection=True):
         """
         clears the discoveredbyInfo for playfields/systemnames given. This will resolve these first
         """
@@ -144,12 +157,12 @@ class EsmWipeService:
         playfields = list(set(playfieldsByName) | set(playfieldsFromSolarSystems))
         log.info(f"Found {len(playfields)} playfields matching the systems and names given that are currently discovered.")
         if len(playfields) > 0:
-            return self.clearDiscoveredByInfoForPlayfields(playfields, nodrymode, database=database, dbLocation=dbLocation)
+            return self.clearDiscoveredByInfoForPlayfields(playfields, nodrymode, database=database, dbLocation=dbLocation, closeConnection=closeConnection)
         else:
             log.info("Nothing to do.")
             return
         
-    def clearDiscoveredByInfoForPlayfields(self, playfields: List[Playfield], nodrymode, database=None, dbLocation=None):
+    def clearDiscoveredByInfoForPlayfields(self, playfields: List[Playfield], nodrymode, database=None, dbLocation=None, closeConnection=True, doPrint=True):
         """
         clears the discoveredbyInfo for the given playfields
         """
@@ -158,13 +171,15 @@ class EsmWipeService:
                 raise WrongParameterError("neither database nor dblocation was provided to access the database")
             database = EsmDatabaseWrapper(dbLocation)
         if nodrymode:
-            log.info(f"Will delete the discovered info from {len(playfields)} playfields")
+            log.info(f"Will delete the discovered-by info from {len(playfields)} playfields")
             database.deleteFromDiscoveredPlayfields(playfields=playfields)
-            database.closeDbConnection()
+            if closeConnection:
+                database.closeDbConnection()
         else:
-            csvFilename = Path(f"esm-cleardiscoveredby.csv").absolute()
-            log.info(f"Will output the list of playfields whose discoverd by info would have been cleared '{csvFilename}'")
-            self.printListOfPlayfieldsAsCSV(csvFilename=csvFilename, playfields=playfields)
+            if doPrint:
+                csvFilename = Path(f"esm-cleardiscoveredby.csv").absolute()
+                log.info(f"Will output the list of {len(playfields)} playfields whose discoverd-by info would have been cleared '{csvFilename}'")
+                self.printListOfPlayfieldsAsCSV(csvFilename=csvFilename, playfields=playfields)
     
     def printListOfPlayfieldsAsCSV(self, csvFilename, playfields):
         """
