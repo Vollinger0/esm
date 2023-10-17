@@ -132,12 +132,21 @@ class EsmWipeService:
         log.debug(f"playfield names: {len(playfieldNames)} system names: {len(systemNames)}")
         # call this once on the db to make sure the db will be writable on the following operations.
         database.getGameDbConnection("rw")
-        solarsystems = database.retrieveSolarsystemsByName(systemNames)
-        playfieldsByName = database.retrievePlayfieldsByName(playfieldNames)
-        playfieldsFromSolarSystems = database.retrieveDiscoveredPlayfieldsForSolarSystems(solarsystems)
+        playfieldsFromSolarSystems = []
+        if systemNames and len(systemNames) > 0:
+            solarsystems = database.retrieveSolarsystemsByName(systemNames)
+            if solarsystems and len(solarsystems) > 0:
+                playfieldsFromSolarSystems = database.retrieveDiscoveredPlayfieldsForSolarSystems(solarsystems)
+        playfieldsByName = []
+        if playfieldNames and len(playfieldNames) > 0:
+            playfieldsByName = database.retrievePlayfieldsByName(playfieldNames)
         playfields = list(set(playfieldsByName) | set(playfieldsFromSolarSystems))
         log.info(f"Found {len(playfields)} playfields matching the systems and names given that are currently discovered.")
-        return self.clearDiscoveredByInfoForPlayfields(playfields, nodrymode, database=database, dbLocation=dbLocation)
+        if len(playfields) > 0:
+            return self.clearDiscoveredByInfoForPlayfields(playfields, nodrymode, database=database, dbLocation=dbLocation)
+        else:
+            log.info("Nothing to do.")
+            return
         
     def clearDiscoveredByInfoForPlayfields(self, playfields: List[Playfield], nodrymode, database=None, dbLocation=None):
         """

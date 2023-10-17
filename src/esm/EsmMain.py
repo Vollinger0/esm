@@ -394,7 +394,7 @@ class EsmMain:
             inputFilePath = Path(inputFile).resolve()
             if inputFilePath.exists():
                 with open(inputFilePath, "r") as file:
-                    names.extend(file.readlines())
+                    names.extend([line.rstrip('\n') for line in file.readlines()])
             else:
                 raise WrongParameterError(f"input file at '{inputFilePath}' not found")
             

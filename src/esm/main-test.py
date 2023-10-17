@@ -89,7 +89,8 @@ def testStartAndWait():
     log.info(f"Server shut down after {getElapsedTime(start)}")
 
 def testClearDiscoveredBy():
-    esm.wipeService.clearDiscoveredByInfoForSolarSystems()
+    #esm -v tool-clear-discovered --dblocation D:\temp\temp\20230708_original_anvils6_global.db -f namelist_s6.txt
+    esm.clearDiscoveredByInfos(dbLocation=r"D:\temp\temp\20230708_original_anvils6_global.db", inputFile="namelist_s6.txt", nodrymode=False)
 
 
 
@@ -117,6 +118,6 @@ log.debug(f"Logging to: {esm.logFile}")
 #testBackup()
 #testStaticBackup()
 #testDeleteAll()
-testClearDiscoveredBy()
+#testClearDiscoveredBy()
 
 log.info(f"Script finished successfully. Check the logfile ({esm.logFile}) if you missed something. Bye!")

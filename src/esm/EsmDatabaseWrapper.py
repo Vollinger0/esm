@@ -146,6 +146,7 @@ class EsmDatabaseWrapper:
         connection.commit()
         log.debug(f"deleted {cursor.rowcount} entries from DiscoveredPlayfields")
 
+
     def retrieveSolarsystemsByName(self, solarsystemNames: List[str]) -> List[SolarSystem]:
         """return a list of solar systems which match the given names"""
         # SELECT ssid, name, startype, sectorx, sectory, sectorz FROM SolarSystems WHERE name IN ("Alpha", "Beta")
