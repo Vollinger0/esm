@@ -116,6 +116,19 @@ def stopServer():
             log.error(f"Could not stop server. Is it running at all? {ex}")
 
 
+@cli.command(name="server-resume", short_help="resumes execution if the gameserver is still running")
+def resumeServer():
+    """Looks for a running server and restarts inner processes accordingly (e.g. the ram synchronizer). Will end when the server shuts down, just like server-start."""
+    with LogContext():
+        esm = ServiceRegistry.get(EsmMain)
+        try:
+            with Halo(text="Server running", spinner="dots") as spinner:
+                esm.resumeServerAndWait()                
+                spinner.succeed("Server shut down")
+        except TimeoutError as ex:
+            log.error(f"Could not resume server. Is it running at all? {ex}")
+
+
 @cli.command(name="backup-create", short_help="creates a blazing fast rolling backup")
 def createBackup():
     """Creates a new rolling mirror backup from the savegame mirror, can be done while the server is running if it is in ramdisk mode."""

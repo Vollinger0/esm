@@ -119,16 +119,22 @@ class EsmMain:
             log.warning("A server is already running!")
             return
 
-        if self.config.general.useRamdisk:
-            syncInterval = self.config.ramdisk.synchronizeRamToMirrorInterval
-            if syncInterval>0:
-                # start the synchronizer
-                log.info(f"Starting ram2mirror synchronizer with interval {syncInterval}")
-                self.ramdiskManager.startSynchronizer(syncInterval)
+        self.startSynchronizer()
         
         # start the server
         log.info(f"Starting the dedicated server")
         return self.dedicatedServer.startServer()
+
+    def startSynchronizer(self):
+        """
+        starts the ramdisk synchronizer if ramdisk and the synchronizer are enabled and properly configured
+        """
+        if self.config.general.useRamdisk:
+            syncInterval = self.config.ramdisk.synchronizeRamToMirrorInterval
+            if syncInterval > 0:
+                # start the synchronizer
+                log.info(f"Starting ram2mirror synchronizer with interval {syncInterval}")
+                self.ramdiskManager.startSynchronizer(syncInterval)
     
     def waitForEnd(self, checkInterval=5):
         """
@@ -181,6 +187,23 @@ class EsmMain:
         success = self.dedicatedServer.sendExitRetryAndWait(interval=self.config.server.sendExitInterval, additionalTimeout=self.config.server.sendExitTimeout)
         if success:
             log.info(f"Server shut down or not running any more.")
+
+    def resumeServerAndWait(self):
+        """
+        resumes execution for when the gameserver is probably still running
+        """
+        if not self.dedicatedServer.isRunning():
+            log.warning("No running gameserver found.")
+            return
+        # we found a server, then start synchronizer if enabled
+        self.startSynchronizer()
+        
+        log.info(f"Running server found. Waiting until it shut down or stopped existing.")
+        self.waitForEnd()
+
+        log.info(f"Server shut down. Executing shutdown tasks.")
+        self.onShutdown()
+
 
     def createBackup(self):
         """

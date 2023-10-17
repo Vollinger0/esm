@@ -1,4 +1,22 @@
-## ESM - Empyrion Server Manager
+# ESM - Empyrion Server Manager
+Sophisticated console client to manage an Empyrion Galactic Survival Dedicated Server.
+Built to manage servers with a *lot* of players and *huge* savegames (>>10GB) perfomantly, adding a lot of performance optimizations to the way the server runs.
+The main features being fully automated support for running the game on a ramdisk, a blazing fast rolling backup system and a series of tools for managing the galaxy.
+
+## Features
+- automatically sets up and runs a game on a ramdisk, which eliminates most server performance problems
+- provides its own (eah compatible) rolling mirror backup system, that backs up a 50GB savegame in under a minute without even affecting game server performance
+- ability to create static (zipped) backups
+- ability to "prepare" the filesystem for ramdisk usage, aswell as to rever that again.
+- deleteall function to remove any traces of an existing savegame, when you want to start a new season
+- wipe tool for wiping playfields with no player or player-owned terrain placeables or structures.
+- tool to clear the "discovered-by" infos from playfields and/or systems
+- can install the game for you (from steam)
+- can update the game for you (from steam)
+- fully integrated to be used with EAH
+- various tools to manage the galaxy
+- almost all features, limits, timeouts and paths are configurable
+- extensive logfile with a ton of information
 
 
 ## running locally
@@ -14,7 +32,6 @@
 
 ## TODOS:
 ### WIP
-- [ ] server-resume - usecase, for when you have to kill the script and start it again without having to kill the server.
 
 ### later
 - [ ] wipes from the wipetool should propagate to EAH? do i need to alter EAHs database too?
@@ -25,17 +42,19 @@
   - [ ] interactive mode for wipe galaxy tool?
   - [ ] actually make any option have a -batchmode when there are interactive prompts, defaulting to the most defensive option.
 - [+] when useRamdisk is enabled, enable checks for its file structure, when its not, do not start use the synchronizer (of course)
-- [ ] implement allowMultpleServerInstances switch. Once enabled, do not check for running instances of the game before starting, do not start if startmode is set to direct, etc.
-- [ ] implement warning/talkback via tickets
+- [ ] implement allowMultpleServerInstances switch? Once enabled, do not check for instances of the game before starting, do not start if startmode is set to direct, etc.
+- [ ] implement warning/talkback via tickets for when an admin is required (e.g. low disk space, etc.)
 - [ ] implement warning/talkback to server chat for syncs, backups probably even random stuff with funny hamster sentences.
 - [ ] integrity check: checks if things fit together (e.g. dedicated.yaml config), our own config when running multiple instances, etc.
     * or adapt config to dedicated.yaml, especially when paths change. probably as a sanity check implementation
+    * may also just check the config, e.g. if all paths exist
 - [+] create separate windows-gui thingy that resides in the taskbar or similar and provides a shortcut to the cli tool.
 
 ### optional
 - [-] usecase: create configuration? => probably not needed. the custom config covers our needs.
 
 ### done
+- [x] server-resume - usecase, for when you have to kill the script and start it again without having to kill the server.
 - [x] feature: add the ability to delete the discovered by flag to the wipe tool
 - [x] tool: deletes the "discovered by" flags for given systems/playfields (potentially also for wipes/purges)
 - [x] add some for spinner or similar when server is running, to see if the console-suspend-bug has hit again
