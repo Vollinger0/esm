@@ -54,6 +54,7 @@ The main features being fully automated support for running the game on a ramdis
 - [-] usecase: create configuration? => probably not needed. the custom config covers our needs.
 
 ### done
+- [x] catch ctrl+c or sigints properly
 - [x] server-resume - usecase, for when you have to kill the script and start it again without having to kill the server.
 - [x] feature: add the ability to delete the discovered by flag to the wipe tool
 - [x] tool: deletes the "discovered by" flags for given systems/playfields (potentially also for wipes/purges)
