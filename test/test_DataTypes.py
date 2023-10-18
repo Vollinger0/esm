@@ -1,7 +1,7 @@
 import logging
 import unittest
 
-from esm.DataTypes import WipeType
+from esm.DataTypes import EntityType, WipeType
 
 log = logging.getLogger(__name__)
 
@@ -17,4 +17,9 @@ class test_DataTypes(unittest.TestCase):
 
         self.assertTrue(isinstance(test.value.name, str))
         self.assertEqual(test.value.name, "all")
+
+    def test_EntityTypes(self):
+        test = EntityType.byNumber(2)
+        self.assertEqual(EntityType.BA, test)
+
         

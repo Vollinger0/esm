@@ -70,3 +70,22 @@ class WipeType(Enum):
     @staticmethod
     def valueList():
         return list(map(lambda x: x.value.name, list(WipeType)))
+
+class EntityType(Enum):
+    """
+    contains the games entity types (e.g. to recognize entities in the Entities table in db)
+    """
+    PLAYER = 1
+    BA = 2
+    CV = 3
+    SV = 4
+    HV = 5
+    Asteroid = 7
+    EscapePod = 8
+    NPC = 9
+
+    @staticmethod
+    def byNumber(number):
+        for et in list(EntityType):
+            if et.value == number:
+                return et
