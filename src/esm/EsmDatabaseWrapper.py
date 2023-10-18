@@ -1,3 +1,4 @@
+from datetime import datetime
 from functools import cached_property
 import logging
 from pathlib import Path
@@ -171,3 +172,24 @@ class EsmDatabaseWrapper:
             playfields.append(Playfield(pfid=row[0], name=row[1], ssid=row[2], starName=row[3]))
         log.debug(f"found {len(playfields)} playfields")
         return playfields
+    
+    def retrieveLatestGametime(self):
+        """
+        returns the current gametick and stoptime from the serverstartstop table. 
+        Gameticks and passed time do not correlate exactly, since ticks/second vary. They usually default to ~20 ticks/s though.
+        
+        select sid, startticks, stopticks, starttime, stoptime, timezone from ServerStartStop order by sid desc limit 1
+        34	341747	351813	2023-10-17 18:52:23	2023-10-17 19:00:50	v1.10.4	4243	+02:00
+        """
+        log.debug(f"quering db for latest serverstartstop entry")
+        cursor = self.getGameDbCursor()
+        query = "SELECT sid, startticks, stopticks, starttime, stoptime, timezone FROM ServerStartStop ORDER BY sid DESC LIMIT 1"
+        cursor.execute(query)
+        row = cursor.fetchone()
+        stopticks = row[2]
+        stoptimeString = row[4]
+
+        dateFormat = '%Y-%m-%d %H:%M:%S'
+        # Create a datetime object from the date string
+        stoptime = datetime.strptime(stoptimeString, dateFormat)        
+        return stopticks, stoptime
