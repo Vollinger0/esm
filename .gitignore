@@ -13,3 +13,5 @@ esm.egg-info
 build/
 esm-cleardiscoveredby.csv
 namelist_s6.txt
+test/test.db-shm
+test/test.db-wal
