@@ -31,6 +31,8 @@ class EsmConfigService:
 
         if context:
             mergeDicts(config["context"], context)
+
+        # convert to dotsi dict, that allows the dictionary to be accessed via dotPath notation as attributes
         self.config = dotsi.Dict(config)
     
     def __getattr__(self, attr):
