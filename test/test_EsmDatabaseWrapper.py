@@ -72,3 +72,10 @@ class test_EsmDatabaseWrapper(unittest.TestCase):
         self.assertEqual(len(pfs), 2)
         self.assertEqual(sorted(pfIds), [88, 709])
 
+
+    def test_retrieveNonRemovedEntities(self):
+        dbPath = Path(f"./test/test.db").resolve()
+        db = EsmDatabaseWrapper(dbPath)
+
+        pfIds = db.retrieveNonRemovedEntities()
+        self.assertEqual(len(pfIds), 213)

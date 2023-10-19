@@ -303,7 +303,7 @@ class EsmDatabaseWrapper:
             entities.append(Entity(id=row[0], pfid=row[1], name=row[2], type=EntityType.byNumber(row[3]), isremoved=True))
         return entities
     
-    def countDiscoveredPlayfields(self) -> int:
+    def countDiscoveredPlayfields(self):
         """
         just return the amount of discovered playfields
         """
@@ -312,3 +312,15 @@ class EsmDatabaseWrapper:
         cursor.execute(query)
         return cursor.fetchone()[0]
     
+    def retrieveNonRemovedEntities(self) -> List[str]:
+        """
+        retrieve all entityids of non removed entities
+
+        select entityid from Entities where isremoved=0
+        """
+        query = "select entityid from Entities where isremoved=0"
+        cursor = self.getGameDbCursor()
+        ids = []
+        for row in cursor.execute(query):
+            ids.append(f"{row[0]}")
+        return ids

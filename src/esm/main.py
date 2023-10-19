@@ -288,6 +288,31 @@ def purgeRemovedEntities(dblocation, nodryrun, force):
                 log.error(f"Wrong Parameters: {ex}")
 
 
+@cli.command(name="tool-cleanup-shared", short_help="removes any obsolete entries in the shared folder")
+@click.option('--dblocation', metavar='file', help="location of database file to be used in dry mode. Defaults to use the current savegames DB")
+@click.option('--nodryrun', is_flag=True, help="set to actually execute the purge on the disk")
+@click.option('--force', is_flag=True, help=f"if set, do not ask interactively before file deletion")
+def cleanupShared(dblocation, nodryrun, force):
+    """Will check all entries in the Shared-Folder against the database and remove all the ones that shouldn't exist any more or are not needed any more.
+
+    This requires the server to be shut down, since it modifies the files on the filesystem. Make sure to have a recent backup aswell.
+    
+    Defaults to use a dryrun, so the results are only written to a csv file for you to check.
+    If you use the dry mode just to see how it works, you may aswell define a different savegame database.
+    When NOT in dry mode, you can NOT specify a different database to make sure you do not accidentally purge the wrong playfields folder.
+    """
+    with LogContext():
+        esm = ServiceRegistry.get(EsmMain)  
+
+        if nodryrun and dblocation:
+            log.error(f"--nodryrun and --dblocation can not be used together for safety reasons.")
+        else:
+            try:
+                esm.cleanupSharedFolder(dbLocation=dblocation, nodryrun=nodryrun, force=force)
+            except WrongParameterError as ex:
+                log.error(f"Wrong Parameters: {ex}")
+
+
 @cli.command(name="tool-clear-discovered", short_help="clears the discovered info for systems/playields")
 @click.option('--dblocation', metavar='file', help="location of database file to be used. Defaults to use the current savegames DB")
 @click.option('--nodryrun', is_flag=True, help="set to actually execute the action on the disk")
