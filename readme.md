@@ -12,13 +12,13 @@ The main features being fully automated support for running the game on a ramdis
 - wipe tool for wiping playfields with no player or player-owned terrain placeables or structures.
 - tool to clear the "discovered-by" infos from playfields and/or systems
 - purge-tools to delete old playfield files, delete the related structures and templates - this will keep your savegame small if used regularly.
+- some other tools to clean up and remove obsolete files and data
 - can install the game for you (from steam)
 - can update the game for you (from steam)
 - fully integrated to be used with EAH
 - various tools to manage the galaxy
 - almost all features, limits, timeouts and paths are configurable
 - extensive logfile with a ton of information
-
 
 ## running locally
 * install venv: $ py -m venv .venv
