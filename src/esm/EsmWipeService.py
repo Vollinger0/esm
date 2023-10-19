@@ -315,3 +315,42 @@ class EsmWipeService:
             log.info(f"Will output the list of {len(removedEntities)} entities that should have been removed as '{csvFilename}'")
             self.printListOfEntitiesAsCSV(csvFilename=csvFilename, entities=removedEntities)
             return None
+
+    def purgeWipedPlayfields(self, leavetemplates=False):
+        """
+        purge all playfields that have a wipeinfo file containing 'all'. also purge its templates if leavetemplates is False
+        """
+        playfieldsFolderPath = self.fileSystem.getAbsolutePathTo("saves.games.savegame.playfields")
+        templatesFolderPath = self.fileSystem.getAbsolutePathTo("saves.games.savegame.templates")
+
+        log.debug(f"iterating through playfields in {playfieldsFolderPath}")
+        wipedPlayfieldNames = []
+        playfieldCount = 0
+        processCounter = 0
+        for folder in playfieldsFolderPath.iterdir():
+            wipeInfoPath = Path(f"{folder}/wipeinfo.txt")
+            if wipeInfoPath.exists():
+                content = wipeInfoPath.read_text()
+                if content is not None and content.startswith(WipeType.ALL.value.name):
+                    wipedPlayfieldNames.append(Path(folder).name)
+                    playfieldCount += 1
+                    self.fileSystem.markForDelete(folder)
+            processCounter += 1
+            if processCounter % 10000 == 0:
+                log.debug(f"processed {processCounter} playfield folders")
+        log.debug(f"found {len(wipedPlayfieldNames)} from {processCounter} playfields with a wipeinfo containing '{WipeType.ALL.value.name}'")
+
+        templateCount = 0
+        processCounter = 0
+        if not leavetemplates:
+            for playfieldName in wipedPlayfieldNames:
+                templatePath = Path(f"{templatesFolderPath}/{playfieldName}")
+                if templatePath.exists():
+                    templateCount += 1
+                    self.fileSystem.markForDelete(templatePath)
+                processCounter += 1
+                if processCounter % 10000 == 0:
+                    log.debug(f"processed {processCounter} template folders")
+
+        log.debug(f"marked {templateCount} from {processCounter} template folders for deletion")
+        return wipedPlayfieldNames, playfieldCount, templateCount

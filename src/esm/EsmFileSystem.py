@@ -205,7 +205,6 @@ class EsmFileSystem:
         if not askUser("Proceed? [yes/no] ", "yes", override=override):
             log.info("Will not delete the listed files.")
             raise UserAbortedException("User aborted file deletion.")
-            # return False, None
 
         start = getTimer()
         for path, targetPath, native in self.pendingDeletePaths:

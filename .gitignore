@@ -15,3 +15,4 @@ esm-cleardiscoveredby.csv
 namelist_s6.txt
 test/test.db-shm
 test/test.db-wal
+esm-purgewipedplayfields.lst
