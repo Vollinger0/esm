@@ -189,7 +189,7 @@ class EsmFileSystem:
     def clearPendingDeletePaths(self):
         self.pendingDeletePaths = []
 
-    def commitDelete(self, override=None):
+    def commitDelete(self, override=None, additionalInfo=None):
         """
         actually deletes the list of paths that we are saving in the listOfPathstoDelete
         returns bool, elapsedTime - bool containing True if the deletion was comitted and the time taken to delete.
@@ -202,6 +202,9 @@ class EsmFileSystem:
         for path, targetPath, native in self.pendingDeletePaths:
             print(f"   {path}")
 
+        if additionalInfo:
+            log.info(additionalInfo)
+            
         if not askUser("Proceed? [yes/no] ", "yes", override=override):
             log.info("Will not delete the listed files.")
             raise UserAbortedException("User aborted file deletion.")

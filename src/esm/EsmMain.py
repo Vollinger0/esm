@@ -479,12 +479,12 @@ class EsmMain:
         count = self.wipeService.purgeRemovedEntities(dbLocation=dbLocation, nodrymode=nodrymode)
         if nodrymode:
             if force:
-                self.fileSystem.commitDelete(override="yes")
-                log.info(f"Deleted {count} folders with removed entities in the Shared folder.")
+                result, elapsedTime = self.fileSystem.commitDelete(override="yes")
+                log.info(f"Deleted {count} folders with removed entities in the Shared folder, elapsed time: {elapsedTime}")
             else:
                 try:
-                    self.fileSystem.commitDelete()
-                    log.info(f"Deleted {count} folders with removed entities in the Shared folder.")
+                    result, elapsedTime = self.fileSystem.commitDelete()
+                    log.info(f"Deleted {count} folders with removed entities in the Shared folder, elapsed time: {elapsedTime}")
                 except UserAbortedException as ex:
                     log.warning("User aborted operation, nothing was deleted.")
 
@@ -516,7 +516,7 @@ class EsmMain:
                     log.warning("User aborted operation, nothing was deleted.")
         else:
             fileName = f"esm-purgewipedplayfields.lst"
-            with open(fileName, "w") as file:
+            with open(fileName, "w", encoding='utf-8') as file:
                 file.writelines([line + '\n' for line in wipedPlayfieldNames])
             log.warning(f"Dry mode is active, exported list of playfields to purge as {fileName}")
 
