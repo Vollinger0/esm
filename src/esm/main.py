@@ -34,12 +34,14 @@ class LogContext:
 @click.option('-c', '--config', default="esm-custom-config.yaml", metavar='<file>', show_default=True, help="set the custom config file to use")
 def cli(verbose, config):
     """ 
-    ESM, the Empyrion Server Manager - will help you set up an optional ramdisk, run the server, do rolling backups and other things efficiently.
+    ESM, the Empyrion Server Manager - will help you set up an optional ramdisk, run the server, do rolling backups, cleanups and other things efficiently.
     Optimized for speed to be used for busy servers with huge savegames.
 
-    Make sure to check the configuration before running stuff.
+    Make sure to check the configuration before running any command!
 
-    Tip: You can get more info and options to each command by calling it with the param --help.
+    
+    Tip: You can get more info and options to each command by calling it with the param --help\n
+    e.g. "esm tool-wipe-empty-playfields --help"
     """
     if verbose:
         init(streamLogLevel=logging.DEBUG, customConfig=config)
@@ -92,7 +94,7 @@ def ramdiskUninstall(force):
             log.error(f"Error trying to uninstall: {ex}")
 
 
-@cli.command(name="server-start", short_help="starts the server, returns when the server shuts down.")
+@cli.command(name="server-start", short_help="starts the server, returns when the server shuts down")
 def startServer():
     """Starts up the server, if ramdisk usage is enabled, this will automatically start the ram2mirror synchronizer thread too. The script will return when the server shut down.
     This will *NOT* shut down the server. If you want to do that do that either via other means or use the server-stop command in a new console.
@@ -130,7 +132,7 @@ def resumeServer():
             log.error(f"Could not resume server. Is it running at all? {ex}")
 
 
-@cli.command(name="backup-create", short_help="creates a blazing fast rolling backup")
+@cli.command(name="backup-create", short_help="creates a fast rolling backup")
 def createBackup():
     """Creates a new rolling mirror backup from the savegame mirror, can be done while the server is running if it is in ramdisk mode."""
     with LogContext():
@@ -154,7 +156,7 @@ def installGame():
         esm.installGame()
 
 
-@cli.command(name="game-update", short_help="updates the via steam and executes additional commands")
+@cli.command(name="game-update", short_help="updates the game via steam and executes additional commands")
 def updateGame():
     """Updates the game via steam and executes the additional copy tasks listed in the configuration"""
     with LogContext():
@@ -166,6 +168,8 @@ def updateGame():
 def deleteAll():
     """Deletes the savegame, all the related rolling backups, all eah data, logs and executes all configured delete tasks to be able to start a fresh new savegame.
     This uses delete operations that are optimized for maximum speed and efficiency, which you'll need to delete millions of files.
+
+    Be aware that this will take a lot of time and delete a lot of data if you have a big savegame!
     """
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)
@@ -210,12 +214,12 @@ def wipeEmptyPlayfields(dblocation, territory, wipetype, nodrymode, showtypes, s
                 log.error(f"Wrong Parameters: {ex}")
 
 
-@cli.command(name="tool-purge-empty-playfields", short_help="purges empty playfields for a given territory or galaxy-wide")
+@cli.command(name="tool-purge-empty-playfields", short_help="purges empty playfields that have not been visited for a time")
 @click.option('--dblocation', metavar='file', help="location of database file to be used in dry mode. Defaults to use the current savegames DB")
 @click.option('--nocleardiscoveredby', is_flag=True, help="If set, will *not* clear the discovered by infos from the purged playfields")
-@click.option('--nodrymode', is_flag=True, help="set to actually execute the purge on the disk. A custom --dblocation will be ignored!")
-@click.option('--minimumage', default=30, help=f"age a playfield has to have for it to get purged in *days*")
-@click.option('--leavetemplates', is_flag=True, help=f"if set, do not purge the templates of the purged playfields")
+@click.option('--nodrymode', is_flag=True, help="set to actually execute the changes on the disk")
+@click.option('--minimumage', default=30, show_default=True, help=f"age a playfield has to have for it to get purged in *days*")
+@click.option('--leavetemplates', is_flag=True, help=f"if set, do not delete the related templates")
 @click.option('--force', is_flag=True, help=f"if set, do not ask interactively before file deletion")
 def purgeEmptyPlayfields(dblocation, nodrymode, nocleardiscoveredby, minimumage, leavetemplates, force):
     """Will *purge* playfields without players, player owned structures, terrain placeables for the whole galaxy.
@@ -240,15 +244,16 @@ def purgeEmptyPlayfields(dblocation, nodrymode, nocleardiscoveredby, minimumage,
                 log.error(f"Wrong Parameters: {ex}")
 
 
-@cli.command(name="tool-purge-wiped-playfields", short_help="purges all playfields that are marked to be wiped with wipetype 'all'")
-@click.option('--nodrymode', is_flag=True, help="set to actually execute the purge on the disk. A custom --dblocation will be ignored!")
-@click.option('--leavetemplates', is_flag=True, help=f"if set, do not purge the templates of the purged playfields")
+@cli.command(name="tool-purge-wiped-playfields", short_help="purges all playfields that are marked to be completely wiped")
+@click.option('--nodrymode', is_flag=True, help="set to actually execute the purge on the disk")
+@click.option('--leavetemplates', is_flag=True, help=f"if set, do not delete the related templates")
 @click.option('--force', is_flag=True, help=f"if set, do not ask interactively before file deletion")
 def purgeWipedPlayfields(nodrymode, leavetemplates, force):
-    """Will *purge* all playfields that are marked for wipe with wipetype 'all' including their templates.
-    This requires the server to be shut down, since it modifies the files on the filesystem.
+    """Will *purge* all playfields that are marked for complete wipe (with wipetype 'all') including their templates.
+    Since this uses the filesystem to check for the info, the execution might take a while on huge savegames.
 
-    Make sure to have a recent backup before doing this.
+    This requires the server to be shut down, since it modifies the files on the filesystem.
+    Make sure to have a recent backup before doing this!
     
     Defaults to use a drymode, so the results are only written to a txt file for you to check.
     """
@@ -260,11 +265,12 @@ def purgeWipedPlayfields(nodrymode, leavetemplates, force):
             log.error(f"Wrong Parameters: {ex}")
 
 
-@cli.command(name="tool-clean-removed-entities", short_help="")
+@cli.command(name="tool-purge-removed-entities", short_help="purges entities that are marked as removed in the database")
 @click.option('--dblocation', metavar='file', help="location of database file to be used in dry mode. Defaults to use the current savegames DB")
-@click.option('--nodrymode', is_flag=True, help="set to actually execute the purge on the disk. A custom --dblocation will be ignored!")
-def cleanRemovedEntities(dblocation, nodrymode):
-    """
+@click.option('--nodrymode', is_flag=True, help="set to actually execute the purge on the disk")
+@click.option('--force', is_flag=True, help=f"if set, do not ask interactively before file deletion")
+def purgeRemovedEntities(dblocation, nodrymode, force):
+    """Will purge all entities that are marked as removed in the database. This requires the server to be shut down, since it modifies the files on the filesystem.
     
     Defaults to use a drymode, so the results are only written to a csv file for you to check.
     If you use the dry mode just to see how it works, you may aswell define a different savegame database.
@@ -277,7 +283,7 @@ def cleanRemovedEntities(dblocation, nodrymode):
             log.error(f"--nodrymode and --dblocation can not be used together for safety reasons.")
         else:
             try:
-                esm.cleanRemovedEntites(dbLocation=dblocation, nodrymode=nodrymode)
+                esm.purgeRemovedEntities(dbLocation=dblocation, nodrymode=nodrymode, force=force)
             except WrongParameterError as ex:
                 log.error(f"Wrong Parameters: {ex}")
 
@@ -306,15 +312,6 @@ def clearDiscoveredByInfos(dblocation, nodrymode, file, names):
                 esm.clearDiscoveredByInfos(dbLocation=dblocation, nodrymode=nodrymode, inputFile=file, inputNames=names)
             except WrongParameterError as ex:
                 log.error(f"Wrong Parameters: {ex}")
-
-
-@cli.command(short_help="for development purposes")
-def test():
-    """used for development purposes"""
-    with LogContext():
-        esm = ServiceRegistry.get(EsmMain)
-        log.info(f"Hi! {esm}")
-        log.info(f"savegame will be {esm.config.server.savegame}")
 
 
 def getEsm():

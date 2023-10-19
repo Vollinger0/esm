@@ -459,7 +459,7 @@ class EsmMain:
         except UserAbortedException as ex:
             log.warning(f"User aborted the operation, nothing deleted.")
 
-    def cleanRemovedEntites(self, dbLocation=None, nodrymode=False):
+    def purgeRemovedEntities(self, dbLocation=None, nodrymode=False, force=False):
         """
         will purge all entity folders in the shared folder of entities that are marked as deleted in the database
         """
@@ -475,14 +475,18 @@ class EsmMain:
             else:
                 raise WrongParameterError(f"DbLocation '{dbLocation}' is not a valid database location path.")
 
-        log.info(f"Calling clean removed entities for dbLocation: '{dbLocation}', nodrymode '{nodrymode}'")
-        count = self.wipeService.cleanRemovedEntites(dbLocation=dbLocation, nodrymode=nodrymode)
+        log.info(f"Purging removed entities for dbLocation: '{dbLocation}', nodrymode '{nodrymode}'")
+        count = self.wipeService.purgeRemovedEntities(dbLocation=dbLocation, nodrymode=nodrymode)
         if nodrymode:
-            try:
-                self.fileSystem.commitDelete()
-                log.info(f"Cleaned up {count} folders with removed entities in the Shared folder.")
-            except UserAbortedException as ex:
-                log.warning("User aborted operation, nothing was deleted.")
+            if force:
+                self.fileSystem.commitDelete(override="yes")
+                log.info(f"Deleted {count} folders with removed entities in the Shared folder.")
+            else:
+                try:
+                    self.fileSystem.commitDelete()
+                    log.info(f"Deleted {count} folders with removed entities in the Shared folder.")
+                except UserAbortedException as ex:
+                    log.warning("User aborted operation, nothing was deleted.")
 
     def purgeWipedPlayfields(self, nodrymode=False, leavetemplates=False, force=False):
         """
