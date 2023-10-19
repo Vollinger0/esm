@@ -341,7 +341,7 @@ class EsmMain:
                 log.info(f"No savegame exists at {savegamePath}. This is either a configuration error or none exists. You might need to create a new one later.")
                 return False
             
-    def wipeEmptyPlayfields(self, dbLocation=None, wipeType=None, territory=None, nodrymode=False, nocleardiscoveredby=False):
+    def wipeEmptyPlayfields(self, dbLocation=None, wipeType=None, territory=None, nodryrun=False, nocleardiscoveredby=False):
         """
         Wipes all defined playfields with the defined wipetype, filtering out any playfield that has a player, player owned structure or terrain placeable on it.
 
@@ -349,8 +349,8 @@ class EsmMain:
         Takes about a minute to wipe 50k playfields on a 30GB savegame. 
         Comparison: EAH's "wipe empty playfield" function takes 36hs and does not take into account terrain placeables.
         """
-        if nodrymode and self.dedicatedServer.isRunning():
-            raise ServerNeedsToBeStopped("Can not execute wipe empty playfields with --nodrymode if the server is running. Please stop it first.")
+        if nodryrun and self.dedicatedServer.isRunning():
+            raise ServerNeedsToBeStopped("Can not execute wipe empty playfields with --nodryrun if the server is running. Please stop it first.")
 
         if dbLocation is None:
             dbLocation = self.fileSystem.getAbsolutePathTo("saves.games.savegame.globaldb")
@@ -374,8 +374,8 @@ class EsmMain:
         else:
             raise WrongParameterError(f"Wipe type '{wipeType}' not valid, must be one of: {wtl}")
         
-        log.info(f"Calling wipe empty playfields for dbLocation: '{dbLocation}' territory '{territory}', wipeType '{wipeType}', nodrymode '{nodrymode}', nocleardiscoveredby '{nocleardiscoveredby}'")
-        self.wipeService.wipeEmptyPlayfields(dbLocation, territory, WipeType.byName(wipeType), nodrymode, nocleardiscoveredby)
+        log.info(f"Calling wipe empty playfields for dbLocation: '{dbLocation}' territory '{territory}', wipeType '{wipeType}', nodryrun '{nodryrun}', nocleardiscoveredby '{nocleardiscoveredby}'")
+        self.wipeService.wipeEmptyPlayfields(dbLocation, territory, WipeType.byName(wipeType), nodryrun, nocleardiscoveredby)
 
     def ramdiskRemount(self):
         """
@@ -407,7 +407,7 @@ class EsmMain:
         log.info("Calling ramdisk setup to mount it again with the current configuration and sync the savegame again.")
         self.ramdiskSetup()
 
-    def clearDiscoveredByInfos(self, dbLocation, nodrymode, inputFile=None, inputNames=None):
+    def clearDiscoveredByInfos(self, dbLocation, nodryrun, inputFile=None, inputNames=None):
         """
         resolves the given system- and playfieldnames from the file or the names array and clears the discovered by info for these completely
         The game saves an entry for every player, even if it was discovered before, so this tool will delete them all so it goes back to "Undiscovered".
@@ -432,14 +432,14 @@ class EsmMain:
             else:
                 raise WrongParameterError(f"DbLocation '{dbLocation}' is not a valid database location path.")
         log.info(f"Clearing discovered by infos for {len(names)} names.")
-        self.wipeService.clearDiscoveredByInfo(dbLocation=dbLocation, names=names, nodrymode=nodrymode)
+        self.wipeService.clearDiscoveredByInfo(dbLocation=dbLocation, names=names, nodryrun=nodryrun)
 
-    def purgeEmptyPlayfields(self, dbLocation=None, nodrymode=False, nocleardiscoveredby=False, minimumage=30, leavetemplates=False, force=False):
+    def purgeEmptyPlayfields(self, dbLocation=None, nodryrun=False, nocleardiscoveredby=False, minimumage=30, leavetemplates=False, force=False):
         """
         checks for playfields that haven't been visited for the minimumage days and purges them from the filesystem
         """
-        if nodrymode and self.dedicatedServer.isRunning():
-            raise ServerNeedsToBeStopped("Can not execute wipe empty playfields with --nodrymode if the server is running. Please stop it first.")
+        if nodryrun and self.dedicatedServer.isRunning():
+            raise ServerNeedsToBeStopped("Can not execute wipe empty playfields with --nodryrun if the server is running. Please stop it first.")
 
         if dbLocation is None:
             dbLocation = self.fileSystem.getAbsolutePathTo("saves.games.savegame.globaldb")
@@ -454,17 +454,17 @@ class EsmMain:
             raise WrongParameterError(f"Minimum age in days is 1, you chose {minimumage}")
 
         try:
-            log.info(f"Calling purge empty playfields for dbLocation: '{dbLocation}', minimumage '{minimumage}', nodrymode '{nodrymode}', nocleardiscoveredby '{nocleardiscoveredby}', leavetemplates '{leavetemplates}', force '{force}")
-            self.wipeService.purgeEmptyPlayfields(dbLocation=dbLocation, minimumage=minimumage, nodrymode=nodrymode, nocleardiscoveredby=nocleardiscoveredby, leavetemplates=leavetemplates, force=force)
+            log.info(f"Calling purge empty playfields for dbLocation: '{dbLocation}', minimumage '{minimumage}', nodryrun '{nodryrun}', nocleardiscoveredby '{nocleardiscoveredby}', leavetemplates '{leavetemplates}', force '{force}")
+            self.wipeService.purgeEmptyPlayfields(dbLocation=dbLocation, minimumage=minimumage, nodryrun=nodryrun, nocleardiscoveredby=nocleardiscoveredby, leavetemplates=leavetemplates, force=force)
         except UserAbortedException as ex:
             log.warning(f"User aborted the operation, nothing deleted.")
 
-    def purgeRemovedEntities(self, dbLocation=None, nodrymode=False, force=False):
+    def purgeRemovedEntities(self, dbLocation=None, nodryrun=False, force=False):
         """
         will purge all entity folders in the shared folder of entities that are marked as deleted in the database
         """
-        if nodrymode and self.dedicatedServer.isRunning():
-            raise ServerNeedsToBeStopped("Can not execute wipe empty playfields with --nodrymode if the server is running. Please stop it first.")
+        if nodryrun and self.dedicatedServer.isRunning():
+            raise ServerNeedsToBeStopped("Can not execute wipe empty playfields with --nodryrun if the server is running. Please stop it first.")
 
         if dbLocation is None:
             dbLocation = self.fileSystem.getAbsolutePathTo("saves.games.savegame.globaldb")
@@ -475,9 +475,9 @@ class EsmMain:
             else:
                 raise WrongParameterError(f"DbLocation '{dbLocation}' is not a valid database location path.")
 
-        log.info(f"Purging removed entities for dbLocation: '{dbLocation}', nodrymode '{nodrymode}'")
-        count = self.wipeService.purgeRemovedEntities(dbLocation=dbLocation, nodrymode=nodrymode)
-        if nodrymode:
+        log.info(f"Purging removed entities for dbLocation: '{dbLocation}', nodryrun '{nodryrun}'")
+        count = self.wipeService.purgeRemovedEntities(dbLocation=dbLocation, nodryrun=nodryrun)
+        if nodryrun:
             if force:
                 result, elapsedTime = self.fileSystem.commitDelete(override="yes")
                 log.info(f"Deleted {count} folders with removed entities in the Shared folder, elapsed time: {elapsedTime}")
@@ -488,14 +488,14 @@ class EsmMain:
                 except UserAbortedException as ex:
                     log.warning("User aborted operation, nothing was deleted.")
 
-    def purgeWipedPlayfields(self, nodrymode=False, leavetemplates=False, force=False):
+    def purgeWipedPlayfields(self, nodryrun=False, leavetemplates=False, force=False):
         """
         search for wipeinfo.txt containing "all" for all playfields and purge those (and their templates) completely.
         """
-        if nodrymode and self.dedicatedServer.isRunning():
-            raise ServerNeedsToBeStopped("Can not execute wipe empty playfields with --nodrymode if the server is running. Please stop it first.")
+        if nodryrun and self.dedicatedServer.isRunning():
+            raise ServerNeedsToBeStopped("Can not execute wipe empty playfields with --nodryrun if the server is running. Please stop it first.")
 
-        log.info(f"Executing purge on wiped playfields: nodrymode '{nodrymode}', leavetemplates '{leavetemplates}', force '{force}'")
+        log.info(f"Executing purge on wiped playfields: nodryrun '{nodryrun}', leavetemplates '{leavetemplates}', force '{force}'")
         with Timer() as timer:
             wipedPlayfieldNames, playfieldCount, templateCount = self.wipeService.purgeWipedPlayfields(leavetemplates)
         log.info(f"Marked {playfieldCount} playfield folders and {templateCount} template folders for deletion, time elapsed: {timer.elapsedTime}")
@@ -504,7 +504,7 @@ class EsmMain:
             log.info(f"Nothing to purge")
             return
 
-        if nodrymode:
+        if nodryrun:
             if force:
                 result, elapsedTime = self.fileSystem.commitDelete(override="yes")
                 log.info(f"Purged {playfieldCount} playfield and {templateCount} template folders, time elapsed: {elapsedTime}.")

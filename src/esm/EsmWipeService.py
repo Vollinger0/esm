@@ -30,12 +30,12 @@ class EsmWipeService:
     def fileSystem(self) -> EsmFileSystem:
         return ServiceRegistry.get(EsmFileSystem)
 
-    def wipeEmptyPlayfields(self, dbLocation, territoryString, wipeType: WipeType, nodrymode, nocleardiscoveredby=False):
+    def wipeEmptyPlayfields(self, dbLocation, territoryString, wipeType: WipeType, nodryrun, nocleardiscoveredby=False):
         """
         wipe given territory with given wipetype and mode using the given db
         """
         database = EsmDatabaseWrapper(dbLocation)
-        if nodrymode and not nocleardiscoveredby:
+        if nodryrun and not nocleardiscoveredby:
             # we need to open the db in rw mode, if we are to clear the discoverd-by info
             database.getGameDbConnection(mode="rw")
         with Timer() as timer:
@@ -51,7 +51,7 @@ class EsmWipeService:
             log.info(f"The amount of empty but discovered playfields that can be wiped is: {len(emptyPlayfields)}")
 
             if not nocleardiscoveredby and len(emptyPlayfields) > 0:
-                self.clearDiscoveredByInfoForPlayfields(playfields=emptyPlayfields, database=database, nodrymode=nodrymode, closeConnection=False, doPrint=False)
+                self.clearDiscoveredByInfoForPlayfields(playfields=emptyPlayfields, database=database, nodryrun=nodryrun, closeConnection=False, doPrint=False)
 
             database.closeDbConnection()
         log.info(f"Connection to database closed. Time elapsed reading from the database: {timer.elapsedTime}")
@@ -60,7 +60,7 @@ class EsmWipeService:
             log.warn(f"There is nothing to wipe!")
             return
 
-        if nodrymode:
+        if nodryrun:
             self.wipePlayfields(emptyPlayfields, wipeType)
         else:
             self.printoutPlayfields(territoryString, emptyPlayfields, wipeType)
@@ -133,7 +133,7 @@ class EsmWipeService:
         distance = sqrt(((solarsystem.x - customTerritory.x)**2) + ((solarsystem.y - customTerritory.y)**2) + ((solarsystem.z - customTerritory.z)**2))
         return (distance <= customTerritory.radius)
 
-    def clearDiscoveredByInfo(self, names, nodrymode, database=None, dbLocation=None, closeConnection=True):
+    def clearDiscoveredByInfo(self, names, nodryrun, database=None, dbLocation=None, closeConnection=True):
         """
         clears the discoveredbyInfo for playfields/systemnames given. This will resolve these first
         """
@@ -144,7 +144,7 @@ class EsmWipeService:
         # get the list of playfields for the solarsystems
         systemNames, playfieldNames = Tools.extractSystemAndPlayfieldNames(names)
         log.debug(f"playfield names: {len(playfieldNames)} system names: {len(systemNames)}")
-        if nodrymode:
+        if nodryrun:
             # call this once on the db to make sure the db will be writable on the following operations.
             database.getGameDbConnection("rw")
         playfieldsFromSolarSystems = []
@@ -158,12 +158,12 @@ class EsmWipeService:
         playfields = list(set(playfieldsByName) | set(playfieldsFromSolarSystems))
         log.info(f"Found {len(playfields)} playfields matching the systems and names given that are currently discovered.")
         if len(playfields) > 0:
-            return self.clearDiscoveredByInfoForPlayfields(playfields, nodrymode, database=database, dbLocation=dbLocation, closeConnection=closeConnection)
+            return self.clearDiscoveredByInfoForPlayfields(playfields, nodryrun, database=database, dbLocation=dbLocation, closeConnection=closeConnection)
         else:
             log.info("Nothing to do.")
             return
         
-    def clearDiscoveredByInfoForPlayfields(self, playfields: List[Playfield], nodrymode, database=None, dbLocation=None, closeConnection=True, doPrint=True):
+    def clearDiscoveredByInfoForPlayfields(self, playfields: List[Playfield], nodryrun, database=None, dbLocation=None, closeConnection=True, doPrint=True):
         """
         clears the discoveredbyInfo for the given playfields
         """
@@ -171,7 +171,7 @@ class EsmWipeService:
             if dbLocation is None:
                 raise WrongParameterError("neither database nor dblocation was provided to access the database")
             database = EsmDatabaseWrapper(dbLocation)
-        if nodrymode:
+        if nodryrun:
             log.info(f"Will delete the discovered-by info from {len(playfields)} playfields")
             database.deleteFromDiscoveredPlayfields(playfields=playfields)
             if closeConnection:
@@ -202,7 +202,7 @@ class EsmWipeService:
                 file.write(f"{entity.id},{entity.name},{entity.pfid},{entity.type.name},{entity.isremoved}\n")
         log.info("CSV file written. Nothing was changed in the current savegame. Please remember that this list gets instantly outdated once players play the game.")
 
-    def purgeEmptyPlayfields(self, database=None, dbLocation=None, minimumage=30, nodrymode=False, nocleardiscoveredby=False, leavetemplates=False, force=False):
+    def purgeEmptyPlayfields(self, database=None, dbLocation=None, minimumage=30, nodryrun=False, nocleardiscoveredby=False, leavetemplates=False, force=False):
         """
         will purge (delete) all playfields and associated static entities from the filesystem that haven't been visisted for miniumage days.
         this includes deleting the templates, unless leavetemplates is set to true
@@ -214,7 +214,7 @@ class EsmWipeService:
                 raise WrongParameterError("neither database nor dblocation was provided to access the database")
             database = EsmDatabaseWrapper(dbLocation)
 
-        if nodrymode and not nocleardiscoveredby:
+        if nodryrun and not nocleardiscoveredby:
             # we need to open the db in rw mode
             database.getGameDbConnection(mode="rw")
 
@@ -241,10 +241,10 @@ class EsmWipeService:
         # get all purgeable entities that are contained in the playfields
         entities = database.retrievePurgeableEntitiesByPlayfields(playfields)
 
-        if nodrymode:
+        if nodryrun:
             log.info(f"Purging {len(playfields)} playfields and {len(entities)} contained entities from the file system.")
             if not nocleardiscoveredby and len(playfields) > 0:
-                self.clearDiscoveredByInfoForPlayfields(playfields=playfields, database=database, nodrymode=nodrymode, closeConnection=False, doPrint=False)
+                self.clearDiscoveredByInfoForPlayfields(playfields=playfields, database=database, nodryrun=nodryrun, closeConnection=False, doPrint=False)
             database.closeDbConnection()
             log.debug(f"Purging {len(playfields)} playfields")
             pfCounter, tpCounter = self.doPurgePlayfields(playfields, leavetemplates)
@@ -303,7 +303,7 @@ class EsmWipeService:
                 markedCounter += 1
         return markedCounter
     
-    def purgeRemovedEntities(self, database=None, dbLocation=None, nodrymode=False):
+    def purgeRemovedEntities(self, database=None, dbLocation=None, nodryrun=False):
         """purge any entity that is marked as removed in the db
         returns the amount of entity folders marked for deletion
         """
@@ -314,7 +314,7 @@ class EsmWipeService:
         # get all entites marked as removed in the db
         removedEntities = database.retrievePuregableRemovedEntities()
         log.debug(f"got {len(removedEntities)} entites marked as removed")
-        if nodrymode:
+        if nodryrun:
             # purge all their files from the current savegame
             return self.doPurgeEntities(removedEntities)
         else:

@@ -67,7 +67,7 @@ The main features being fully automated support for running the game on a ramdis
 - [x] implement server-callback with epmremoteclient
 - [x] re-mount option for when ramdisk size has to be updated or ramdisk is down for some reason.
 - [x] print out wipetypep descriptions on help too.
-- [x] custom dblocation may not be given in conjunction with nodrymode.
+- [x] custom dblocation may not be given in conjunction with nodryrun.
 - [x] usecase: wipe galaxy - integrate other script
 - [x] split the config in a "basic" config, an custom config that overwrites the basic config.
 - [x] debugmode
