@@ -2,7 +2,7 @@ import logging
 import signal
 import click
 from halo import Halo
-from esm import WrongParameterError
+from esm import UserAbortedException, WrongParameterError
 from esm.DataTypes import Territory, WipeType
 from esm.ServiceRegistry import ServiceRegistry
 from esm.EsmMain import EsmMain
@@ -174,7 +174,7 @@ def deleteAll():
 
 @cli.command(name="tool-wipe-empty-playfields", short_help="wipes empty playfields for a given territory or galaxy-wide")
 @click.option('--dblocation', metavar='file', help="location of database file to be used in dry mode. Defaults to use the current savegames DB")
-@click.option('--territory', help=f"territory to wipe, use {Territory.GALAXY} for the whole galaxy or any of the configured ones")
+@click.option('--territory', help=f"territory to wipe, use {Territory.GALAXY} for the whole galaxy or any of the configured ones, use --showterritories to get list")
 @click.option('--wipetype', help=f"wipe type, one of: {WipeType.valueList()}")
 @click.option('--nocleardiscoveredby', is_flag=True, help="If set, will *not* clear the discovered by infos from the wiped playfields")
 @click.option('--nodrymode', is_flag=True, help="set to actually execute the wipe on the disk. A custom --dblocation will be ignored!")
@@ -198,6 +198,7 @@ def wipeEmptyPlayfields(dblocation, territory, wipetype, nodrymode, showtypes, s
             return
         if showterritories:
             click.echo("Configured custom territories:\n" + "\n".join(f"{ct.name}" for ct in esm.wipeService.getAvailableTerritories()))
+            click.echo(f"\nUse {Territory.GALAXY} to wipe the whole galaxy.\n")
             return
 
         if nodrymode and dblocation:
@@ -205,6 +206,57 @@ def wipeEmptyPlayfields(dblocation, territory, wipetype, nodrymode, showtypes, s
         else:
             try:
                 esm.wipeEmptyPlayfields(dbLocation=dblocation, territory=territory, wipeType=wipetype, nodrymode=nodrymode, nocleardiscoveredby=nocleardiscoveredby)
+            except WrongParameterError as ex:
+                log.error(f"Wrong Parameters: {ex}")
+
+
+@cli.command(name="tool-purge-empty-playfields", short_help="purges empty playfields for a given territory or galaxy-wide")
+@click.option('--dblocation', metavar='file', help="location of database file to be used in dry mode. Defaults to use the current savegames DB")
+@click.option('--nocleardiscoveredby', is_flag=True, help="If set, will *not* clear the discovered by infos from the purged playfields")
+@click.option('--nodrymode', is_flag=True, help="set to actually execute the purge on the disk. A custom --dblocation will be ignored!")
+@click.option('--minimumage', default=30, help=f"age a playfield has to have for it to get purged in *days*")
+@click.option('--force', is_flag=True, help=f"if set, not ask interactively before file deletion")
+def purgeEmptyPlayfields(dblocation, nodrymode, nocleardiscoveredby, minimumage, force):
+    """Will *purge* playfields without players, player owned structures, terrain placeables for the whole galaxy.
+    This requires the server to be shut down, since it needs access to the current state of the savegame and the filesystem.
+
+    This will actually delete playfields that have not been visited for minimumage days along with the referenced structures 
+    from the filesystem (!). Make sure to have a recent backup before doing this.
+    
+    Defaults to use a drymode, so the results are only written to a csv file for you to check.
+    If you use the dry mode just to see how it works, you may aswell define a different savegame database.
+    When NOT in dry mode, you can NOT specify a different database to make sure you do not accidentally purge the wrong playfields folder.
+    """
+    with LogContext():
+        esm = ServiceRegistry.get(EsmMain)  
+
+        if nodrymode and dblocation:
+            log.error(f"--nodrymode and --dblocation can not be used together for safety reasons.")
+        else:
+            try:
+                esm.purgeEmptyPlayfields(dbLocation=dblocation, nodrymode=nodrymode, nocleardiscoveredby=nocleardiscoveredby, minimumage=minimumage, force=force)
+            except WrongParameterError as ex:
+                log.error(f"Wrong Parameters: {ex}")
+
+
+@cli.command(name="tool-clean-removed-entities", short_help="")
+@click.option('--dblocation', metavar='file', help="location of database file to be used in dry mode. Defaults to use the current savegames DB")
+@click.option('--nodrymode', is_flag=True, help="set to actually execute the purge on the disk. A custom --dblocation will be ignored!")
+def cleanRemovedEntities(dblocation, nodrymode):
+    """
+    
+    Defaults to use a drymode, so the results are only written to a csv file for you to check.
+    If you use the dry mode just to see how it works, you may aswell define a different savegame database.
+    When NOT in dry mode, you can NOT specify a different database to make sure you do not accidentally purge the wrong playfields folder.
+    """
+    with LogContext():
+        esm = ServiceRegistry.get(EsmMain)  
+
+        if nodrymode and dblocation:
+            log.error(f"--nodrymode and --dblocation can not be used together for safety reasons.")
+        else:
+            try:
+                esm.cleanRemovedEntites(dbLocation=dblocation, nodrymode=nodrymode)
             except WrongParameterError as ex:
                 log.error(f"Wrong Parameters: {ex}")
 
@@ -265,5 +317,5 @@ def init(fileLogLevel=logging.DEBUG, streamLogLevel=logging.INFO, customConfig="
 
 
 def forcedExit(*args):
-    log.warning("Script execution interrupted via SIGINT. You may resume execution via the server-resume command later")
+    log.warning("Script execution interrupted via SIGINT. If the server is still running, you may resume execution via the server-resume command")
     exit(1)

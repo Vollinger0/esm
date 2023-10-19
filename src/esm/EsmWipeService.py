@@ -1,3 +1,4 @@
+from datetime import datetime, timedelta
 from functools import cached_property
 import logging
 from math import sqrt
@@ -5,7 +6,7 @@ from pathlib import Path
 from typing import List
 from esm import WrongParameterError
 from esm import Tools
-from esm.DataTypes import Playfield, SolarSystem, Territory, WipeType
+from esm.DataTypes import Entity, Playfield, SolarSystem, Territory, WipeType
 from esm.EsmConfigService import EsmConfigService
 from esm.EsmDatabaseWrapper import EsmDatabaseWrapper
 from esm.EsmFileSystem import EsmFileSystem
@@ -17,7 +18,7 @@ log = logging.getLogger(__name__)
 @Service
 class EsmWipeService:
     """
-    Service class that provides some functionality to wipe playfields
+    Service class that provides some functionality to wipe and purge playfields and other stuff
 
     optimized for huge savegames, just when you need to wipe a whole galaxy without affecting players.
     """
@@ -35,7 +36,7 @@ class EsmWipeService:
         """
         database = EsmDatabaseWrapper(dbLocation)
         if nodrymode and not nocleardiscoveredby:
-            # we need to open the db in rw mode
+            # we need to open the db in rw mode, if we are to clear the discoverd-by info
             database.getGameDbConnection(mode="rw")
         with Timer() as timer:
             allSolarSystems = database.retrieveAllSolarSystems()
@@ -181,7 +182,7 @@ class EsmWipeService:
                 log.info(f"Will output the list of {len(playfields)} playfields whose discoverd-by info would have been cleared '{csvFilename}'")
                 self.printListOfPlayfieldsAsCSV(csvFilename=csvFilename, playfields=playfields)
     
-    def printListOfPlayfieldsAsCSV(self, csvFilename, playfields):
+    def printListOfPlayfieldsAsCSV(self, csvFilename, playfields: List[Playfield]):
         """
         creates a csv with the given playfields that would have been altered, to verify the results if needed, or whatever.
         """
@@ -190,3 +191,118 @@ class EsmWipeService:
             for playfield in playfields:
                 file.write(f"{playfield.pfid},{playfield.name},{playfield.ssid},{playfield.starName}\n")
         log.info("CSV file written. Nothing was changed in the current savegame. Please remember that this list gets instantly outdated once players play the game.")
+
+    def printListOfEntitiesAsCSV(self, csvFilename, entities: List[Entity]):
+        """
+        creates a csv with the given playfields that would have been altered, to verify the results if needed, or whatever.
+        """
+        with open(csvFilename, 'w') as file:
+            file.write("entity_id,entity_name,entity_pfid,entity_type,entity_isremoved\n")
+            for entity in entities:
+                file.write(f"{entity.id},{entity.name},{entity.pfid},{entity.type.name},{entity.isremoved}\n")
+        log.info("CSV file written. Nothing was changed in the current savegame. Please remember that this list gets instantly outdated once players play the game.")
+
+    def purgeEmptyPlayfields(self, database=None, dbLocation=None, minimumage=30, nodrymode=False, nocleardiscoveredby=False, force=False):
+        """
+        will purge (delete) all playfields and associated static entities from the filesystem that haven't been visisted for miniumage days.
+        
+        force will force delete anything without asking the user.
+        """
+        if database is None:
+            if dbLocation is None:
+                raise WrongParameterError("neither database nor dblocation was provided to access the database")
+            database = EsmDatabaseWrapper(dbLocation)
+
+        if nodrymode and not nocleardiscoveredby:
+            # we need to open the db in rw mode
+            database.getGameDbConnection(mode="rw")
+
+        maxDatetime = datetime.now() - timedelta(minimumage)
+        maximumGametick, stoptime = database.retrieveLatestGameStoptickWithinDatetime(maxDatetime)
+        log.debug(f"latest entry for given max age is stoptime {stoptime} and gametick {maximumGametick}")
+        # get all playfields older than minage
+        totalPlayfields = database.countDiscoveredPlayfields()
+        log.debug(f"total playfields {totalPlayfields}")
+        oldPlayfields = database.retrievePFsUnvisitedSince(maximumGametick)
+        log.debug(f"found {len(oldPlayfields)} playfields unvisited since {stoptime}")
+        # get all occupied playfields
+        occupiedPlayfields = database.retrieveAllNonEmptyPlayfields()
+        log.debug(f"{len(occupiedPlayfields)} playfields are occupied by players or their stuff")
+        # filter out playfields that contain player stuff, using sets, since we can just substract these.
+        playfields = list(set(oldPlayfields) - set(occupiedPlayfields))
+        log.debug(f"{len(playfields)} playfields can be purged")
+
+        # get all purgeable entities that are contained in the playfields
+        entities = database.retrievePurgeableEntitiesByPlayfields(playfields)
+
+        if nodrymode:
+            log.info(f"Purging {len(playfields)} playfields and {len(entities)} contained entities from the file system.")
+            if not nocleardiscoveredby and len(playfields) > 0:
+                self.clearDiscoveredByInfoForPlayfields(playfields=playfields, database=database, nodrymode=nodrymode, closeConnection=False, doPrint=False)
+            database.closeDbConnection()
+            log.debug(f"Purging {len(playfields)} playfields")
+            pfCounter = self.doPurgePlayfields(playfields)
+            log.debug(f"Purging {len(entities)} entities")
+            enCounter = self.doPurgeEntities(entities)
+            log.info(f"{pfCounter} playfield folders and {enCounter} entity folders marked for deletion.")
+            if force:
+                self.fileSystem.commitDelete(override="yes")
+            else:
+                self.fileSystem.commitDelete()
+        else:
+            database.closeDbConnection()
+            csvFilename = Path(f"esm-purgeplayfields-older-than-{minimumage}.csv").absolute()
+            log.info(f"Will output the list of {len(playfields)} playfields that would have been purged as '{csvFilename}'")
+            self.printListOfPlayfieldsAsCSV(csvFilename=csvFilename, playfields=playfields)
+
+            csvFilename = Path(f"esm-purgeentities-older-than-{minimumage}.csv").absolute()
+            log.info(f"Will output the list of {len(entities)} entities that would have been purged as '{csvFilename}'")
+            self.printListOfEntitiesAsCSV(csvFilename=csvFilename, entities=entities)
+
+    def doPurgePlayfields(self, playfields: List[Playfield]):
+        """deletes the folders associated with the given playfields
+        returns the amount of folders marked for deletion
+        """
+        playfieldFolderPath = self.fileSystem.getAbsolutePathTo("saves.games.savegame.playfields")
+        markedCounter = 0
+        for playfield in playfields:
+            playfieldPath = Path(f"{playfieldFolderPath}/{playfield.name}")
+            if playfieldPath.exists():
+                log.debug(f"folder {playfieldPath} exists will be marked as deleted")
+                self.fileSystem.markForDelete(targetPath=playfieldPath)
+                markedCounter += 1
+        return markedCounter
+    
+    def doPurgeEntities(self, entities: List[Entity]):
+        """deletes the folders associated with the given entities
+        returns the amount of still existing folders marked for deletion
+        """
+        sharedFolderPath = self.fileSystem.getAbsolutePathTo("saves.games.savegame.shared")
+        markedCounter = 0
+        for entity in entities:
+            idPath = Path(f"{sharedFolderPath}/{entity.id}")
+            if idPath.exists():
+                log.debug(f"folder {idPath} exists although it is marked as deleted")
+                self.fileSystem.markForDelete(targetPath=idPath)
+                markedCounter += 1
+        return markedCounter
+    
+    def cleanRemovedEntites(self, database=None, dbLocation=None, nodrymode=False):
+        """purge any entity that is marked as removed in the db
+        returns the amount of entity folders marked for deletion
+        """
+        if database is None:
+            if dbLocation is None:
+                raise WrongParameterError("neither database nor dblocation was provided to access the database")
+            database = EsmDatabaseWrapper(dbLocation)
+        # get all entites marked as removed in the db
+        removedEntities = database.retrievePuregableRemovedEntities()
+        log.debug(f"got {len(removedEntities)} entites marked as removed")
+        if nodrymode:
+            # purge all their files from the current savegame
+            return self.doPurgeEntities(removedEntities)
+        else:
+            csvFilename = Path(f"esm-clean-removed-entites.csv").resolve()
+            log.info(f"Will output the list of {len(removedEntities)} entities that should have been removed as '{csvFilename}'")
+            self.printListOfEntitiesAsCSV(csvFilename=csvFilename, entities=removedEntities)
+            return None

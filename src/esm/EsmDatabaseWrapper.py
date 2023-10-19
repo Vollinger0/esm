@@ -4,7 +4,7 @@ import logging
 from pathlib import Path
 import sqlite3
 from typing import List
-from esm.DataTypes import Playfield, SolarSystem
+from esm.DataTypes import Entity, EntityType, Playfield, SolarSystem
 from esm.EsmConfigService import EsmConfigService
 from esm.ServiceRegistry import ServiceRegistry
 
@@ -102,13 +102,13 @@ class EsmDatabaseWrapper:
     def retrievePFsWithPlayers(self) -> List[Playfield]:
         log.debug("finding playfields containing players")
         pfsWithPlayers = []
-        for row in self.getGameDbCursor().execute("select playfields.pfid, playfields.name from Entities LEFT JOIN playfields ON Entities.pfid = playfields.pfid WHERE Entities.etype = 1;"):
+        for row in self.getGameDbCursor().execute("select distinct playfields.pfid, playfields.name from Entities LEFT JOIN playfields ON Entities.pfid = playfields.pfid WHERE Entities.etype = 1;"):
             pfsWithPlayers.append(Playfield(pfid=row[0], name=row[1]))
         log.debug(f"playfields containing players: {len(pfsWithPlayers)}")
         return pfsWithPlayers
 
     def retrieveAllNonEmptyPlayfields(self) -> List[Playfield]:
-        """this will get *all* non empty playfields from the db, there's no need to filter out before since this is almost instant anyways."""
+        """this will get all non empty playfields from the db, excluding pfs with structures, placeables or players"""
         pfsWithPlayerStructures = self.retrievePFsWithPlayerStructures()
         pfsWithPlaceables = self.retrievePFsWithPlaceables()
         pfsWithPlayers = self.retrievePFsWithPlayers()
@@ -166,7 +166,7 @@ class EsmDatabaseWrapper:
         # SELECT pf.pfid, pf.name, ss.ssid, ss.name FROM Playfields as pf LEFT JOIN SolarSystems AS ss ON pf.ssid=ss.ssid WHERE pf.name IN ("Gaia", "Haven", "schalala")
         log.debug(f"selecting playfields matching {len(playfieldNames)} names")
         cursor = self.getGameDbCursor()
-        query = "SELECT pf.pfid, pf.name, ss.ssid, ss.name FROM Playfields as pf LEFT JOIN SolarSystems AS ss ON pf.ssid=ss.ssid WHERE pf.name IN ({})".format(','.join(['?'] * len(playfieldNames)))
+        query = "SELECT DISTINCT pf.pfid, pf.name, ss.ssid, ss.name FROM Playfields as pf LEFT JOIN SolarSystems AS ss ON pf.ssid=ss.ssid WHERE pf.name IN ({})".format(','.join(['?'] * len(playfieldNames)))
         playfields = []
         for row in cursor.execute(query, playfieldNames):
             playfields.append(Playfield(pfid=row[0], name=row[1], ssid=row[2], starName=row[3]))
@@ -193,3 +193,86 @@ class EsmDatabaseWrapper:
         # Create a datetime object from the date string
         stoptime = datetime.strptime(stoptimeString, dateFormat)        
         return stopticks, stoptime
+    
+    def retrievePFsUnvisitedSince(self, gametick) -> List[Playfield]:
+        """
+        Return all playfields that haven't been warped-to since gametick - in other words: all playfields that have newer visits, will not be returned.
+        Will also exclude playfields that contain a player, if he hasn't left that pf since given gametick
+
+        select pfs.pfid, pfs.name, pfs.ssid, ss.name from ChangedPlayfields as cpfs join playfields as pfs on cpfs.topfid = pfs.pfid join SolarSystems as ss on ss.ssid = pfs.ssid where topfid not in (select distinct pfid from entities as e where e.etype = 1) and gametime < 1000000
+        """
+        cursor = self.getGameDbCursor()
+        playfields = []
+        query = F"SELECT DISTINCT pfs.pfid, pfs.name, pfs.ssid, ss.name from ChangedPlayfields as cpfs join playfields as pfs on cpfs.topfid = pfs.pfid join SolarSystems as ss on ss.ssid = pfs.ssid where topfid not in (select distinct pfid from entities as e where e.etype = 1)"
+        query = F"{query} and gametime < {gametick}"
+        for row in cursor.execute(query):
+            playfields.append(Playfield(pfid=row[0], name=row[1], ssid=row[2], starName=row[3]))
+        return playfields
+
+    def retrievePurgeableEntitiesByPlayfields(self, playfields: List[Playfield]) -> List[Entity]:
+        """
+        retrieve all entities contained in the given playfield that can be purged, this means:
+        * type must be structure (isstructure=1 => is SV HV CV or BA)
+        * type must be no proxy
+
+        select entityid, pfid, name, etype from Entities where isstructure=1 and isproxy=0 and etype in (2,3,4,5) and pfid in (x,y,z)
+        """
+        query = "SELECT entityid, pfid, name, etype, isremoved from Entities where isstructure=1 and isproxy=0 and etype in (2,3,4,5)"
+        query = f"{query} and pfid in " + "({})".format(','.join(['?'] * len(playfields)))
+        cursor = self.getGameDbCursor()
+        entities = []
+        playfieldList = list(map(lambda playfield: playfield.pfid, playfields))
+        for row in cursor.execute(query, playfieldList):
+            entities.append(Entity(id=row[0], pfid=row[1], name=row[2], type=EntityType.byNumber(row[3]), isremoved=row[4]))
+        return entities
+    
+    def retrieveLatestGameStoptickWithinDatetime(self, maxDatetime: datetime):
+        """
+        return the starttick of the timeperiod the server was running, or the stoptick if it was after a running period.
+
+        select sid, startticks, stopticks, starttime, stoptime, timezone from ServerStartStop order by sid desc limit 1
+        34	341747	351813	2023-10-17 18:52:23	2023-10-17 19:00:50	v1.10.4	4243	+02:00
+        """
+        dateFormat = '%Y-%m-%d %H:%M:%S'
+        cursor = self.getGameDbCursor()
+        query = "SELECT sid, startticks, stopticks, starttime, stoptime, timezone FROM ServerStartStop ORDER BY sid DESC"
+        for row in cursor.execute(query):
+            startticks = row[1]
+            stopticks = row[2]
+            starttimeString = row[3]
+            stoptimeString = row[4]
+            if starttimeString and stoptimeString:
+                # Create a datetime object from the date string
+                starttime = datetime.strptime(starttimeString, dateFormat)
+                stoptime = datetime.strptime(stoptimeString, dateFormat)
+                if starttime < maxDatetime < stoptime:
+                    return startticks, stoptime
+                elif maxDatetime > stoptime:
+                    return stopticks, stoptime
+        # return the last of the loop (which will be the first sst entry, being the oldest times)
+        return startticks, stoptime
+    
+    def retrievePuregableRemovedEntities(self) -> List[Entity]:
+        """return all entities that are marked as removed from the db
+
+        * type must be structure (isstructure=1 => is SV HV CV or BA)
+        * type must be no proxy
+
+        select entityid, pfid, name, etype from Entities where isremoved=1 and isstructure=1 and isproxy=0 and etype in (2,3,4,5)
+        """
+        entities = []
+        cursor = self.getGameDbCursor()
+        query = "select entityid, pfid, name, etype from Entities where isremoved=1 and isstructure=1 and isproxy=0 and etype in (2,3,4,5)"
+        for row in cursor.execute(query):
+            entities.append(Entity(id=row[0], pfid=row[1], name=row[2], type=EntityType.byNumber(row[3]), isremoved=True))
+        return entities
+    
+    def countDiscoveredPlayfields(self) -> int:
+        """
+        just return the amount of discovered playfields
+        """
+        cursor = self.getGameDbCursor()
+        query = "select count(*) from DiscoveredPlayfields"
+        cursor.execute(query)
+        return cursor.fetchone()[0]
+    

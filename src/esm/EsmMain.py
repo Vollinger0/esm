@@ -366,7 +366,7 @@ class EsmMain:
         if territory and (territory in atn or territory == Territory.GALAXY):
             log.debug(f"valid territory selected '{territory}'")
         else:
-            raise WrongParameterError(f"Territory '{territory}' not valid, must be one of: {Territory.GALAXY} or {atn}")
+            raise WrongParameterError(f"Territory '{territory}' not valid, must be one of: {Territory.GALAXY}, {', '.join(atn)}")
 
         wtl = WipeType.valueList()
         if wipeType and wipeType in wtl:
@@ -433,3 +433,53 @@ class EsmMain:
                 raise WrongParameterError(f"DbLocation '{dbLocation}' is not a valid database location path.")
         log.info(f"Clearing discovered by infos for {len(names)} names.")
         self.wipeService.clearDiscoveredByInfo(dbLocation=dbLocation, names=names, nodrymode=nodrymode)
+
+    def purgeEmptyPlayfields(self, dbLocation=None, nodrymode=False, nocleardiscoveredby=False, minimumage=30, force=False):
+        """
+        checks for playfields that haven't been visited for the minimumage days and purges them from the filesystem
+        """
+        if nodrymode and self.dedicatedServer.isRunning():
+            raise ServerNeedsToBeStopped("Can not execute wipe empty playfields with --nodrymode if the server is running. Please stop it first.")
+
+        if dbLocation is None:
+            dbLocation = self.fileSystem.getAbsolutePathTo("saves.games.savegame.globaldb")
+        else:
+            dbLocationPath = Path(dbLocation).resolve().absolute()
+            if dbLocationPath.exists():
+                dbLocation = str(dbLocationPath)
+            else:
+                raise WrongParameterError(f"DbLocation '{dbLocation}' is not a valid database location path.")
+
+        if minimumage < 1:
+            raise WrongParameterError(f"Minimum age in days is 1, you chose {minimumage}")
+
+        try:
+            log.info(f"Calling purge empty playfields for dbLocation: '{dbLocation}', minimumage '{minimumage}', nodrymode '{nodrymode}', nocleardiscoveredby '{nocleardiscoveredby}', force '{force}")
+            self.wipeService.purgeEmptyPlayfields(dbLocation=dbLocation, minimumage=minimumage, nodrymode=nodrymode, nocleardiscoveredby=nocleardiscoveredby, force=force)
+        except UserAbortedException as ex:
+            log.warning(f"User aborted the operation, nothing deleted.")
+
+    def cleanRemovedEntites(self, dbLocation=None, nodrymode=False):
+        """
+        will purge all entity folders in the shared folder of entities that are marked as deleted in the database
+        """
+        if nodrymode and self.dedicatedServer.isRunning():
+            raise ServerNeedsToBeStopped("Can not execute wipe empty playfields with --nodrymode if the server is running. Please stop it first.")
+
+        if dbLocation is None:
+            dbLocation = self.fileSystem.getAbsolutePathTo("saves.games.savegame.globaldb")
+        else:
+            dbLocationPath = Path(dbLocation).resolve().absolute()
+            if dbLocationPath.exists():
+                dbLocation = str(dbLocationPath)
+            else:
+                raise WrongParameterError(f"DbLocation '{dbLocation}' is not a valid database location path.")
+
+        log.info(f"Calling clean removed entities for dbLocation: '{dbLocation}', nodrymode '{nodrymode}'")
+        count = self.wipeService.cleanRemovedEntites(dbLocation=dbLocation, nodrymode=nodrymode)
+        if nodrymode:
+            try:
+                self.fileSystem.commitDelete()
+                log.info(f"Cleaned up {count} folders with removed entities in the Shared folder.")
+            except UserAbortedException as ex:
+                log.warning("User aborted operation, nothing was deleted.")
