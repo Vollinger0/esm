@@ -11,6 +11,7 @@ The main features being fully automated support for running the game on a ramdis
 - deleteall function to remove any traces of an existing savegame, when you want to start a new season
 - wipe tool for wiping playfields with no player or player-owned terrain placeables or structures.
 - tool to clear the "discovered-by" infos from playfields and/or systems
+- purge-tools to delete old playfield files, delete the related structures and templates - this will keep your savegame small if used regularly.
 - can install the game for you (from steam)
 - can update the game for you (from steam)
 - fully integrated to be used with EAH
@@ -32,7 +33,6 @@ The main features being fully automated support for running the game on a ramdis
 
 ## TODOS:
 ### WIP
-- [+] purge the wiped: check for wipeinfos containing "all", and purge those (fs operations only)
 
 ### later
 - [ ] tool to purge playfield passed in the command line?
@@ -56,6 +56,7 @@ The main features being fully automated support for running the game on a ramdis
 - [-] usecase: create configuration? => probably not needed. the custom config covers our needs.
 
 ### done
+- [x] purge the wiped: check for wipeinfos containing "all", and purge those (fs operations only)
 - [x] usecase: purge galaxy
 - [x] tool: clean structures that have been removed in the DB, but still exist on the FS (optional also give a min age)
 - [x] catch ctrl+c or sigints properly

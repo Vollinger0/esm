@@ -296,7 +296,7 @@ class EsmWipeService:
                 markedCounter += 1
         return markedCounter
     
-    def cleanRemovedEntites(self, database=None, dbLocation=None, nodrymode=False):
+    def purgeRemovedEntities(self, database=None, dbLocation=None, nodrymode=False):
         """purge any entity that is marked as removed in the db
         returns the amount of entity folders marked for deletion
         """
