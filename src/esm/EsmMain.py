@@ -434,7 +434,7 @@ class EsmMain:
         log.info(f"Clearing discovered by infos for {len(names)} names.")
         self.wipeService.clearDiscoveredByInfo(dbLocation=dbLocation, names=names, nodrymode=nodrymode)
 
-    def purgeEmptyPlayfields(self, dbLocation=None, nodrymode=False, nocleardiscoveredby=False, minimumage=30, force=False):
+    def purgeEmptyPlayfields(self, dbLocation=None, nodrymode=False, nocleardiscoveredby=False, minimumage=30, leavetemplates=False, force=False):
         """
         checks for playfields that haven't been visited for the minimumage days and purges them from the filesystem
         """
@@ -454,8 +454,8 @@ class EsmMain:
             raise WrongParameterError(f"Minimum age in days is 1, you chose {minimumage}")
 
         try:
-            log.info(f"Calling purge empty playfields for dbLocation: '{dbLocation}', minimumage '{minimumage}', nodrymode '{nodrymode}', nocleardiscoveredby '{nocleardiscoveredby}', force '{force}")
-            self.wipeService.purgeEmptyPlayfields(dbLocation=dbLocation, minimumage=minimumage, nodrymode=nodrymode, nocleardiscoveredby=nocleardiscoveredby, force=force)
+            log.info(f"Calling purge empty playfields for dbLocation: '{dbLocation}', minimumage '{minimumage}', nodrymode '{nodrymode}', nocleardiscoveredby '{nocleardiscoveredby}', leavetemplates '{leavetemplates}', force '{force}")
+            self.wipeService.purgeEmptyPlayfields(dbLocation=dbLocation, minimumage=minimumage, nodrymode=nodrymode, nocleardiscoveredby=nocleardiscoveredby, leavetemplates=leavetemplates, force=force)
         except UserAbortedException as ex:
             log.warning(f"User aborted the operation, nothing deleted.")
 

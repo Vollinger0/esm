@@ -55,38 +55,51 @@ class EsmDatabaseWrapper:
             connection = self.getGameDbConnection(mode)
             self.gameDbCursor = connection.cursor()
         return self.gameDbCursor
-
-    def retrieveDiscoveredPlayfieldsForSolarSystems(self, solarsystems: List[SolarSystem]) -> List[Playfield]:
+    
+    def retrieveDiscoveredPlayfieldsForSolarSystems(self, solarsystems: List[SolarSystem], batchSize=10000) -> List[Playfield]:
         """return all playfields that are discovered and belong to the list of given solar systems"""
         log.debug(f"getting discovered playfields for given {len(solarsystems)} solarsystems")
-        ssids = []
-        for solarsystem in solarsystems:
-            ssids.append(solarsystem.ssid)
         discoveredPlayfields = []
-        for row in self.getGameDbCursor().execute("SELECT DISTINCT DiscoveredPlayfields.pfid, pfs.name, pfs.ssid, ss.name FROM DiscoveredPlayfields LEFT JOIN Playfields as pfs ON pfs.pfid = DiscoveredPlayfields.pfid LEFT JOIN SolarSystems as ss ON ss.ssid = pfs.ssid ORDER BY pfs.name;"):
-            ssid=row[2]
-            if ssid in ssids:
-                discoveredPlayfields.append(
-                    Playfield(ssid=ssid, 
-                                pfid=row[0], 
-                                starName=row[3], 
-                                name=row[1]))
+        solarsystemIds = list(map(lambda solarsystem: solarsystem.ssid, solarsystems))
+        cursor = self.getGameDbCursor()
+        # do the selection in batches, to avoid memory usage and performance issues.
+        for i in range(0, len(solarsystemIds), batchSize):
+            ssIdBatch = solarsystemIds[i:i+batchSize]
+            log.debug(f"selecting batch {i}-{i+batchSize} with {len(ssIdBatch)} ssids")
+            query = "SELECT DISTINCT dpfs.pfid, pfs.name, pfs.ssid, ss.name FROM DiscoveredPlayfields as dpfs"
+            query = f"{query} JOIN Playfields as pfs ON pfs.pfid = dpfs.pfid" 
+            query = f"{query} JOIN SolarSystems as ss ON ss.ssid = pfs.ssid"
+            query = f"{query} WHERE pfs.ssid in " + "({})".format(','.join(['?'] * len(ssIdBatch)))
+            query = f"{query} AND pfs.isinstance = 0"
+            query = f"{query} ORDER BY pfs.name"
+            for row in cursor.execute(query, ssIdBatch):
+                discoveredPlayfields.append(Playfield(pfid=row[0], name=row[1], ssid=row[2], starName=row[3]))
+
         log.debug(f"discovered playfields for the given solarsystems: {len(discoveredPlayfields)}")
         return discoveredPlayfields
 
     def retrieveAllSolarSystems(self) -> List[SolarSystem]:
-        """returns all solar systems"""
+        """returns all solar systems, no exceptions"""
         solarsystems = []
-        log.debug("loading solar systems")
-        for row in self.getGameDbCursor().execute("SELECT name, sectorx, sectory, sectorz, ssid FROM SolarSystems ORDER BY name"):
+        log.debug("retrieving solar systems")
+        cursor = self.getGameDbCursor()
+        query = "SELECT name, sectorx, sectory, sectorz, ssid FROM SolarSystems ORDER BY name"
+        for row in cursor.execute(query):
             solarsystems.append(SolarSystem(name=row[0], x=row[1], y=row[2], z=row[3], ssid=row[4]))
-        log.debug(f"solar systems loaded: {len(solarsystems)}")
+        log.debug(f"solar systems found: {len(solarsystems)}")
         return solarsystems
 
     def retrievePFsWithPlayerStructures(self) -> List[Playfield]:
-        log.debug("finding playfields containing player structures")
+        log.debug("retrieving playfields containing player structures")
         pfsWithStructures = []
-        for row in self.getGameDbCursor().execute("SELECT pfid, name FROM playfields WHERE pfid IN (SELECT e.pfid FROM Entities e INNER JOIN Structures s ON e.entityid = s.entityid WHERE (ispoi = 0) and (facid > 0) OR ((ispoi = 1) AND (etype = 3) AND (facid > 0) AND (bpname NOT LIKE '%OPV%')) OR ((ispoi = 1) AND (etype != 3) AND (facid > 0))) ORDER BY name;"):
+        cursor = self.getGameDbCursor()
+        query = "SELECT pfid, name FROM playfields WHERE pfid IN (" 
+        query = f"{query} SELECT e.pfid FROM Entities e INNER JOIN Structures s ON e.entityid = s.entityid"
+        query = f"{query} WHERE (ispoi = 0) and (facid > 0)"
+        query = f"{query} OR ((ispoi = 1) AND (etype = 3) AND (facid > 0) AND (bpname NOT LIKE '%OPV%'))"
+        query = f"{query} OR ((ispoi = 1) AND (etype != 3) AND (facid > 0)))"
+        query = f"{query} ORDER BY name"
+        for row in cursor.execute(query):
             pfsWithStructures.append(Playfield(pfid=row[0], name=row[1]))
         log.debug(f"playfields containing player structures: {len(pfsWithStructures)}")
         return pfsWithStructures
@@ -94,15 +107,29 @@ class EsmDatabaseWrapper:
     def retrievePFsWithPlaceables(self) -> List[Playfield]:
         log.debug("finding playfields containing terrain placeables")
         pfsWithPlaceables = []
-        for row in self.getGameDbCursor().execute("SELECT distinct playfields.pfid, playfields.name from TerrainPlaceables LEFT JOIN playfields ON TerrainPlaceables.pfid = playfields.pfid;"):
+        cursor = self.getGameDbCursor()
+        query = "SELECT DISTINCT playfields.pfid, playfields.name from TerrainPlaceables LEFT JOIN playfields ON TerrainPlaceables.pfid = playfields.pfid"
+        for row in cursor.execute(query):
             pfsWithPlaceables.append(Playfield(pfid=row[0], name=row[1]))
         log.debug(f"playfields containing terrain placeables: {len(pfsWithPlaceables)}")
         return pfsWithPlaceables
 
     def retrievePFsWithPlayers(self) -> List[Playfield]:
+        """retrieve all playfields that (should) contain players.
+        actually, select all playfields where players have last changed to, since this seems the only way to find out.
+        
+        Use this to check for yourself:
+        -- select cpfs.entityid, cpfs.topfid, max(gametime) as lastchange from ChangedPlayfields as cpfs group by cpfs.entityid order by entityid
+        -- select cpfs.entityid, cpfs.topfid, pfs.name, max(gametime) as lastchange from ChangedPlayfields as cpfs join playfields as pfs on pfs.pfid = cpfs.topfid group by cpfs.entityid order by entityid
+        -- select cpfs.entityid, cpfs.topfid, pfs.name, max(gametime) as lastchange, e.name from ChangedPlayfields as cpfs join Entities as e on e.entityid = cpfs.entityid join playfields as pfs on cpfs.topfid = pfs.pfid  group by e.entityid
+        """
         log.debug("finding playfields containing players")
         pfsWithPlayers = []
-        for row in self.getGameDbCursor().execute("select distinct playfields.pfid, playfields.name from Entities LEFT JOIN playfields ON Entities.pfid = playfields.pfid WHERE Entities.etype = 1;"):
+        cursor = self.getGameDbCursor()
+        query = "SELECT cpfs.topfid, pfs.name, cpfs.entityid, max(gametime) FROM ChangedPlayfields as cpfs "
+        query = f"{query} JOIN playfields as pfs on pfs.pfid = cpfs.topfid"
+        query = f"{query} GROUP BY cpfs.entityid"
+        for row in cursor.execute(query):
             pfsWithPlayers.append(Playfield(pfid=row[0], name=row[1]))
         log.debug(f"playfields containing players: {len(pfsWithPlayers)}")
         return pfsWithPlayers
@@ -118,17 +145,17 @@ class EsmDatabaseWrapper:
         log.debug(f"total amount of non empty playfields: {len(nonEmptyPlayfields)}")
         return nonEmptyPlayfields
 
-    def retrieveEmptyPlayfields(self, solarsystems) -> List[Playfield]:
+    def retrieveEmptyDiscoveredPlayfields(self, solarsystems) -> List[Playfield]:
         """this will get the empty playfields contained in the array of solarsystems"""
         discoveredPlayfields = self.retrieveDiscoveredPlayfieldsForSolarSystems(solarsystems)
         nonEmptyPlayfields = self.retrieveAllNonEmptyPlayfields()
 
         log.debug("filtering out non empty playfields from all discovered playfields")
-        emptyPlayfields = [playfield for playfield in discoveredPlayfields if playfield not in nonEmptyPlayfields]
+        emptyPlayfields = list(set(discoveredPlayfields) - set(nonEmptyPlayfields))
         log.debug(f"wipeable empty playfields: {len(emptyPlayfields)}")
         return emptyPlayfields
     
-    def deleteFromDiscoveredPlayfields(self, playfields: List[Playfield], batchSize = 1000):
+    def deleteFromDiscoveredPlayfields(self, playfields: List[Playfield], batchSize = 5000):
         """ 
         this will delete the rows from DiscoveredPlayfields for all playfields given
         will do the deletion statements in batches
@@ -196,34 +223,43 @@ class EsmDatabaseWrapper:
     
     def retrievePFsUnvisitedSince(self, gametick) -> List[Playfield]:
         """
-        Return all playfields that haven't been warped-to since gametick - in other words: all playfields that have newer visits, will not be returned.
+        Return all playfields that haven't been warped-to since gametick - in other words: all playfields that have visits after that, will not be returned.
         Will also exclude playfields that contain a player, if he hasn't left that pf since given gametick
 
         select pfs.pfid, pfs.name, pfs.ssid, ss.name from ChangedPlayfields as cpfs join playfields as pfs on cpfs.topfid = pfs.pfid join SolarSystems as ss on ss.ssid = pfs.ssid where topfid not in (select distinct pfid from entities as e where e.etype = 1) and gametime < 1000000
         """
         cursor = self.getGameDbCursor()
         playfields = []
-        query = F"SELECT DISTINCT pfs.pfid, pfs.name, pfs.ssid, ss.name from ChangedPlayfields as cpfs join playfields as pfs on cpfs.topfid = pfs.pfid join SolarSystems as ss on ss.ssid = pfs.ssid where topfid not in (select distinct pfid from entities as e where e.etype = 1)"
-        query = F"{query} and gametime < {gametick}"
+        query = f"SELECT DISTINCT pfs.pfid, pfs.name, pfs.ssid, ss.name from ChangedPlayfields AS cpfs"
+        query = f"{query} JOIN playfields AS pfs ON cpfs.topfid = pfs.pfid"
+        query = f"{query} JOIN SolarSystems AS ss ON ss.ssid = pfs.ssid"
+        query = f"{query} WHERE topfid NOT IN (SELECT DISTINCT pfid FROM entities AS e WHERE e.etype = 1)"
+        query = f"{query} AND pfs.isinstance = 0"
+        query = f"{query} AND gametime < {gametick}"
         for row in cursor.execute(query):
             playfields.append(Playfield(pfid=row[0], name=row[1], ssid=row[2], starName=row[3]))
         return playfields
 
-    def retrievePurgeableEntitiesByPlayfields(self, playfields: List[Playfield]) -> List[Entity]:
+    def retrievePurgeableEntitiesByPlayfields(self, playfields: List[Playfield], batchSize=20000) -> List[Entity]:
         """
         retrieve all entities contained in the given playfield that can be purged, this means:
-        * type must be structure (isstructure=1 => is SV HV CV or BA)
-        * type must be no proxy
+        * type must be structure (isstructure=1)
+        * is of known entity type => is SV HV CV or BA
+        * type must be no proxy (isproxy=0)
 
         select entityid, pfid, name, etype from Entities where isstructure=1 and isproxy=0 and etype in (2,3,4,5) and pfid in (x,y,z)
         """
-        query = "SELECT entityid, pfid, name, etype, isremoved from Entities where isstructure=1 and isproxy=0 and etype in (2,3,4,5)"
-        query = f"{query} and pfid in " + "({})".format(','.join(['?'] * len(playfields)))
         cursor = self.getGameDbCursor()
         entities = []
-        playfieldList = list(map(lambda playfield: playfield.pfid, playfields))
-        for row in cursor.execute(query, playfieldList):
-            entities.append(Entity(id=row[0], pfid=row[1], name=row[2], type=EntityType.byNumber(row[3]), isremoved=row[4]))
+        pfIdList = list(map(lambda playfield: playfield.pfid, playfields))
+        for i in range(0, len(pfIdList), batchSize):
+            pfIdBatch = pfIdList[i:i+batchSize]
+            query = "SELECT entityid, pfid, name, etype, isremoved from Entities where isstructure=1 and isproxy=0 and etype in (2,3,4,5)"
+            query = f"{query} and pfid in " + "({})".format(','.join(['?'] * len(pfIdBatch)))
+            log.debug(f"selecting batch {i}-{i+batchSize} with {len(pfIdBatch)} pfids")
+            for row in cursor.execute(query, pfIdBatch):
+                entities.append(Entity(id=row[0], pfid=row[1], name=row[2], type=EntityType.byNumber(row[3]), isremoved=row[4]))
+        log.debug(f"discovered {len(entities)} purgeable entities")
         return entities
     
     def retrieveLatestGameStoptickWithinDatetime(self, maxDatetime: datetime):
@@ -246,7 +282,7 @@ class EsmDatabaseWrapper:
                 starttime = datetime.strptime(starttimeString, dateFormat)
                 stoptime = datetime.strptime(stoptimeString, dateFormat)
                 if starttime < maxDatetime < stoptime:
-                    return startticks, stoptime
+                    return startticks, starttime
                 elif maxDatetime > stoptime:
                     return stopticks, stoptime
         # return the last of the loop (which will be the first sst entry, being the oldest times)

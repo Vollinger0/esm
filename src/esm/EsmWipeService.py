@@ -47,7 +47,7 @@ class EsmWipeService:
                 territory = self.getCustomTerritoryByName(territoryString)
                 solarSystems = self.getSolarSystemsInCustomTerritory(allSolarSystems, territory)
             log.info(f"The amount of stars is: {len(solarSystems)}")
-            emptyPlayfields = database.retrieveEmptyPlayfields(solarSystems)
+            emptyPlayfields = database.retrieveEmptyDiscoveredPlayfields(solarSystems)
             log.info(f"The amount of empty but discovered playfields that can be wiped is: {len(emptyPlayfields)}")
 
             if not nocleardiscoveredby and len(emptyPlayfields) > 0:
@@ -202,9 +202,10 @@ class EsmWipeService:
                 file.write(f"{entity.id},{entity.name},{entity.pfid},{entity.type.name},{entity.isremoved}\n")
         log.info("CSV file written. Nothing was changed in the current savegame. Please remember that this list gets instantly outdated once players play the game.")
 
-    def purgeEmptyPlayfields(self, database=None, dbLocation=None, minimumage=30, nodrymode=False, nocleardiscoveredby=False, force=False):
+    def purgeEmptyPlayfields(self, database=None, dbLocation=None, minimumage=30, nodrymode=False, nocleardiscoveredby=False, leavetemplates=False, force=False):
         """
         will purge (delete) all playfields and associated static entities from the filesystem that haven't been visisted for miniumage days.
+        this includes deleting the templates, unless leavetemplates is set to true
         
         force will force delete anything without asking the user.
         """
@@ -241,10 +242,10 @@ class EsmWipeService:
                 self.clearDiscoveredByInfoForPlayfields(playfields=playfields, database=database, nodrymode=nodrymode, closeConnection=False, doPrint=False)
             database.closeDbConnection()
             log.debug(f"Purging {len(playfields)} playfields")
-            pfCounter = self.doPurgePlayfields(playfields)
+            pfCounter, tpCounter = self.doPurgePlayfields(playfields, leavetemplates)
             log.debug(f"Purging {len(entities)} entities")
             enCounter = self.doPurgeEntities(entities)
-            log.info(f"{pfCounter} playfield folders and {enCounter} entity folders marked for deletion.")
+            log.info(f"{pfCounter} playfield folders, {tpCounter} template folders and {enCounter} entity folders marked for deletion.")
             if force:
                 self.fileSystem.commitDelete(override="yes")
             else:
@@ -259,19 +260,27 @@ class EsmWipeService:
             log.info(f"Will output the list of {len(entities)} entities that would have been purged as '{csvFilename}'")
             self.printListOfEntitiesAsCSV(csvFilename=csvFilename, entities=entities)
 
-    def doPurgePlayfields(self, playfields: List[Playfield]):
+    def doPurgePlayfields(self, playfields: List[Playfield], leavetemplates=False):
         """deletes the folders associated with the given playfields
-        returns the amount of folders marked for deletion
+        returns the amount of folders marked for deletion for playfields and templates
         """
         playfieldFolderPath = self.fileSystem.getAbsolutePathTo("saves.games.savegame.playfields")
-        markedCounter = 0
+        templateFolderPath = self.fileSystem.getAbsolutePathTo("saves.games.savegame.templates")
+        markedPfCounter = 0
+        markedTpCounter = 0
         for playfield in playfields:
             playfieldPath = Path(f"{playfieldFolderPath}/{playfield.name}")
             if playfieldPath.exists():
-                log.debug(f"folder {playfieldPath} exists will be marked as deleted")
+                log.debug(f"playfield folder {playfieldPath} exists will be marked as deleted")
                 self.fileSystem.markForDelete(targetPath=playfieldPath)
-                markedCounter += 1
-        return markedCounter
+                markedPfCounter += 1
+            if not leavetemplates:
+                templatePath = Path(f"{templateFolderPath}/{playfield.name}")
+                if templatePath.exists():
+                    log.debug(f"template folder {templatePath} exists will be marked as deleted")
+                    self.fileSystem.markForDelete(targetPath=templatePath)
+                    markedTpCounter += 1
+        return markedPfCounter, markedTpCounter
     
     def doPurgeEntities(self, entities: List[Entity]):
         """deletes the folders associated with the given entities
