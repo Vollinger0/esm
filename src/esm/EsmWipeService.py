@@ -384,20 +384,20 @@ class EsmWipeService:
         # calculate all ids that are on the FS but not in the DB (or marked as removed there)
         idsOnFsNotInDb = sorted(list(set(fsEntityIds) - set(dbEntityIds)))
 
-        log.info(f"found {len(idsOnFsNotInDb)} dangling entries in the shared folder that can be removed")
-        
+        additionalInfo = f"found {len(idsOnFsNotInDb)} dangling entries in the shared folder that can be removed"
         if nodryrun:
             for id in idsOnFsNotInDb:
                 self.fileSystem.markForDelete(Path(f"{sharedFolderPath}/{id}"))
 
             if force:
-                result, elapsedTime = self.fileSystem.commitDelete(override="yes")
+                result, elapsedTime = self.fileSystem.commitDelete(override="yes", additionalInfo=additionalInfo)
             else:
-                result, elapsedTime = self.fileSystem.commitDelete()
+                result, elapsedTime = self.fileSystem.commitDelete(additionalInfo=additionalInfo)
 
             if result:
                 log.info(f"Deleted {len(idsOnFsNotInDb)} folders in {elapsedTime}")
         else:
+            log.info(additionalInfo)
             filename="esm-cleanup-shared-folder.lst"
             log.info(f"Saving list of ids that are obsolete in file {filename}")
             with open(filename, "w", encoding="utf-8") as file:
