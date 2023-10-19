@@ -361,3 +361,45 @@ class EsmWipeService:
 
         log.debug(f"marked {templateCount} from {processCounter} template folders for deletion")
         return wipedPlayfieldNames, playfieldCount, templateCount
+
+    def cleanUpSharedFolder(self, database=None, dbLocation=None, nodryrun=False, force=False):
+        """
+        will check the entries in the shared folder, then retrieve all non-removed entities from the db and delete the dangling folders.
+        """
+        if database is None:
+            if dbLocation is None:
+                raise WrongParameterError("neither database nor dblocation was provided to access the database")
+            database = EsmDatabaseWrapper(dbLocation)
+        
+        sharedFolderPath = self.fileSystem.getAbsolutePathTo("saves.games.savegame.shared")
+        fsEntityIds = []
+        for entry in sharedFolderPath.iterdir():
+            id = Path(f"{entry}").name
+            fsEntityIds.append(id)
+        log.debug(f"found {len(fsEntityIds)} entries in the shared folder")
+        
+        dbEntityIds = database.retrieveNonRemovedEntities()
+        log.debug(f"found {len(dbEntityIds)} entries in the database")
+
+        # calculate all ids that are on the FS but not in the DB (or marked as removed there)
+        idsOnFsNotInDb = sorted(list(set(fsEntityIds) - set(dbEntityIds)))
+
+        log.info(f"found {len(idsOnFsNotInDb)} dangling entries in the shared folder that can be removed")
+        
+        if nodryrun:
+            for id in idsOnFsNotInDb:
+                self.fileSystem.markForDelete(Path(f"{sharedFolderPath}/{id}"))
+
+            if force:
+                result, elapsedTime = self.fileSystem.commitDelete(override="yes")
+            else:
+                result, elapsedTime = self.fileSystem.commitDelete()
+
+            if result:
+                log.info(f"Deleted {len(idsOnFsNotInDb)} folders in {elapsedTime}")
+        else:
+            filename="esm-cleanup-shared-folder.lst"
+            log.info(f"Saving list of ids that are obsolete in file {filename}")
+            with open(filename, "w", encoding="utf-8") as file:
+                file.writelines([line + '\n' for line in idsOnFsNotInDb])
+

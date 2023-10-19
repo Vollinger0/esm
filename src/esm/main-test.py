@@ -92,7 +92,8 @@ def testClearDiscoveredBy():
     #esm -v tool-clear-discovered --dblocation D:\temp\temp\20230708_original_anvils6_global.db -f namelist_s6.txt
     esm.clearDiscoveredByInfos(dbLocation=r"D:\temp\temp\20230708_original_anvils6_global.db", inputFile="namelist_s6.txt", nodryrun=False)
 
-
+def testcleanupSharedFolder():
+    esm.cleanupSharedFolder()
 
 ######################################################
 ## main code start
@@ -119,5 +120,6 @@ log.debug(f"Logging to: {esm.logFile}")
 #testStaticBackup()
 #testDeleteAll()
 #testClearDiscoveredBy()
+#testcleanupSharedFolder()
 
 log.info(f"Script finished successfully. Check the logfile ({esm.logFile}) if you missed something. Bye!")

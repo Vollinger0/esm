@@ -56,6 +56,7 @@ The main features being fully automated support for running the game on a ramdis
 - [-] usecase: create configuration? => probably not needed. the custom config covers our needs.
 
 ### done
+- [x] tool to find and delete obsolete folders in Shared
 - [x] purge the wiped: check for wipeinfos containing "all", and purge those (fs operations only)
 - [x] usecase: purge galaxy
 - [x] tool: clean structures that have been removed in the DB, but still exist on the FS (optional also give a min age)

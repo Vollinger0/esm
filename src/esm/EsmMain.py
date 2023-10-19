@@ -439,7 +439,7 @@ class EsmMain:
         checks for playfields that haven't been visited for the minimumage days and purges them from the filesystem
         """
         if nodryrun and self.dedicatedServer.isRunning():
-            raise ServerNeedsToBeStopped("Can not execute wipe empty playfields with --nodryrun if the server is running. Please stop it first.")
+            raise ServerNeedsToBeStopped("Can not purge empty playfields with --nodryrun if the server is running. Please stop it first.")
 
         if dbLocation is None:
             dbLocation = self.fileSystem.getAbsolutePathTo("saves.games.savegame.globaldb")
@@ -464,7 +464,7 @@ class EsmMain:
         will purge all entity folders in the shared folder of entities that are marked as deleted in the database
         """
         if nodryrun and self.dedicatedServer.isRunning():
-            raise ServerNeedsToBeStopped("Can not execute wipe empty playfields with --nodryrun if the server is running. Please stop it first.")
+            raise ServerNeedsToBeStopped("Can not purge removed entities with --nodryrun if the server is running. Please stop it first.")
 
         if dbLocation is None:
             dbLocation = self.fileSystem.getAbsolutePathTo("saves.games.savegame.globaldb")
@@ -493,7 +493,7 @@ class EsmMain:
         search for wipeinfo.txt containing "all" for all playfields and purge those (and their templates) completely.
         """
         if nodryrun and self.dedicatedServer.isRunning():
-            raise ServerNeedsToBeStopped("Can not execute wipe empty playfields with --nodryrun if the server is running. Please stop it first.")
+            raise ServerNeedsToBeStopped("Can not purge wiped playfields with --nodryrun if the server is running. Please stop it first.")
 
         log.info(f"Executing purge on wiped playfields: nodryrun '{nodryrun}', leavetemplates '{leavetemplates}', force '{force}'")
         with Timer() as timer:
@@ -519,4 +519,25 @@ class EsmMain:
             with open(fileName, "w", encoding='utf-8') as file:
                 file.writelines([line + '\n' for line in wipedPlayfieldNames])
             log.warning(f"Dry mode is active, exported list of playfields to purge as {fileName}")
+    
+    def cleanupSharedFolder(self, dbLocation=None, nodryrun=False, force=False):
+        """
+        will clean up the shared folder, after checking the entries against the entities table in the db.
+        """
+        if nodryrun and self.dedicatedServer.isRunning():
+            raise ServerNeedsToBeStopped("Can not clean up shared folders with --nodryrun if the server is running. Please stop it first.")
 
+        if dbLocation is None:
+            dbLocation = self.fileSystem.getAbsolutePathTo("saves.games.savegame.globaldb")
+        else:
+            dbLocationPath = Path(dbLocation).resolve().absolute()
+            if dbLocationPath.exists():
+                dbLocation = str(dbLocationPath)
+            else:
+                raise WrongParameterError(f"DbLocation '{dbLocation}' is not a valid database location path.")
+
+        log.info(f"Cleaning up shared folder for dbLocation: '{dbLocation}', nodryrun '{nodryrun}', force '{force}'")
+        try:
+            self.wipeService.cleanUpSharedFolder(dbLocation=dbLocation, nodryrun=nodryrun, force=force)
+        except UserAbortedException:
+            log.info(f"User aborted clean up execution.")
