@@ -224,17 +224,17 @@ class EsmDatabaseWrapper:
     def retrievePFsUnvisitedSince(self, gametick) -> List[Playfield]:
         """
         Return all playfields that haven't been warped-to since gametick - in other words: all playfields that have visits after that, will not be returned.
-        Will also exclude playfields that contain a player, if he hasn't left that pf since given gametick
+        Will not exclude playfields that contain a player!
 
-        select pfs.pfid, pfs.name, pfs.ssid, ss.name from ChangedPlayfields as cpfs join playfields as pfs on cpfs.topfid = pfs.pfid join SolarSystems as ss on ss.ssid = pfs.ssid where topfid not in (select distinct pfid from entities as e where e.etype = 1) and gametime < 1000000
+        select pfs.pfid, pfs.name, pfs.ssid, ss.name from ChangedPlayfields as cpfs 
+        join playfields as pfs on cpfs.topfid = pfs.pfid join SolarSystems as ss on ss.ssid = pfs.ssid where gametime < 1000000
         """
         cursor = self.getGameDbCursor()
         playfields = []
         query = f"SELECT DISTINCT pfs.pfid, pfs.name, pfs.ssid, ss.name from ChangedPlayfields AS cpfs"
         query = f"{query} JOIN playfields AS pfs ON cpfs.topfid = pfs.pfid"
         query = f"{query} JOIN SolarSystems AS ss ON ss.ssid = pfs.ssid"
-        query = f"{query} WHERE topfid NOT IN (SELECT DISTINCT pfid FROM entities AS e WHERE e.etype = 1)"
-        query = f"{query} AND pfs.isinstance = 0"
+        query = f"{query} WHERE pfs.isinstance = 0"
         query = f"{query} AND gametime < {gametick}"
         for row in cursor.execute(query):
             playfields.append(Playfield(pfid=row[0], name=row[1], ssid=row[2], starName=row[3]))

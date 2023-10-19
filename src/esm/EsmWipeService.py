@@ -186,7 +186,7 @@ class EsmWipeService:
         """
         creates a csv with the given playfields that would have been altered, to verify the results if needed, or whatever.
         """
-        with open(csvFilename, 'w') as file:
+        with open(csvFilename, 'w', encoding='utf-8') as file:
             file.write("playfield_id,playfield_name,system_id,system_name\n")
             for playfield in playfields:
                 file.write(f"{playfield.pfid},{playfield.name},{playfield.ssid},{playfield.starName}\n")
@@ -196,7 +196,7 @@ class EsmWipeService:
         """
         creates a csv with the given playfields that would have been altered, to verify the results if needed, or whatever.
         """
-        with open(csvFilename, 'w') as file:
+        with open(csvFilename, 'w', encoding='utf-8') as file:
             file.write("entity_id,entity_name,entity_pfid,entity_type,entity_isremoved\n")
             for entity in entities:
                 file.write(f"{entity.id},{entity.name},{entity.pfid},{entity.type.name},{entity.isremoved}\n")
@@ -224,13 +224,18 @@ class EsmWipeService:
         # get all playfields older than minage
         totalPlayfields = database.countDiscoveredPlayfields()
         log.debug(f"total playfields {totalPlayfields}")
-        oldPlayfields = database.retrievePFsUnvisitedSince(maximumGametick)
-        log.debug(f"found {len(oldPlayfields)} playfields unvisited since {stoptime}")
+        olderPlayfields = database.retrievePFsUnvisitedSince(maximumGametick)
+        log.debug(f"found {len(olderPlayfields)} playfields unvisited since {stoptime}")
+
+        if len(olderPlayfields) < 1:
+            log.info(f"Nothing to purge")
+            return
+        
         # get all occupied playfields
         occupiedPlayfields = database.retrieveAllNonEmptyPlayfields()
         log.debug(f"{len(occupiedPlayfields)} playfields are occupied by players or their stuff")
-        # filter out playfields that contain player stuff, using sets, since we can just substract these.
-        playfields = list(set(oldPlayfields) - set(occupiedPlayfields))
+        # filter out playfields that contain player stuff, using sets, since we can just substract these very fast
+        playfields = list(set(olderPlayfields) - set(occupiedPlayfields))
         log.debug(f"{len(playfields)} playfields can be purged")
 
         # get all purgeable entities that are contained in the playfields
@@ -245,11 +250,13 @@ class EsmWipeService:
             pfCounter, tpCounter = self.doPurgePlayfields(playfields, leavetemplates)
             log.debug(f"Purging {len(entities)} entities")
             enCounter = self.doPurgeEntities(entities)
-            log.info(f"{pfCounter} playfield folders, {tpCounter} template folders and {enCounter} entity folders marked for deletion.")
+
+            additionalInfo = f"{pfCounter} playfield folders, {tpCounter} template folders and {enCounter} entity folders marked for deletion."
             if force:
-                self.fileSystem.commitDelete(override="yes")
+                result, elapsedTime = self.fileSystem.commitDelete(override="yes", additionalInfo=additionalInfo)
             else:
-                self.fileSystem.commitDelete()
+                result, elapsedTime = self.fileSystem.commitDelete(additionalInfo=additionalInfo)
+            log.info(f"Deleting took {elapsedTime}")
         else:
             database.closeDbConnection()
             csvFilename = Path(f"esm-purgeplayfields-older-than-{minimumage}.csv").absolute()
@@ -271,13 +278,13 @@ class EsmWipeService:
         for playfield in playfields:
             playfieldPath = Path(f"{playfieldFolderPath}/{playfield.name}")
             if playfieldPath.exists():
-                log.debug(f"playfield folder {playfieldPath} exists will be marked as deleted")
+                log.debug(f"playfield folder '{playfieldPath}' exists and will be marked for deletion")
                 self.fileSystem.markForDelete(targetPath=playfieldPath)
                 markedPfCounter += 1
             if not leavetemplates:
                 templatePath = Path(f"{templateFolderPath}/{playfield.name}")
                 if templatePath.exists():
-                    log.debug(f"template folder {templatePath} exists will be marked as deleted")
+                    log.debug(f"template folder '{templatePath}' exists and will be marked for deletion")
                     self.fileSystem.markForDelete(targetPath=templatePath)
                     markedTpCounter += 1
         return markedPfCounter, markedTpCounter
@@ -291,7 +298,7 @@ class EsmWipeService:
         for entity in entities:
             idPath = Path(f"{sharedFolderPath}/{entity.id}")
             if idPath.exists():
-                log.debug(f"folder {idPath} exists although it is marked as deleted")
+                log.debug(f"folder '{idPath}' exists although it is marked as deleted")
                 self.fileSystem.markForDelete(targetPath=idPath)
                 markedCounter += 1
         return markedCounter
