@@ -6,7 +6,7 @@ from esm import UserAbortedException, WrongParameterError
 from esm.DataTypes import Territory, WipeType
 from esm.ServiceRegistry import ServiceRegistry
 from esm.EsmMain import EsmMain
-from esm.Tools import getElapsedTime, getTimer
+from esm.Tools import askUser, getElapsedTime, getTimer
 
 log = logging.getLogger(__name__)
 
@@ -337,6 +337,26 @@ def clearDiscoveredByInfos(dblocation, nodryrun, file, names):
                 esm.clearDiscoveredByInfos(dbLocation=dblocation, nodryrun=nodryrun, inputFile=file, inputNames=names)
             except WrongParameterError as ex:
                 log.error(f"Wrong Parameters: {ex}")
+
+
+@cli.command(name="terminate-galaxy", short_help="creates a singularity to destroy everything")
+@click.option('--i-am-darkestwarrior', is_flag=True, help="forces termination")
+@click.option('--i-am-vollinger', is_flag=True, help="graceful shutdown")
+@click.option('--i-am-kreliz', is_flag=True, help="have a coffee instead")
+def omg(i_am_darkestwarrior, i_am_vollinger, i_am_kreliz):
+    """Beware, this function will ^w^w^w"""
+    with LogContext():
+        esm = ServiceRegistry.get(EsmMain)  
+        result = ""
+        try:
+            while result != "yes":
+                result = input("Are you really sure? [yes/yes] ")
+                if result != "yes": 
+                    log.error(f"{result} is not a valid option, try again")
+        except:
+            log.info(f"It's all your fault now")
+        log.error("what? i didn't press anything!")
+        raise KeyboardInterrupt
 
 
 def getEsm():
