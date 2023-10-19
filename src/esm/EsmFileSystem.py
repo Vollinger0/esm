@@ -59,6 +59,7 @@ class EsmFileSystem:
                         "_parent": config.server.savegame,
                         "templates": config.foldernames.templates,
                         "playfields": config.foldernames.playfields,
+                        "shared": config.foldernames.shared,
                         "globaldb": config.filenames.globaldb
                     }
                 },
@@ -167,6 +168,7 @@ class EsmFileSystem:
     def markForDelete(self, targetPath, native=False):
         """
         mark a file, folder or hardlink and all its content for deletion, use #commitDelete to actually delete the stuff
+        if native is True, the path will be deleted with native shell commands on commit.
         """
         if isinstance(targetPath, Path):
             path = targetPath.absolute()
@@ -196,7 +198,7 @@ class EsmFileSystem:
             log.info("There is nothing to delete")
             return False, None
         
-        print(f"List of files marked for deletion:")
+        print(f"List of paths marked for deletion:")
         for path, targetPath, native in self.pendingDeletePaths:
             print(f"   {path}")
 

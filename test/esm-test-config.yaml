@@ -68,6 +68,7 @@ foldernames:
   backup: 'Backup'
   playfields: "Playfields"
   templates: 'Templates'
+  shared: 'Shared'
   backupmirrors: 'BackupMirrors'
   backupmirrorprefix: 'rollingBackup_'
   dedicatedserver: 'DedicatedServer'

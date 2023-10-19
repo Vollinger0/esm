@@ -28,14 +28,15 @@ The main features being fully automated support for running the game on a ramdis
 ## releasing:
 * execute a $ pip freeze >> requirements.txt
   * check the computed requirements, clean up as necessary
-* TODO
+* //TODO
 
 ## TODOS:
 ### WIP
+- [+] usecase: purge galaxy
 
 ### later
+- [ ] tool to purge playfield passed in the command line?
 - [ ] wipes from the wipetool should propagate to EAH? do i need to alter EAHs database too?
-- [ ] usecase: purge galaxy
 - [ ] add more epmclient functions, especially the sync event announcements. needs more work from notoats.
 - [ ] make sure the script only runs once? probably by opening up a port, that way there's no need for cleanups.
 - [ ] offer some kind of better interactive mode for different stuff
@@ -55,6 +56,7 @@ The main features being fully automated support for running the game on a ramdis
 - [-] usecase: create configuration? => probably not needed. the custom config covers our needs.
 
 ### done
+- [x] tool: clean structures that have been removed in the DB, but still exist on the FS (optional also give a min age)
 - [x] catch ctrl+c or sigints properly
 - [x] server-resume - usecase, for when you have to kill the script and start it again without having to kill the server.
 - [x] feature: add the ability to delete the discovered by flag to the wipe tool

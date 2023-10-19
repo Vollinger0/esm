@@ -83,9 +83,31 @@ class EntityType(Enum):
     Asteroid = 7
     EscapePod = 8
     NPC = 9
+    PlayerDrone = 12
+    Trader = 13
+    Playerbike = 19
+    UNKNOWN = 0
 
     @staticmethod
     def byNumber(number):
         for et in list(EntityType):
             if et.value == number:
                 return et
+        return EntityType.UNKNOWN
+            
+class Entity:
+    """
+    game entity
+    """
+    def __init__(self, id, name, pfid, type: EntityType, isremoved: bool) -> None:
+        self.id = id
+        self.name = name
+        self.pfid = pfid
+        self.type = type
+        self.isremoved = isremoved
+    def __eq__(self, other):
+        if isinstance(other, Entity):
+            return self.id == other.id
+        return False        
+    def __hash__(self):
+        return hash(self.id)
