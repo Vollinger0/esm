@@ -9,6 +9,7 @@ paths:
 server:
   dedicatedYaml: 'esm-dedicated.yaml'
   savegame: 'EsmDediGame'
+  #savegame: 'AnvilS6'
   gfxMode: True
   minDiskSpaceForStartup: 500M
 

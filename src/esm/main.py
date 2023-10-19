@@ -240,6 +240,26 @@ def purgeEmptyPlayfields(dblocation, nodrymode, nocleardiscoveredby, minimumage,
                 log.error(f"Wrong Parameters: {ex}")
 
 
+@cli.command(name="tool-purge-wiped-playfields", short_help="purges all playfields that are marked to be wiped with wipetype 'all'")
+@click.option('--nodrymode', is_flag=True, help="set to actually execute the purge on the disk. A custom --dblocation will be ignored!")
+@click.option('--leavetemplates', is_flag=True, help=f"if set, do not purge the templates of the purged playfields")
+@click.option('--force', is_flag=True, help=f"if set, do not ask interactively before file deletion")
+def purgeWipedPlayfields(nodrymode, leavetemplates, force):
+    """Will *purge* all playfields that are marked for wipe with wipetype 'all' including their templates.
+    This requires the server to be shut down, since it modifies the files on the filesystem.
+
+    Make sure to have a recent backup before doing this.
+    
+    Defaults to use a drymode, so the results are only written to a txt file for you to check.
+    """
+    with LogContext():
+        esm = ServiceRegistry.get(EsmMain)  
+        try:
+            esm.purgeWipedPlayfields(nodrymode=nodrymode, leavetemplates=leavetemplates, force=force)
+        except WrongParameterError as ex:
+            log.error(f"Wrong Parameters: {ex}")
+
+
 @cli.command(name="tool-clean-removed-entities", short_help="")
 @click.option('--dblocation', metavar='file', help="location of database file to be used in dry mode. Defaults to use the current savegames DB")
 @click.option('--nodrymode', is_flag=True, help="set to actually execute the purge on the disk. A custom --dblocation will be ignored!")

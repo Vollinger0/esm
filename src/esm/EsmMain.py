@@ -14,7 +14,7 @@ from esm.EsmRamdiskManager import EsmRamdiskManager
 from esm.EsmSteamService import EsmSteamService
 from esm.EsmWipeService import EsmWipeService
 from esm.ServiceRegistry import ServiceRegistry
-from esm.Tools import askUser, isDebugMode, monkeyPatchAllFSFunctionsForDebugMode
+from esm.Tools import Timer, askUser, isDebugMode, monkeyPatchAllFSFunctionsForDebugMode
 
 log = logging.getLogger(__name__)
 
@@ -483,3 +483,36 @@ class EsmMain:
                 log.info(f"Cleaned up {count} folders with removed entities in the Shared folder.")
             except UserAbortedException as ex:
                 log.warning("User aborted operation, nothing was deleted.")
+
+    def purgeWipedPlayfields(self, nodrymode=False, leavetemplates=False, force=False):
+        """
+        search for wipeinfo.txt containing "all" for all playfields and purge those (and their templates) completely.
+        """
+        if nodrymode and self.dedicatedServer.isRunning():
+            raise ServerNeedsToBeStopped("Can not execute wipe empty playfields with --nodrymode if the server is running. Please stop it first.")
+
+        log.info(f"Executing purge on wiped playfields: nodrymode '{nodrymode}', leavetemplates '{leavetemplates}', force '{force}'")
+        with Timer() as timer:
+            wipedPlayfieldNames, playfieldCount, templateCount = self.wipeService.purgeWipedPlayfields(leavetemplates)
+        log.info(f"Marked {playfieldCount} playfield folders and {templateCount} template folders for deletion, time elapsed: {timer.elapsedTime}")
+
+        if len(wipedPlayfieldNames) < 1:
+            log.info(f"Nothing to purge")
+            return
+
+        if nodrymode:
+            if force:
+                result, elapsedTime = self.fileSystem.commitDelete(override="yes")
+                log.info(f"Purged {playfieldCount} playfield and {templateCount} template folders, time elapsed: {elapsedTime}.")
+            else:
+                try:
+                    result, elapsedTime = self.fileSystem.commitDelete()
+                    log.info(f"Purged {playfieldCount} playfield and {templateCount} template folders, time elapsed: {elapsedTime}.")
+                except UserAbortedException as ex:
+                    log.warning("User aborted operation, nothing was deleted.")
+        else:
+            fileName = f"esm-purgewipedplayfields.lst"
+            with open(fileName, "w") as file:
+                file.writelines([line + '\n' for line in wipedPlayfieldNames])
+            log.warning(f"Dry mode is active, exported list of playfields to purge as {fileName}")
+
