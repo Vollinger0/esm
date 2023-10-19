@@ -68,6 +68,7 @@ class test_EsmDatabaseWrapper(unittest.TestCase):
         db = EsmDatabaseWrapper(dbPath)
 
         pfs = db.retrievePFsUnvisitedSince(336776)
-        self.assertEqual(len(pfs), 1)
-        self.assertEqual(pfs[0].pfid, 709)
+        pfIds = list(map(lambda pf: pf.pfid, pfs))
+        self.assertEqual(len(pfs), 2)
+        self.assertEqual(sorted(pfIds), [88, 709])
 
