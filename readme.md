@@ -32,7 +32,7 @@ The main features being fully automated support for running the game on a ramdis
 
 ## TODOS:
 ### WIP
-- [+] usecase: purge galaxy
+- [x] usecase: purge galaxy
 
 ### later
 - [ ] tool to purge playfield passed in the command line?

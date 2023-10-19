@@ -215,13 +215,14 @@ def wipeEmptyPlayfields(dblocation, territory, wipetype, nodrymode, showtypes, s
 @click.option('--nocleardiscoveredby', is_flag=True, help="If set, will *not* clear the discovered by infos from the purged playfields")
 @click.option('--nodrymode', is_flag=True, help="set to actually execute the purge on the disk. A custom --dblocation will be ignored!")
 @click.option('--minimumage', default=30, help=f"age a playfield has to have for it to get purged in *days*")
+@click.option('--leavetemplates', is_flag=True, help=f"if set, do not purge the templates of the purged playfields")
 @click.option('--force', is_flag=True, help=f"if set, do not ask interactively before file deletion")
-def purgeEmptyPlayfields(dblocation, nodrymode, nocleardiscoveredby, minimumage, force):
+def purgeEmptyPlayfields(dblocation, nodrymode, nocleardiscoveredby, minimumage, leavetemplates, force):
     """Will *purge* playfields without players, player owned structures, terrain placeables for the whole galaxy.
     This requires the server to be shut down, since it needs access to the current state of the savegame and the filesystem.
 
     This will actually delete playfields that have not been visited for minimumage days along with the referenced structures 
-    from the filesystem (!). Make sure to have a recent backup before doing this.
+    and templates from the filesystem (!). Make sure to have a recent backup before doing this.
     
     Defaults to use a drymode, so the results are only written to a csv file for you to check.
     If you use the dry mode just to see how it works, you may aswell define a different savegame database.
@@ -234,7 +235,7 @@ def purgeEmptyPlayfields(dblocation, nodrymode, nocleardiscoveredby, minimumage,
             log.error(f"--nodrymode and --dblocation can not be used together for safety reasons.")
         else:
             try:
-                esm.purgeEmptyPlayfields(dbLocation=dblocation, nodrymode=nodrymode, nocleardiscoveredby=nocleardiscoveredby, minimumage=minimumage, force=force)
+                esm.purgeEmptyPlayfields(dbLocation=dblocation, nodrymode=nodrymode, nocleardiscoveredby=nocleardiscoveredby, minimumage=minimumage, leavetemplates=leavetemplates, force=force)
             except WrongParameterError as ex:
                 log.error(f"Wrong Parameters: {ex}")
 
