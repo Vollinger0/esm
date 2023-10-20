@@ -51,6 +51,7 @@ The main features being fully automated support for running the game on a ramdis
     * may also just check the config, e.g. if all paths exist
 - [+] create separate windows-gui thingy that resides in the taskbar or similar and provides a shortcut to the cli tool.
 - [ ] use pyinstaller to create a distributable program without any installation overhead: https://pyinstaller.org/
+- [ ] check for 8dot3name
 
 ### optional
 - [-] usecase: create configuration? => probably not needed. the custom config covers our needs.
