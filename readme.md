@@ -1,9 +1,11 @@
 # ESM - Empyrion Server Manager
+
 Sophisticated console client to manage an Empyrion Galactic Survival Dedicated Server.
 Built to manage servers with a *lot* of players and *huge* savegames (>>10GB) perfomantly, adding a lot of performance optimizations to the way the server runs.
 The main features being fully automated support for running the game on a ramdisk, a blazing fast rolling backup system and a series of tools for managing the galaxy.
 
 ## Features
+
 - automatically sets up and runs a game on a ramdisk, which eliminates most server performance problems
 - provides its own (eah compatible) rolling mirror backup system, that backs up a 50GB savegame in under a minute without even affecting game server performance
 - ability to create static (zipped) backups
@@ -21,20 +23,27 @@ The main features being fully automated support for running the game on a ramdis
 - extensive logfile with a ton of information
 
 ## running locally
-* install venv: $ py -m venv .venv
-* activate venv: $ .\\.venv\Scripts\activate
-* install requirements: $ pip install -r requirements.txt
-* start esm: $ esm
 
-## releasing:
-* execute a $ pip freeze >> requirements.txt
-  * check the computed requirements, clean up as necessary
-* //TODO
+- install venv: $ py -m venv .venv
+- activate venv: $ .\\.venv\Scripts\activate
+- install requirements: $ pip install -r requirements.txt
+- start esm: $ esm
 
-## TODOS:
+## releasing
+
+- execute a $ pip freeze >> requirements.txt
+  - check the computed requirements, clean up as necessary
+- //TODO
+
+## TODOS
+
 ### WIP
 
 ### later
+
+- [ ] provide full installation package with install bat, that installs esm, the tools (osfmount, peazip, epm, python, etc.)
+- [ ] install should have the option to install the scenario? or...
+- [ ] update should have the option to disable the steam check?
 - [ ] tool to purge playfield passed in the command line?
 - [ ] wipes from the wipetool should propagate to EAH? do i need to alter EAHs database too?
 - [ ] add more epmclient functions, especially the sync event announcements. needs more work from notoats.
@@ -47,16 +56,18 @@ The main features being fully automated support for running the game on a ramdis
 - [ ] implement warning/talkback via tickets for when an admin is required (e.g. low disk space, etc.)
 - [ ] implement warning/talkback to server chat for syncs, backups probably even random stuff with funny hamster sentences.
 - [ ] integrity check: checks if things fit together (e.g. dedicated.yaml config), our own config when running multiple instances, etc.
-    * or adapt config to dedicated.yaml, especially when paths change. probably as a sanity check implementation
-    * may also just check the config, e.g. if all paths exist
+  - or adapt config to dedicated.yaml, especially when paths change. probably as a sanity check implementation
+  - may also just check the config, e.g. if all paths exist
 - [+] create separate windows-gui thingy that resides in the taskbar or similar and provides a shortcut to the cli tool.
-- [ ] use pyinstaller to create a distributable program without any installation overhead: https://pyinstaller.org/
+- [ ] use pyinstaller to create a distributable program without any installation overhead: <https://pyinstaller.org/>
 - [ ] check for 8dot3name
 
 ### optional
+
 - [-] usecase: create configuration? => probably not needed. the custom config covers our needs.
 
 ### done
+
 - [x] tool to find and delete obsolete folders in Shared
 - [x] purge the wiped: check for wipeinfos containing "all", and purge those (fs operations only)
 - [x] usecase: purge galaxy
@@ -93,6 +104,5 @@ The main features being fully automated support for running the game on a ramdis
 - [x] usecase: install ramdisk
 - [x] usecase: kill gameserver (via sigterm)
 - [x] usecase: start up gameserver
-
 
 #### copyright by Vollinger 2023
