@@ -1,15 +1,14 @@
 paths:
-  install: 'D:\EGS\Empyrion\'
-  osfmount: 'C:\Users\Nutzer\Programme\OSFMount\osfmount.com'
-  peazip: 'C:\Program Files\PeaZip\res\bin\7z\7z.exe'
-  epmremoteclient: 'D:\EGS\Empyrion\EmpyrionPrime.RemoteClient.Console.exe'
-  eah: 'D:\EGS\Empyrion\DedicatedServer\EmpyrionAdminHelper'
-  steamcmd: 'D:\EGS\steamcmd.exe'
+  install: 'C:\Servers\Empyrion\'
+  osfmount: 'C:\Servers\Tools\OSFMount\osfmount.com'
+  peazip: 'C:\Servers\Tools\PeaZip\res\bin\7z\7z.exe'
+  epmremoteclient: 'c:\Servers\Tools\\EmpyrionPrime.RemoteClient.Console.exe'
+  eah: 'C:\Servers\Empyrion\DedicatedServer\EmpyrionAdminHelper'
+  steamcmd: 'C:\Servers\Tools\steamcmd\steamcmd.exe'
 
 server:
   dedicatedYaml: 'esm-dedicated.yaml'
   savegame: 'EsmDediGame'
-  #savegame: 'AnvilS6'
   gfxMode: True
   minDiskSpaceForStartup: 500M
 
@@ -20,8 +19,8 @@ ramdisk:
 backups:
   additionalBackupPaths: 
     # list of full paths to source files or directories to backup additionally. Those will all end up in the folder "Additional" in the backup.
-    - 'D:\EGS\Empyrion\esm\esm-custom-config.yaml' # our own configuration
-    - 'D:\EGS\Empyrion\Content\Mods\EncryptoidModPack' # the whole modpack
+    - 'C:\Servers\Empyrion\Tools\esm\esm-custom-config.yaml' # our own configuration
+    #- 'C:\Servers\Empyrion\Content\Mods\EncryptoidModPack' # the whole modpack
 
 updates: 
   additional:
@@ -30,7 +29,8 @@ updates:
     # if dst is not a directory, a directory with that name will be created and used as target for the source.
     # if src is a directory, it will be copied recursively into the target folder.
     # existing files/directories in the target will be overwritten!
-    - {src: 'D:\EGS\Empyrion\test.txt', dst: 'esm'}
+    - {src: 'c:\Servers\Scenarios\ProjectA\' , dst: 'c:\Servers\empyrion\Content\Scenarios\'}
+    #- {src: 'D:\EGS\Empyrion\test.txt', dst: 'esm'}
     #- {src: 'D:\EGS\Empyrion\test.txt', dst: 'content\configuration'}
     #- {src: 'D:\EGS\Empyrion\test.txt', dst: 'D:\temp'}
 
@@ -38,7 +38,7 @@ deletes:
   additionalDeletes: # additional paths of stuff to delete when using the "deleteall" command
     # paths to files/directories could point to like mod data, etc.. This accepts filesystem globbing (wildcards) like *.dat or similar.
     # if a path is relative, it will be assumed to be relative to the installation path.
-    - 'test.txt'
+    # - 'test.txt'
     # - 'Content\Mods\EncryptoidModPack\Mods\AdminTetherport\Database'
 
 galaxy:
