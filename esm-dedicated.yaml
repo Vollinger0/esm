@@ -1,0 +1,18 @@
+ServerConfig:
+  Srv_Port: 40000
+  Srv_Name: Vollingers Test Server on a ramdisk managed by ESM
+  Srv_MaxPlayers: 8
+  Srv_ReservePlayfields: 1
+  Srv_Public: false
+  AdminConfigFile: adminconfig.yaml
+  Tel_Port: 30004
+  SaveDirectory: Saves
+  MaxAllowedSizeClass: 21
+  AllowedBlueprints: All
+  HeartbeatServer: 15
+  TimeoutBootingPfServer: 90
+GameConfig:
+  GameName: EsmDediGame
+  Mode: Survival
+  Seed: 42069420
+  CustomScenario: ProjectA
