@@ -173,12 +173,18 @@ class EsmBackupService:
         # saves/adminconfig.yaml
         adminConfig = Path(f"{self.fileSystem.getAbsolutePathTo('saves')}/adminconfig.yaml")
         targetAdminConfig = Path(f"{targetBackupFolder}/{self.config.foldernames.saves}/adminconfig.yaml")
-        FsTools.copyFile(adminConfig, targetAdminConfig)
+        if adminConfig.exists():
+            FsTools.copyFile(adminConfig, targetAdminConfig)
+        else:
+            log.warning(f"adminconfig.yaml at {adminConfig} does not exist. You probably should have one or something is misconfigured.")
 
         # dedicated.yaml
         dedicatedYaml = Path(f"{self.config.paths.install}/{self.config.server.dedicatedYaml}")
         targetDedicatedYaml = Path(f"{targetBackupFolder}/{self.config.server.dedicatedYaml}")
-        FsTools.copyFile(dedicatedYaml, targetDedicatedYaml)
+        if dedicatedYaml.exists():
+            FsTools.copyFile(dedicatedYaml, targetDedicatedYaml)
+        else:
+            log.warning(f"dedicated yaml at {dedicatedYaml} does not exist. This shouldn't happen")
     
     def backupToolData(self, targetBackupFolder):
         """
