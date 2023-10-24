@@ -269,7 +269,7 @@ class EsmBackupService:
         """
         self.assertEnoughFreeSpace()
 
-        zipFile = f"{backupDirectory}\{zipFileName}"
+        zipFile = f"{backupDirectory}\\{zipFileName}"
         peaZipExecutable = self.getPeaZipPath()
         cmd = [peaZipExecutable]
         cmd.extend(str(self.config.backups.staticBackupPeaZipOptions).split(" "))
