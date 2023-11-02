@@ -1,8 +1,9 @@
+import importlib
 import logging
 import signal
 import click
 from halo import Halo
-from esm import WrongParameterError
+from esm.exceptions import WrongParameterError
 from esm.DataTypes import Territory, WipeType
 from esm.ServiceRegistry import ServiceRegistry
 from esm.EsmMain import EsmMain
@@ -47,6 +48,13 @@ def cli(verbose, config):
         init(streamLogLevel=logging.DEBUG, customConfig=config)
     else:
         init(streamLogLevel=logging.INFO, customConfig=config)
+
+
+@cli.command(name='version', short_help="shows the scripts version")
+def showVersion():
+    """ just shows the version of this script"""
+    version = importlib.metadata.version(__package__)
+    log.info(f"Version is {version}")
 
 
 @cli.command(name="ramdisk-prepare", short_help="prepares the file system for ramdisk setup")
@@ -365,11 +373,6 @@ def getEsm():
     return ServiceRegistry.get(EsmMain)
 
 
-# main cli entry point.
-def start():
-    cli()
-
-
 def init(fileLogLevel=logging.DEBUG, streamLogLevel=logging.INFO, customConfig="esm-custom-config.yaml"):
     signal.signal(signal.SIGINT, forcedExit)
     esm = EsmMain(caller="esm",
@@ -384,3 +387,11 @@ def init(fileLogLevel=logging.DEBUG, streamLogLevel=logging.INFO, customConfig="
 def forcedExit(*args):
     log.warning("Script execution interrupted via SIGINT. If the server is still running, you may resume execution via the server-resume command")
     exit(1)
+
+# main cli entry point.
+def start():
+    cli()
+
+# needed so the module can be started directly with esm.main
+if __name__ == "__main__":
+    start()

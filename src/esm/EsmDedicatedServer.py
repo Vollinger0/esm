@@ -6,7 +6,7 @@ import psutil
 import re
 from pathlib import Path, PurePath
 from datetime import datetime
-from esm import AdminRequiredException
+from esm.exceptions import AdminRequiredException
 from esm.EsmConfigService import EsmConfigService
 from esm.EsmEpmRemoteClientService import EsmEpmRemoteClientService
 from esm.EsmRamdiskManager import EsmRamdiskManager

@@ -4,7 +4,7 @@ from functools import cached_property
 import logging
 from pathlib import Path
 import shutil
-from esm import AdminRequiredException
+from esm.exceptions import AdminRequiredException
 from esm.EsmBackupService import EsmBackupService
 from esm.EsmConfigService import EsmConfigService
 from esm.EsmFileSystem import EsmFileSystem

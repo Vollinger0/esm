@@ -3,7 +3,7 @@ from functools import cached_property
 import logging
 from pathlib import Path
 import subprocess
-from esm import RequirementsNotFulfilledError
+from esm.exceptions import RequirementsNotFulfilledError
 from esm.EsmConfigService import EsmConfigService
 from esm.FsTools import FsTools
 from esm.ServiceRegistry import Service, ServiceRegistry
