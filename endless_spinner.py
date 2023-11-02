@@ -9,3 +9,4 @@ with Halo(text="Running", spinner="dots") as spinner:
         spinner.succeed("Stopped")
 
 print("The end.")
+

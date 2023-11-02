@@ -3,7 +3,7 @@ import logging
 import signal
 import click
 from halo import Halo
-from esm.exceptions import WrongParameterError
+from esm.Exceptions import ExitCodes, WrongParameterError
 from esm.DataTypes import Territory, WipeType
 from esm.ServiceRegistry import ServiceRegistry
 from esm.EsmMain import EsmMain
@@ -31,23 +31,23 @@ class LogContext:
 # this file is the main cli interface and entry point for the script and module.
 #
 @click.group(epilog='Brought to you by hamster, coffee and pancake symphatisants')
+@click.option('-c', '--config', default="esm-custom-config.yaml", metavar='<file>', show_default=True, help="set the custom config file")
 @click.option('-v', '--verbose', is_flag=True, help='set loglevel on console to DEBUG')
-@click.option('-c', '--config', default="esm-custom-config.yaml", metavar='<file>', show_default=True, help="set the custom config file to use")
-def cli(verbose, config):
+@click.option('-w', '--wait', is_flag=True, help="if set, will wait and retry to start command, if there is already an instance running. You can set the interval and amount of tries in the configuration.")
+def cli(verbose, config, wait):
     """ 
     ESM, the Empyrion Server Manager - will help you set up an optional ramdisk, run the server, do rolling backups, cleanups and other things efficiently.
     Optimized for speed to be used for busy servers with huge savegames.
 
     Make sure to check the configuration before running any command!
 
-    
     Tip: You can get more info and options to each command by calling it with the param --help\n
     e.g. "esm tool-wipe-empty-playfields --help"
     """
     if verbose:
-        init(streamLogLevel=logging.DEBUG, customConfig=config)
+        init(streamLogLevel=logging.DEBUG, customConfig=config, wait=wait)
     else:
-        init(streamLogLevel=logging.INFO, customConfig=config)
+        init(streamLogLevel=logging.INFO, customConfig=config, wait=wait)
 
 
 @cli.command(name='version', short_help="shows the scripts version")
@@ -354,8 +354,16 @@ def clearDiscoveredByInfos(dblocation, nodryrun, file, names):
 @click.option('--i-am-vollinger', is_flag=True, help="graceful shutdown")
 @click.option('--i-am-kreliz', is_flag=True, help="have a coffee instead")
 def omg(i_am_darkestwarrior, i_am_vollinger, i_am_kreliz):
-    """Beware, this function will ^w^w^w"""
+    """Beware, this function will ^w^w^w
+    
+    Do not press CTRL+C!
+    """
+    def NoOp(*args):
+        raise KeyboardInterrupt
     with LogContext():
+        # reset the global signal handler for this method
+        signal.signal(signal.SIGINT, NoOp)
+
         esm = ServiceRegistry.get(EsmMain)  
         result = ""
         try:
@@ -365,16 +373,20 @@ def omg(i_am_darkestwarrior, i_am_vollinger, i_am_kreliz):
                     log.error(f"{result} is not a valid option, try again")
         except:
             log.info(f"It's all your fault now")
-        log.error("what? i didn't press anything!")
-        raise KeyboardInterrupt
+
+        with Halo(text="Destroying worlds", spinner="dots") as spinner:
+            try:
+                while True:
+                    pass
+            except KeyboardInterrupt:
+                spinner.fail("Stopped")
+                log.warning("Destruction of the galaxy ended prematurely. Please contact an expert.")
 
 
-def getEsm():
-    return ServiceRegistry.get(EsmMain)
-
-
-def init(fileLogLevel=logging.DEBUG, streamLogLevel=logging.INFO, customConfig="esm-custom-config.yaml"):
+def init(fileLogLevel=logging.DEBUG, streamLogLevel=logging.INFO, customConfig="esm-custom-config.yaml", wait=False):
+    # catch keyboard interrupts 
     signal.signal(signal.SIGINT, forcedExit)
+    
     esm = EsmMain(caller="esm",
                 configFileName="esm-base-config.yaml",
                 customConfigFileName=customConfig,
@@ -382,16 +394,21 @@ def init(fileLogLevel=logging.DEBUG, streamLogLevel=logging.INFO, customConfig="
                 streamLogLevel=streamLogLevel
                 )
     ServiceRegistry.register(esm)
+    
+    # enable multiple instance check and wait
+    port = esm.config.general.bindingPort
+    if wait:
+        interval = esm.config.general.multipleInstanceWaitInterval
+        tries = esm.config.general.multipleInstanceWaitTries
+        esm.openSocket(port, interval=interval, tries=tries)
+    else:
+        esm.openSocket(port)
 
 
 def forcedExit(*args):
     log.warning("Script execution interrupted via SIGINT. If the server is still running, you may resume execution via the server-resume command")
-    exit(1)
+    exit(ExitCodes.SCRIPT_INTERRUPTED)
 
 # main cli entry point.
 def start():
     cli()
-
-# needed so the module can be started directly with esm.main
-if __name__ == "__main__":
-    start()

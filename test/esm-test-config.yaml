@@ -28,8 +28,8 @@ backups:
   marker: 'esm_this_is_the_latest_backup' # filename used for the marker that marks as backup as being the latest.
   additionalBackupPaths: 
     # list of full paths to source files or directories to backup additionally. Those will all end up in the folder "Additional" in the backup.
-    - 'D:\EGS\Empyrion\esm\esm-config.yaml' # our own configuration
-    - 'D:\EGS\Empyrion\Content\Mods\EncryptoidModPack' # the whole modpack
+    - 'C:\Servers\Tools\esm\esm-config.yaml' # our own configuration
+    - 'C:\Servers\Empyrion\Content\Mods\EncryptoidModPack' # the whole modpack
   staticBackupPeaZipOptions: "a -tzip -mtp=0 -mm=Deflate64 -mmt=on -mx1 -mfb=32 -mpass=1 -sccUTF-8 -mcu=on -mem=AES256 -bb0 -bse0 -bsp2" #make sure to use the fastest compression options
   minDiskSpaceForStaticBackup: 500M # if disk space on the drive with the backups has less free space than this, do not create a backup. gnu notation.
 
@@ -40,7 +40,7 @@ updates:
     # if dst is not a directory, a directory with that name will be created and used as target for the source.
     # if src is a directory, it will be copied recursively into the target folder.
     # existing files/directories in the target will be overwritten!
-    - {src: 'D:\EGS\Empyrion\test.txt', dst: 'esm'}
+    - {src: 'C:\Servers\Tools\esm\test.py', dst: 'esm'}
     #- {src: 'D:\EGS\Empyrion\test.txt', dst: 'content\configuration'}
     #- {src: 'D:\EGS\Empyrion\test.txt', dst: 'D:\temp'}
 
@@ -55,12 +55,12 @@ deletes:
     # - 'Content\Mods\EncryptoidModPack\Mods\AdminTetherport\Database'
 
 paths:
-  install: 'D:\EGS\Empyrion\esm\test\empyrion'
-  osfmount: 'C:\Users\Nutzer\Programme\OSFMount\osfmount.com'
-  peazip: 'C:\Program Files\PeaZip\res\bin\7z\7z.exe'
-  epmremoteclient: 'D:\EGS\Empyrion\EmpyrionPrime.RemoteClient.Console.exe'
-  eah: 'D:\EGS\Empyrion\DedicatedServer\EmpyrionAdminHelper'
-  steamcmd: 'D:\EGS\steamcmd.exe'
+  install: 'C:\Servers\Empyrion'
+  osfmount: 'C:\Servers\Tools\OSFMount\osfmount.com'
+  peazip: 'C:\Servers\Tools\PeaZip\res\bin\7z\7z.exe'
+  epmremoteclient: 'c:\Servers\Tools\\EmpyrionPrime.RemoteClient.Console.exe'
+  eah: 'C:\Servers\Empyrion\DedicatedServer\EmpyrionAdminHelper'
+  steamcmd: 'C:\Servers\Tools\steamcmd\steamcmd.exe'
 
 foldernames:
   saves: 'Saves'

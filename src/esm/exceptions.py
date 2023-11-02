@@ -30,3 +30,12 @@ class SafetyException(Exception):
 
 class WrongParameterError(Exception):
     pass
+
+
+class ExitCodes:
+    """
+    used as console return codes for sys.exit() throughout the application, if needed.
+    """
+    INSTANCE_RUNNING = 1
+    INSTANCE_RUNNING_GAVE_UP = 2
+    SCRIPT_INTERRUPTED = 10

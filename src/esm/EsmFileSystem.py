@@ -8,7 +8,7 @@ from esm.EsmConfigService import EsmConfigService
 from esm.FsTools import FsTools
 from esm.ServiceRegistry import Service, ServiceRegistry
 from esm.Tools import askUser, getElapsedTime, getTimer, isDebugMode
-from esm.exceptions import UserAbortedException
+from esm.Exceptions import UserAbortedException
 
 log = logging.getLogger(__name__)
 

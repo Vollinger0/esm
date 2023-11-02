@@ -3,7 +3,7 @@ import logging
 from pathlib import Path
 import socket
 import time
-from esm.exceptions import AdminRequiredException, ServerNeedsToBeStopped, UserAbortedException, WrongParameterError
+from esm.Exceptions import AdminRequiredException, ExitCodes, ServerNeedsToBeStopped, UserAbortedException, WrongParameterError
 from esm.DataTypes import Territory, WipeType
 from esm.EsmBackupService import EsmBackupService
 from esm.EsmDeleteService import EsmDeleteService
@@ -82,9 +82,7 @@ class EsmMain:
         # in debug mode, monkey patch all functions that may alter the file system or execute other programs.
         if isDebugMode(esmConfig):
             monkeyPatchAllFSFunctionsForDebugMode()
-
-        # only one running instance with this config allowed
-        self.openSocket()
+            
         
     def createNewSavegame(self):
         """
@@ -546,16 +544,27 @@ class EsmMain:
         except UserAbortedException:
             log.info(f"User aborted clean up execution.")
 
-    def openSocket(self):
+    def openSocket(self, port=6969, interval=0, tries=0):
         """
         open a socket for this application to make sure only one instance can run at a time (with given port).
+        supports interval and tries if you want to check and wait for a longer period.
         """
-        port = self.config.general.bindingPort
         self.serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        try:
-            #log.debug(f"binding port {port}")
-            self.serverSocket.bind(('localhost', port))
-        except:
-            log.debug(f"Port {port} is already bound. If you need to use another port for this application, set it in the config.")
-            log.error(f"Looks like the tool is already running!")
-            exit(2)
+        timeLeft = tries * interval + 1
+        while timeLeft >= 0:
+            try:
+                self.serverSocket.bind(('localhost', port))
+                return
+            except OSError as ex:
+                if timeLeft > 1:
+                    log.warning(f"Port {port} probably already bound, is the script already running? Will wait {interval} seconds to retry. Time left for tries: {timeLeft}")
+                    time.sleep(interval)
+                    timeLeft = timeLeft - interval
+                elif timeLeft == 0:
+                    log.error(f"Giving up on waiting. You will have to check yourself why there is another script running.")
+                    timeLeft = -1
+                    exit(ExitCodes.INSTANCE_RUNNING_GAVE_UP)
+                else:
+                    log.debug(f"If you need to use another port for this application, set it in the config.")
+                    log.error(f"Looks like the tool is already running!")
+                    exit(ExitCodes.INSTANCE_RUNNING)

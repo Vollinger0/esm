@@ -53,7 +53,6 @@ Alternatively, you can enable the virtual environment, like below, or create one
 ## TODOS
 
 ### WIP
-- [ ] create batch file to integrate with EAH
 
 ### later
 
@@ -90,6 +89,7 @@ Alternatively, you can enable the virtual environment, like below, or create one
 
 ### done
 
+- [x] create batch file to integrate with EAH
 - [x] add versioning and --version option to show it
 - [x] make script open up a port to avoid having multiple instances running
 - [x] tool to find and delete obsolete folders in Shared

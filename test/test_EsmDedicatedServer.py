@@ -58,7 +58,7 @@ class test_EsmDedicatedServer(unittest.TestCase):
         commandStrings = []
         for thing in command:
             commandStrings.append(str(thing))
-        self.assertEqual(f"{esmConfig.paths.install}\\EmpyrionLauncher.exe -startDediWithGfx -dedicated esm-dedicated.yaml", " ".join(commandStrings))
+        self.assertEqual(f"{esmConfig.paths.install}\EmpyrionLauncher.exe -startDediWithGfx -dedicated esm-dedicated.yaml", " ".join(commandStrings))
 
     def test_getCommandForDirectMode(self):
         esmConfig = EsmConfigService(configFilePath='test/esm-test-config.yaml')
@@ -71,7 +71,7 @@ class test_EsmDedicatedServer(unittest.TestCase):
         commandStrings = []
         for thing in command:
             commandStrings.append(str(thing))
-        expected = f"{esmConfig.paths.install}\\DedicatedServer\\EmpyrionDedicated.exe -dedicated esm-dedicated.yaml -logFile ../Logs/4243/"
+        expected = f"{esmConfig.paths.install}\DedicatedServer\EmpyrionDedicated.exe -dedicated esm-dedicated.yaml -logFile ../Logs/4243/"
         actual = " ".join(commandStrings)
         log.debug(f"expected: {expected}")
         log.debug(f"actual: {actual}")
@@ -89,7 +89,7 @@ class test_EsmDedicatedServer(unittest.TestCase):
         commandStrings = []
         for thing in command:
             commandStrings.append(str(thing))
-        expected = f"{esmConfig.paths.install}\\DedicatedServer\\EmpyrionDedicated.exe -batchmode -nographics -dedicated esm-dedicated.yaml -logFile ../Logs/4243/"
+        expected = f"{esmConfig.paths.install}\DedicatedServer\EmpyrionDedicated.exe -batchmode -nographics -dedicated esm-dedicated.yaml -logFile ../Logs/4243/"
         actual = " ".join(commandStrings)
         log.debug(f"expected: {expected}")
         log.debug(f"actual: {actual}")
