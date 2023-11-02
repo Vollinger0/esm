@@ -1,10 +1,4 @@
-main.log
-main-test_robocopy.log
-main-test.log
-esm-test.log
-esm.log
-esm_robocopy.log
-test.log
+*.log
 __pycache__/
 *.pyc
 .venv
@@ -12,7 +6,7 @@ src/esm.egg-info
 esm.egg-info
 build/
 esm-cleardiscoveredby.csv
-namelist_s6.txt
+namelist*.txt
 test/test.db-shm
 test/test.db-wal
 esm-purgewipedplayfields.lst

@@ -4,7 +4,7 @@ import logging
 from math import sqrt
 from pathlib import Path
 from typing import List
-from esm.exceptions import WrongParameterError
+from esm.Exceptions import WrongParameterError
 from esm import Tools
 from esm.DataTypes import Entity, Playfield, SolarSystem, Territory, WipeType
 from esm.EsmConfigService import EsmConfigService

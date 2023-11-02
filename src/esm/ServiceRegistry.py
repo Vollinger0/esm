@@ -1,5 +1,5 @@
 from typing import TypeVar
-from esm.exceptions import ServiceNotFoundError
+from esm.Exceptions import ServiceNotFoundError
 
 class ServiceRegistryMeta(type):
     _instances = {}

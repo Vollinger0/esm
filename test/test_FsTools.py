@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 import shutil
 import unittest
-from esm.exceptions import SafetyException
+from esm.Exceptions import SafetyException
 from esm.FsTools import FsTools
 
 log = logging.getLogger(__name__)
@@ -342,8 +342,8 @@ class test_FsTools(unittest.TestCase):
         self.assertTrue(FsTools.pathContainsSubPath(path=path1, subPath=path7))
 
     def test_deleteSafetyMeasures(self):
-        moep = Path(r"D:\foo_bar_baz\bla\moep")
-        foo = Path(r"D:\foo_bar_baz")
+        moep = Path(r"C:\foo_bar_baz\bla\moep")
+        foo = Path(r"C:\foo_bar_baz")
         moep.mkdir(exist_ok=True, parents=True)
 
         # this should work.        
