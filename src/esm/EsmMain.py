@@ -3,7 +3,7 @@ import logging
 from pathlib import Path
 import socket
 import time
-from esm import AdminRequiredException, ServerNeedsToBeStopped, UserAbortedException, WrongParameterError
+from esm.exceptions import AdminRequiredException, ServerNeedsToBeStopped, UserAbortedException, WrongParameterError
 from esm.DataTypes import Territory, WipeType
 from esm.EsmBackupService import EsmBackupService
 from esm.EsmDeleteService import EsmDeleteService
@@ -553,7 +553,7 @@ class EsmMain:
         port = self.config.general.bindingPort
         self.serverSocket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         try:
-            log.debug(f"binding port {port}")
+            #log.debug(f"binding port {port}")
             self.serverSocket.bind(('localhost', port))
         except:
             log.debug(f"Port {port} is already bound. If you need to use another port for this application, set it in the config.")

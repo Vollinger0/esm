@@ -22,16 +22,21 @@ The main features being fully automated support for running the game on a ramdis
 - almost all features, limits, timeouts and paths are configurable
 - extensive logfile with a ton of information
 
-## running locally
+## running locally 
 
-### on linux/macOs:
+- once: install requirements: $ pip install -r requirements.txt
+- start esm: $ py -m esm
+
+Alternatively, you can enable the virtual environment, like below, or create one and install the requirements.
+
+### on linux/macOs for development:
 
 - install venv: $ py -m venv .venv
 - activate venv: $ .\\.venv\Scripts\activate
 - install requirements: $ pip install -r requirements.txt
 - start esm: $ esm
 
-### on windows:
+### on windows for development:
 
 - start standard cmd console (not powershell!)
 - install venv: $ py -m venv .venv
@@ -85,6 +90,7 @@ The main features being fully automated support for running the game on a ramdis
 
 ### done
 
+- [x] add versioning and --version option to show it
 - [x] make script open up a port to avoid having multiple instances running
 - [x] tool to find and delete obsolete folders in Shared
 - [x] purge the wiped: check for wipeinfos containing "all", and purge those (fs operations only)

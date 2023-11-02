@@ -4,10 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "esm"
-version = "0.1.0"
-# description = "Your ESM command-line tool"
+version = "0.1.1"
+description = "Your ESM command-line tool"
 
 [project.scripts]
+# entry point when called as script
 esm = "esm.main:start"
 
 # pytest recommends storing settings in this file (not setup.cfg)
@@ -16,5 +17,5 @@ testpaths = ["test"]
 pythonpath = ["src"]
 # log_cli=true and level setting below make sure logging in tests shows up in the output
 log_cli = true
-# log_cli_level = logging.DEBUG
+# corresponds to log_cli_level = logging.DEBUG (aka 10)
 log_cli_level = 10
