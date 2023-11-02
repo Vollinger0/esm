@@ -2,6 +2,7 @@ general:
   debugMode: False # if True, most file system operations will not be executed and processes not started. You probably don't need this unless you're developing this.
   externalizeTemplates: True # if True, will "externalize" the savegame templates, meaning that they will be symlinked back to the hdd when using the ramdisk. This saves aboit 40% of space on the ramdisk!
   useRamdisk: True # if True, use a ramdisk for the savegame. Requires the user to call ramdisk-prepare and ramdisk-setup to work. Will completely solve your server performance issues.
+  bindingPort: 6969 # default port to bind application to, just used to make sure only one instance can run with one config at a time.
 
 ramdisk:
   drive: "R:" # the drive letter to use for the ramdisk, e.g. "R:"
