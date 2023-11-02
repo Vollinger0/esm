@@ -4,6 +4,7 @@ ServerConfig:
   Srv_MaxPlayers: 8
   Srv_ReservePlayfields: 1
   Srv_Public: false
+  EACActive: false
   AdminConfigFile: adminconfig.yaml
   Tel_Port: 30004
   SaveDirectory: Saves
