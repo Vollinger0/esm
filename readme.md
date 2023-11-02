@@ -48,7 +48,6 @@ The main features being fully automated support for running the game on a ramdis
 ## TODOS
 
 ### WIP
-- [ ] make script open up a port to avoid having multiple instances running
 - [ ] create batch file to integrate with EAH
 
 ### later
@@ -86,6 +85,7 @@ The main features being fully automated support for running the game on a ramdis
 
 ### done
 
+- [x] make script open up a port to avoid having multiple instances running
 - [x] tool to find and delete obsolete folders in Shared
 - [x] purge the wiped: check for wipeinfos containing "all", and purge those (fs operations only)
 - [x] usecase: purge galaxy

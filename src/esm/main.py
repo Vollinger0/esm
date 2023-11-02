@@ -2,11 +2,11 @@ import logging
 import signal
 import click
 from halo import Halo
-from esm import UserAbortedException, WrongParameterError
+from esm import WrongParameterError
 from esm.DataTypes import Territory, WipeType
 from esm.ServiceRegistry import ServiceRegistry
 from esm.EsmMain import EsmMain
-from esm.Tools import askUser, getElapsedTime, getTimer
+from esm.Tools import getElapsedTime, getTimer
 
 log = logging.getLogger(__name__)
 
@@ -324,6 +324,8 @@ def clearDiscoveredByInfos(dblocation, nodryrun, file, names):
 
     Names must be the full names of the playfield, or, if it is a solar system, have the prefix "S:".
     e.g. "S:Alpha", "S:Beta", "Dread", "UCHN Discovery" - etc.
+
+    If you defined a file as input, make sure it is a textfile with *one entry per line*.
 
     Defaults to use a dryrun, so the results are only written to a csv file for you to check.
     If you use the dry mode just to see how it works, you should probably also define the location of a different database.
