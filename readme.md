@@ -24,8 +24,18 @@ The main features being fully automated support for running the game on a ramdis
 
 ## running locally
 
+### on linux/macOs:
+
 - install venv: $ py -m venv .venv
 - activate venv: $ .\\.venv\Scripts\activate
+- install requirements: $ pip install -r requirements.txt
+- start esm: $ esm
+
+### on windows:
+
+- start standard cmd console (not powershell!)
+- install venv: $ py -m venv .venv
+- activate venv: $ .\\.venv\Scripts\activate.bat
 - install requirements: $ pip install -r requirements.txt
 - start esm: $ esm
 
@@ -38,6 +48,8 @@ The main features being fully automated support for running the game on a ramdis
 ## TODOS
 
 ### WIP
+- [ ] make script open up a port to avoid having multiple instances running
+- [ ] create batch file to integrate with EAH
 
 ### later
 
@@ -61,6 +73,12 @@ The main features being fully automated support for running the game on a ramdis
 - [+] create separate windows-gui thingy that resides in the taskbar or similar and provides a shortcut to the cli tool.
 - [ ] use pyinstaller to create a distributable program without any installation overhead: <https://pyinstaller.org/>
 - [ ] check for 8dot3name
+- [ ] provide tool to fix item icons as good as possible in EWA
+   1. open item list in eah, CTRL+A, CTRL+C and copy into text file.
+   1. read itemid, itemname, devicename from that eah list
+   1. find block by matching devicename with blocktype
+   1. find customicon name
+   1. save customicon as itemid for EWA.
 
 ### optional
 

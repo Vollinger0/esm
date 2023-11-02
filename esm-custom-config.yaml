@@ -14,7 +14,7 @@ server:
 
 ramdisk:
   size: "1G"
-  synchronizeRamToMirrorInterval: 30 
+  synchronizeRamToMirrorInterval: 600 
 
 backups:
   additionalBackupPaths: 
@@ -29,7 +29,11 @@ updates:
     # if dst is not a directory, a directory with that name will be created and used as target for the source.
     # if src is a directory, it will be copied recursively into the target folder.
     # existing files/directories in the target will be overwritten!
+    #
+    # update the scenario 
     - {src: 'c:\Servers\Scenarios\ProjectA\' , dst: 'c:\Servers\empyrion\Content\Scenarios\'}
+    # copy all item icons from the scenario to EAH
+    - {src: 'c:\Servers\Scenarios\ProjectA\SharedData\Content\Bundles\ItemIcons\*', dst: 'c:\Servers\Empyrion\DedicatedServer\EmpyrionAdminHelper\Items\'}
     #- {src: 'D:\EGS\Empyrion\test.txt', dst: 'esm'}
     #- {src: 'D:\EGS\Empyrion\test.txt', dst: 'content\configuration'}
     #- {src: 'D:\EGS\Empyrion\test.txt', dst: 'D:\temp'}
