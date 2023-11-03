@@ -37,14 +37,15 @@ class EsmSteamService:
         if process.returncode > 0:
             log.error(f"error executing steamcmd: stdout: \n{process.stdout}\n, stderr: \n{process.stderr}\n")
     
-    def updateGame(self):
+    def updateGame(self, nosteam=False):
         """
         calls steam to update the game via steam and call any additionally configured steps (like updating the scenario, copying files etc.)
 
         # %steamCmdPath% +force_install_dir %installPath% +login anonymous +app_update 530870 validate +quit"
         """
         # steam update is actually the exact same call as the install command, so we'll call just that instead.
-        self.installGame()
+        if not nosteam:
+            self.installGame()
 
         # additional copying according to configuration
         self.copyAdditionalUpdateStuff()
@@ -63,25 +64,36 @@ class EsmSteamService:
         copies any additionally configured stuff in the config under updates.additional
         """
         additionalStuffList = self.config.updates.additional
-        if additionalStuffList and len(additionalStuffList)>0:
-            for additionalStuff in additionalStuffList:
+        if additionalStuffList is None or len(additionalStuffList) <= 0:
+            return
+        
+        copiedFiles = 0
+        copiedDirs = 0
+        
+        for additionalStuff in additionalStuffList:
+            sourcePath = Path(additionalStuff.src)
+            if not Path(sourcePath).is_absolute():
+                sourcePath = Path(f"{self.config.paths.install}/{sourcePath}")
+            
+            destinationPath = Path(additionalStuff.dst)
+            if not Path(destinationPath).is_absolute():
+                destinationPath = Path(f"{self.config.paths.install}/{destinationPath}")
 
-                source = Path(additionalStuff.src)
-                if not Path(source).is_absolute():
-                    source = Path(f"{self.config.paths.install}/{source}")
-
+            log.info(f"copying {sourcePath} to {destinationPath}")
+            
+            sourcePaths = FsTools.resolveGlobs([sourcePath])
+            for source in sourcePaths:
                 if source.exists():
-                    destination = Path(additionalStuff.dst)
-                    if not Path(destination).is_absolute():
-                        destination = Path(f"{self.config.paths.install}/{destination}")
-
                     if source.is_dir():
                         # its a dir
-                        log.info(f"copying directory {source} into {destination}")  
-                        FsTools.copyDir(source=source, destination=destination)
+                        log.debug(f"copying directory {source} into {destinationPath}")  
+                        FsTools.copyDir(source=source, destination=destinationPath)
+                        copiedDirs += 1
                     else:
                         # its a file
-                        log.info(f"copying file {source} into {destination}")  
-                        FsTools.copy(source=source, destination=destination)
+                        log.debug(f"copying file {source} into {destinationPath}")  
+                        FsTools.copy(source=source, destination=destinationPath)
+                        copiedFiles += 1
                 else:
                     log.warning(f"Configured additional path {source} does not exist.")
+        log.info(f"Copied {copiedDirs} folders and {copiedFiles} files.")

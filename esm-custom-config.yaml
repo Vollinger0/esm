@@ -27,13 +27,13 @@ updates:
     # additional stuff to copy when doing an esm-update action. 
     # If a path is relative, it will be assumed to be relative to the installation path.
     # if dst is not a directory, a directory with that name will be created and used as target for the source.
-    # if src is a directory, it will be copied recursively into the target folder.
+    # if src is a directory, it will be copied recursively into the target folder. src may be a glob pattern
     # existing files/directories in the target will be overwritten!
     #
     # update the scenario 
     - {src: 'c:\Servers\Scenarios\ProjectA\' , dst: 'c:\Servers\empyrion\Content\Scenarios\'}
     # copy all item icons from the scenario to EAH
-    - {src: 'c:\Servers\Scenarios\ProjectA\SharedData\Content\Bundles\ItemIcons\*', dst: 'c:\Servers\Empyrion\DedicatedServer\EmpyrionAdminHelper\Items\'}
+    - {src: 'c:\Servers\Scenarios\project-a\SharedData\Content\Bundles\ItemIcons\*.*', dst: 'c:\Servers\Empyrion\DedicatedServer\EmpyrionAdminHelper\Items\'}
     #- {src: 'D:\EGS\Empyrion\test.txt', dst: 'esm'}
     #- {src: 'D:\EGS\Empyrion\test.txt', dst: 'content\configuration'}
     #- {src: 'D:\EGS\Empyrion\test.txt', dst: 'D:\temp'}

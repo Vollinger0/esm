@@ -165,11 +165,12 @@ def installGame():
 
 
 @cli.command(name="game-update", short_help="updates the game via steam and executes additional commands")
-def updateGame():
+@click.option('--nosteam', is_flag=True, help="If set, will *not* update the game via steam, just do the additional tasks")
+def updateGame(nosteam):
     """Updates the game via steam and executes the additional copy tasks listed in the configuration"""
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)
-        esm.updateGame()
+        esm.updateGame(nosteam)
 
 
 @cli.command(name="delete-all", short_help="deletes everything related to the currently configured savegame interactively")

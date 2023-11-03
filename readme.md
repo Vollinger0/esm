@@ -53,13 +53,19 @@ Alternatively, you can enable the virtual environment, like below, or create one
 ## TODOS
 
 ### WIP
-- [ ] remove redundant configuration that can be read from the dedicated yaml instead, and do that.
+- [+] remove redundant configuration that can be read from the dedicated yaml instead, and do that.
+- [ ] integrity check: checks if things fit together (e.g. dedicated.yaml config), our own config when running multiple instances, etc.
+  - or adapt config to dedicated.yaml, especially when paths change. probably as a sanity check implementation
+  - may also just check the config, e.g. if all paths exist
+- [ ] check for 8dot3name
 
 ### later
 
+- [ ] implement warning/talkback via tickets for when an admin is required (e.g. low disk space, etc.)
+- [ ] implement warning/talkback to server chat for syncs, backups probably even random stuff with funny hamster sentences.
 - [ ] provide full installation package with install bat, that installs esm, the tools (osfmount, peazip, epm, python, etc.)
+- [ ] use pyinstaller to create a distributable program without any installation overhead: <https://pyinstaller.org/>
 - [ ] install should have the option to install the scenario? or...
-- [ ] update should have the option to disable the steam check?
 - [ ] tool to purge playfield passed in the command line?
 - [ ] add more epmclient functions, especially the sync event announcements. needs more work from notoats.
 - [ ] offer some kind of better interactive mode for different stuff
@@ -67,14 +73,7 @@ Alternatively, you can enable the virtual environment, like below, or create one
   - [ ] actually make any option have a -batchmode when there are interactive prompts, defaulting to the most defensive option.
 - [+] when useRamdisk is enabled, enable checks for its file structure, when its not, do not start use the synchronizer (of course)
 - [ ] implement allowMultpleServerInstances switch? Once enabled, do not check for instances of the game before starting, do not start if startmode is set to direct, etc.
-- [ ] implement warning/talkback via tickets for when an admin is required (e.g. low disk space, etc.)
-- [ ] implement warning/talkback to server chat for syncs, backups probably even random stuff with funny hamster sentences.
-- [ ] integrity check: checks if things fit together (e.g. dedicated.yaml config), our own config when running multiple instances, etc.
-  - or adapt config to dedicated.yaml, especially when paths change. probably as a sanity check implementation
-  - may also just check the config, e.g. if all paths exist
-- [ ] check for 8dot3name
 - [+] create separate windows-gui thingy that resides in the taskbar or similar and provides a shortcut to the cli tool.
-- [ ] use pyinstaller to create a distributable program without any installation overhead: <https://pyinstaller.org/>
 - [ ] provide tool to fix item icons as good as possible in EWA, current process:
    1. open item list in eah, CTRL+A, CTRL+C and copy into text file.
    1. read itemid, itemname, devicename from that eah list
@@ -87,6 +86,7 @@ Alternatively, you can enable the virtual environment, like below, or create one
 
 ### done
 
+- [x] update should have the option to disable the steam check?
 - [-] usecase: create configuration? => probably not needed. the custom config covers our needs.
 - [-] wipes from the wipetool should propagate to EAH? do i need to alter EAHs database too? => no access to eah's dat files.
 - [x] make sure the script only runs once? probably by opening up a port, that way there's no need for cleanups.
