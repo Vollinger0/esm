@@ -341,6 +341,7 @@ class test_FsTools(unittest.TestCase):
         self.assertFalse(FsTools.pathContainsSubPath(path=path1, subPath=path6))
         self.assertTrue(FsTools.pathContainsSubPath(path=path1, subPath=path7))
 
+    @unittest.skip("only execute this manually, it requires extreme caution!")
     def test_deleteSafetyMeasures(self):
         moep = Path(r"C:\foo_bar_baz\bla\moep")
         foo = Path(r"C:\foo_bar_baz")
@@ -353,5 +354,5 @@ class test_FsTools(unittest.TestCase):
             # this should not work.        
             FsTools.deleteDir(foo)
 
-        # actually delete unsafely :D
+        # actually delete unsafely :o
         shutil.rmtree(foo)

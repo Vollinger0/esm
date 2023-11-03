@@ -1,7 +1,6 @@
 general:
   #debugMode: True
   debugMode: False
-  #allowMultpleServerInstances: True
   externalizeTemplates: True
   useRamdisk: True
 
@@ -63,7 +62,7 @@ paths:
   steamcmd: 'C:\Servers\Tools\steamcmd\steamcmd.exe'
 
 foldernames:
-  saves: 'Saves'
+  #saves: 'Saves' # will be dynamically injected from dedicated.yaml
   games: 'Games'
   backup: 'Backup'
   playfields: "Playfields"
@@ -79,7 +78,6 @@ foldernames:
 filenames:
   globaldb: 'global.db'
   buildNumber: 'BuildNumber.txt'
-  #chatlines: 'hamster_sync_lines.txt'
   dedicatedExe: 'EmpyrionDedicated.exe'
   launcherExe: 'EmpyrionLauncher.exe'
 

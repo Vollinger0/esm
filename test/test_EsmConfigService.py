@@ -83,3 +83,11 @@ class test_EsmConfigService(unittest.TestCase):
         config = EsmConfigService(configFilePath="esm-base-config.yaml", customConfigFilePath="esm-custom-config.yaml")
         self.assertEqual(config.server.savegame, "EsmDediGame")
         self.assertEqual(config.server.minDiskSpaceForStartup, "500M")
+
+    def test_loadingConfigReadsDedicatedYaml(self):
+        configFilePath="test/esm-test-config.yaml"
+        config = EsmConfigService(configFilePath=configFilePath)
+        #TODO: implement
+        raise NotImplementedError("todo")
+        self.assertEqual(config.server.savegame, "EsmDediGame")
+        self.assertEqual(config.folderNames.save, "Saves")

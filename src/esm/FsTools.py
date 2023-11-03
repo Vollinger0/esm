@@ -203,7 +203,7 @@ class FsTools:
         return absolutePaths
 
     @staticmethod    
-    def resolveGlobs(paths: [Path]) -> List[Path]:
+    def resolveGlobs(paths: List[Path]) -> List[Path]:
         """
         will resolve any glob pattern given in the list of paths and add them to the resulting list. Any non-pattern path will be added as is.
         """
