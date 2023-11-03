@@ -1,18 +1,20 @@
 ServerConfig:
   Srv_Port: 40000
   Srv_Name: Vollingers Test Server
-  Srv_Description: "Running on a ramdisk managed by ESM. There's nothing to see here, please move on."
+  Srv_Description: Running on a ramdisk managed by ESM. There's nothing to see here, please move on.
   Srv_MaxPlayers: 8
   Srv_ReservePlayfields: 1
   Srv_Public: false
   EACActive: false
   AdminConfigFile: adminconfig.yaml
+  SaveDirectory: Saves
   MaxAllowedSizeClass: 21
   AllowedBlueprints: All
   HeartbeatServer: 15
   TimeoutBootingPfServer: 90
-  PlayerLoginParallelcount: 3
-  #PlayerLoginVipNames: "76561198086927352,1234567890"
+  PlayerLoginParallelCount: 5
+  #PlayerLoginVipNames: 76561198086927352,123456789
+  PlayerLoginFullServerQueueCount: 10
 GameConfig:
   GameName: EsmDediGame
   Mode: Survival
