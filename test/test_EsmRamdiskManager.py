@@ -9,14 +9,36 @@ from esm.EsmFileSystem import EsmFileSystem
 from esm.EsmRamdiskManager import EsmRamdiskManager
 from esm.FsTools import FsTools
 from esm.ServiceRegistry import ServiceRegistry
+import dotsi
 
 log = logging.getLogger(__name__)
 
 class test_EsmRamdiskManager(unittest.TestCase):
 
+    @unittest.skip("only execute this manually, since it is too easy to break things")
     def test_install(self):
         ServiceRegistry.register(EsmMain)
-        self.config = EsmConfigService(configFilePath="test/esm-test-config.yaml")
+        # TODO: set own configservice, or mock it
+        #self.config = EsmConfigService(configFilePath="test/esm-test-config.yaml")
+        self.config = dotsi.Dict({
+            "paths": {
+                "install": "./unittest_installdir"
+            },
+            "saves": {
+                "games": {
+                    "savegame": {
+                        "_parent": "unittest_dedigame",
+                        "globaldb": "unittest_global.db"
+                    }
+                },
+                "gamesmirror": {
+                    "savegamemirror": "unittest_dedigamemirror"
+                }
+            },
+            "filenames": {
+                "buildNumber": "unittest_BuildNumber.txt"
+            }
+        })
         self.fs = EsmFileSystem(self.config)
         self.rdm = EsmRamdiskManager(config=self.config, fileSystem=self.fs)
 
@@ -34,7 +56,8 @@ class test_EsmRamdiskManager(unittest.TestCase):
         self.assertTrue(savegameMirror.exists())
 
         # remove testing trash
-        rmtree(self.config.paths.install)
+        #TODO: nope, too dangerous.
+        #rmtree(self.config.paths.install)
 
     @unittest.skip("only execute this manually, since it requires admin privileges and will pop up that window for the user.")
     def test_setup(self):

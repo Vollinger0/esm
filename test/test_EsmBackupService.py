@@ -12,6 +12,7 @@ log = logging.getLogger(__name__)
 
 class test_EsmBackupService(unittest.TestCase):
 
+    @unittest.skip("this needs a rewrite, use a fresh created virtual filesystem instead")
     def test_assertFileStructure(self):
         config = EsmConfigService(configFilePath="test/esm-test-config.yaml")
         ServiceRegistry.register(config)
@@ -30,7 +31,7 @@ class test_EsmBackupService(unittest.TestCase):
             expected = f"{backupParentDir}/{config.foldernames.backupmirrorprefix}{i}"
             self.assertTrue(Path(expected).exists())
 
-
+    @unittest.skip("this needs a rewrite, use a fresh created virtual filesystem instead")
     def test_getPreviousBackupNumberNoMarker(self):
         config = EsmConfigService(configFilePath="test/esm-test-config.yaml")
         ServiceRegistry.register(config)
@@ -42,6 +43,7 @@ class test_EsmBackupService(unittest.TestCase):
         actual = bm.getPreviousBackupNumber()
         self.assertEqual(actual, None)
 
+    @unittest.skip("this needs a rewrite, use a fresh created virtual filesystem instead")
     def test_getPreviousBackupNumberWithMarker(self):
         config = EsmConfigService(configFilePath="test/esm-test-config.yaml")
         ServiceRegistry.register(config)
@@ -55,6 +57,7 @@ class test_EsmBackupService(unittest.TestCase):
         actual = bm.getPreviousBackupNumber()
         self.assertEqual(3, actual)
 
+    @unittest.skip("this needs a rewrite, use a fresh created virtual filesystem instead")
     def test_getNextBackupNumber(self):
         config = EsmConfigService(configFilePath="test/esm-test-config.yaml")
         ServiceRegistry.register(config)
