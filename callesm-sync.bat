@@ -1,6 +1,6 @@
 @echo off
 setlocal enabledelayedexpansion
-REM just a wrapper script to be called by EAH that will start esm asynchroneously
+REM just a wrapper script to be called by EAH that will start esm synchroneously (blocking the caller until it ends)
 REM
 REM by vollinger 20231102
 
@@ -11,30 +11,39 @@ REM path to esm tool installation
 REM ************** UNCOMMENT THE FOLLOWING LINE AND MAKE SURE THE PATH POINTS TO THE ESM INSTALLATION **************
 REM set "esmPath=C:\Servers\Tools\esm"
 
+set "esmCommand=esm -v version"
+
 REM ################################################################################################################
 REM ## script start
 
 REM own logfile
-set logFile=%~n0.log
+set "logFile=%~dp0%~n0.log"
 
 IF NOT EXIST !esmPath! (
 	call:techo "ERROR: Script was not set up properly. Please edit %~n0 and set the path to esm properly." 
 	exit /b 1
 )
 
-cd %esmPath%
-call:techo "Calling esm script: py -m esm -w -v server-start"
+call:techo "Calling esm script: py -m !esmCommand!"
 
-start cmd /c py -m esm -w -v server-start
+cd %esmPath%
+py -m !esmCommand!
 set scriptReturnCode=%ERRORLEVEL%
+
+REM handle the return code of the esm command
 IF "!scriptReturnCode!"=="0" (
-	call:techo "ESM call ended successfully."
+	call:techo "ESM ended successfully."
+) ELSE IF "!scriptReturnCode!"=="1" (
+	call:techo "Another ESM instance seems to be running. RC: '!scriptReturnCode!'"
+) ELSE IF "!scriptReturnCode!"=="2" (
+	call:techo "Another ESM instance seems to be running, script gave up waiting for it to end, RC: '!scriptReturnCode!'"
+) ELSE IF "!scriptReturnCode!"=="10" (
+	call:techo "ESM script execution interrupted, RC: '!scriptReturnCode!'"
 ) ELSE (
-	call:techo "ESM call failed for an unknown reason returncode: '!scriptReturnCode!'"
+	call:techo "ESM failed for an unknown reason returncode: '!scriptReturnCode!'"
 )
 
-call:techo "ESM started in the background"
-call:timeout 10
+call:timeout 5
 
 goto :eof
 
