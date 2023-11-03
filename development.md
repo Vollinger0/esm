@@ -31,11 +31,11 @@ Alternatively, you can enable the virtual environment, like below, or create one
 ## TODOS
 
 ### WIP
-- [+] remove redundant configuration that can be read from the dedicated yaml instead, and do that.
+- [ ] check for 8dot3name
+- [+] remove redundant configuration that can be read from the dedicated yaml instead, and do that?
 - [ ] integrity check: checks if things fit together (e.g. dedicated.yaml config), our own config when running multiple instances, etc.
   - or adapt config to dedicated.yaml, especially when paths change. probably as a sanity check implementation
   - may also just check the config, e.g. if all paths exist
-- [ ] check for 8dot3name
 
 ### later
 
@@ -43,9 +43,9 @@ Alternatively, you can enable the virtual environment, like below, or create one
 - [ ] implement warning/talkback to server chat for syncs, backups probably even random stuff with funny hamster sentences.
 - [ ] provide full installation package with install bat, that installs esm, the tools (osfmount, peazip, epm, python, etc.)
 - [ ] use pyinstaller to create a distributable program without any installation overhead: <https://pyinstaller.org/>
-- [ ] install should have the option to install the scenario? or...
-- [ ] tool to purge playfield passed in the command line?
-- [ ] add more epmclient functions, especially the sync event announcements. needs more work from notoats.
+- [ ] game-install should have the option to install the scenario? or...
+- [ ] tool to purge a list of playfields passed in the command line and/or file?
+- [ ] add more epmclient functions, especially the sync event announcements.
 - [ ] offer some kind of better interactive mode for different stuff
   - [ ] interactive mode for wipe galaxy tool?
   - [ ] actually make any option have a -batchmode when there are interactive prompts, defaulting to the most defensive option.

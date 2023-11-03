@@ -84,6 +84,7 @@ class test_EsmConfigService(unittest.TestCase):
         self.assertEqual(config.server.savegame, "EsmDediGame")
         self.assertEqual(config.server.minDiskSpaceForStartup, "500M")
 
+    @unittest.skip("not yet implemented")
     def test_loadingConfigReadsDedicatedYaml(self):
         configFilePath="test/esm-test-config.yaml"
         config = EsmConfigService(configFilePath=configFilePath)

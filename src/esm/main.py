@@ -164,7 +164,7 @@ def installGame():
         esm.installGame()
 
 
-@cli.command(name="game-update", short_help="updates the game via steam and executes additional commands")
+@cli.command(name="game-update", short_help="updates and verifies the game via steam and executes additional commands")
 @click.option('--nosteam', is_flag=True, help="If set, will *not* update the game via steam, just do the additional tasks")
 def updateGame(nosteam):
     """Updates the game via steam and executes the additional copy tasks listed in the configuration"""
