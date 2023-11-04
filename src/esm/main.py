@@ -385,15 +385,21 @@ def omg(i_am_darkestwarrior, i_am_vollinger, i_am_kreliz):
                 log.warning("Destruction of the galaxy ended prematurely. Please contact an expert.")
 
 
-@cli.command(name="check-requirements", short_help="checks various things and requirements")
-def checkIntegrity():
+@cli.command(name="check-requirements", short_help="checks various configs and requirements")
+@click.option('--nonadmin', is_flag=True, help="skip checks that require admin privileges")
+def checkIntegrity(nonadmin):
     """Will do several checks, including:
-
-    - 8dot3name generation
+    
+    \b
+    - if 8dot3name generation is enabled on the game drive
+    - if hardlinks are supported on the drives filesystem
+    - configuration of various paths to tools
+    - elevated privileges for accessing ramdisks
+    - free disk space on install dir and savegame dir
     """
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)
-        esm.checkIntegrity()
+        esm.checkIntegrity(nonadmin)
 
 
 def init(fileLogLevel=logging.DEBUG, streamLogLevel=logging.INFO, customConfig="esm-custom-config.yaml", wait=False):

@@ -175,8 +175,8 @@ class EsmRamdiskManager:
             subprocess.run(cmd, capture_output=True, shell=True, check=True)
             log.debug(f"There is an osf mounted ramdrive as {driveLetter}")
             return True
-        except subprocess.CalledProcessError:
-            log.debug(f"No osf mounted ramdrive found as {driveLetter}")
+        except subprocess.CalledProcessError as ex:
+            log.debug(f"No osf mounted ramdrive found as '{driveLetter}'. Ex: {ex}")
             return False
         
     def checkAndGetOsfMountPath(self):
