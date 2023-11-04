@@ -59,10 +59,11 @@ class EsmMain:
     def config(self) -> EsmConfigService:
         return ServiceRegistry.get(EsmConfigService)
 
-    def __init__(self, configFileName="esm-base-config.yaml", customConfigFileName="esm-custom-config.yaml", caller=__name__, fileLogLevel=logging.DEBUG, streamLogLevel=logging.DEBUG):
+    def __init__(self, configFileName="esm-base-config.yaml", customConfigFileName="esm-custom-config.yaml", caller=__name__, fileLogLevel=logging.DEBUG, streamLogLevel=logging.DEBUG, waitForPort=False):
         self.configFilename = configFileName
         self.customConfigFileName = customConfigFileName
         self.caller = caller
+        self.waitForPort = waitForPort
 
         # set up logging
         self.logFile = Path(caller).stem + ".log"
@@ -83,7 +84,7 @@ class EsmMain:
         # in debug mode, monkey patch all functions that may alter the file system or execute other programs.
         if isDebugMode(esmConfig):
             monkeyPatchAllFSFunctionsForDebugMode()
-            
+
         
     def createNewSavegame(self):
         """
@@ -631,3 +632,16 @@ class EsmMain:
             ramdriveMounted = self.ramdiskManager.checkRamdrive(simpleCheck=False)
             if not ramdriveMounted:
                 log.error(f"Could either not execute or not access the ramdisk with osf mount. You require admin privileges for ramdisk mode.")
+
+    def checkAndWaitForOtherInstances(self):
+        """ 
+        enable multiple instance check and wait if waitForPort was set. If the instance ends, 
+        in the configured interval and amount of tries this will return gracefully, if not an exception will be thrown
+        """
+        port = self.config.general.bindingPort
+        if self.waitForPort:
+            interval = self.config.general.multipleInstanceWaitInterval
+            tries = self.config.general.multipleInstanceWaitTries
+            self.openSocket(port, interval=interval, tries=tries)
+        else:
+            self.openSocket(port)

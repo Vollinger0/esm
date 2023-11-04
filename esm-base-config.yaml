@@ -30,7 +30,7 @@ backups:
   additionalBackupPaths: 
     # list of full paths to source files or directories to backup additionally. Those will all end up in the folder "Additional" in the backup.
     - 'C:\Servers\Empyrion\Content\Mods\EncryptoidModPack' # the whole modpack
-    - 'C:\Servers\Empyrion\Tools\esm\esm-custom-config.yaml' # our own configuration
+    - 'C:\Servers\Tools\esm\esm-custom-config.yaml' # our own configuration
 
 updates: 
   additional:
