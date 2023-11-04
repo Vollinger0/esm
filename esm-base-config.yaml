@@ -9,7 +9,7 @@ general:
 ramdisk:
   drive: "R:" # the drive letter to use for the ramdisk, e.g. "R:"
   size: "2G" # ramdisk size to use, e.g. '5G' or '32G', etc. If you change this, the ramdisk needs to be re-mounted, and the setup needs to run again.
-  synchronizeRamToMirrorInterval: 60 # interval in seconds at which to do a ram2hdd sync for the savegame. if interval=0 the sync will be disabled! Recommended to leave at 3600 (1h)
+  synchronizeRamToMirrorInterval: 3600 # interval in seconds at which to do a ram2hdd sync for the savegame. if interval=0 the sync will be disabled! Recommended to leave at 3600 (1h)
 
 server:
   dedicatedYaml: 'esm-dedicated.yaml'
@@ -27,12 +27,12 @@ server:
 backups:
   amount: 4 # amount of rolling mirror backups to keep
   marker: 'esm_this_is_the_latest_backup' # filename used for the marker that marks as backup as being the latest.
-  additionalBackupPaths: 
-    # list of full paths to source files or directories to backup additionally. Those will all end up in the folder "Additional" in the backup.
-    - 'C:\Servers\Empyrion\esm\esm-base-config.yaml' # our own configuration
-    - 'C:\Servers\Empyrion\Content\Mods\EncryptoidModPack' # the whole modpack
   staticBackupPeaZipOptions: "a -tzip -mtp=0 -mm=Deflate64 -mmt=on -mx1 -mfb=32 -mpass=1 -sccUTF-8 -mcu=on -mem=AES256 -bb0 -bse0 -bsp2" #make sure to use the fastest compression options
   minDiskSpaceForStaticBackup: 2G # if disk space on the drive with the backups has less free space than this, do not create a backup. gnu notation.
+  additionalBackupPaths: 
+    # list of full paths to source files or directories to backup additionally. Those will all end up in the folder "Additional" in the backup.
+    - 'C:\Servers\Empyrion\Content\Mods\EncryptoidModPack' # the whole modpack
+    - 'C:\Servers\Empyrion\Tools\esm\esm-custom-config.yaml' # our own configuration
 
 updates: 
   additional:
@@ -41,9 +41,11 @@ updates:
     # if dst is not a directory, a directory with that name will be created and used as target for the source.
     # if src is a directory, it will be copied recursively into the target folder.
     # existing files/directories in the target will be overwritten!
-    - {src: 'C:\Servers\Empyrion\test.txt', dst: 'esm'}
-    #- {src: 'C:\Servers\Empyrion\test.txt', dst: 'content\configuration'}
-    #- {src: 'C:\Servers\Empyrion\test.txt', dst: 'D:\temp'}
+
+    # update the scenario 
+    - {src: 'c:\Servers\Scenarios\ProjectA\' , dst: 'c:\Servers\Empyrion\Content\Scenarios\'}
+    # copy all item icons from the scenario to EAH
+    - {src: 'c:\Servers\Scenarios\project-a\SharedData\Content\Bundles\ItemIcons\*.*', dst: 'c:\Servers\Empyrion\DedicatedServer\EmpyrionAdminHelper\Items\'}
 
 deletes:
   backupGameLogs: True # backup all game logs on deleteall command?
@@ -52,8 +54,7 @@ deletes:
   additionalDeletes: # additional paths of stuff to delete when using the "deleteall" command
     # paths to files/directories could point to like mod data, etc.. This accepts filesystem globbing (wildcards) like *.dat or similar.
     # if a path is relative, it will be assumed to be relative to the installation path.
-    - 'test.txt'
-    # - 'Content\Mods\EncryptoidModPack\Mods\AdminTetherport\Database'
+    - 'Content\Mods\EncryptoidModPack\Mods\AdminTetherport\Database'
 
 paths:
   install: 'C:\Servers\Empyrion\'
@@ -76,6 +77,7 @@ foldernames:
   gamesmirror: 'GamesMirror'
   savegamemirrorpostfix: '_Mirror'
   savegametemplatepostfix: '_Templates'
+  esmtests: 'esm-tests' # this folder will be used to conduct a few tests on the filesystem below the installation dir
 
 filenames:
   globaldb: 'global.db'

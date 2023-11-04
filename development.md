@@ -32,7 +32,6 @@ Alternatively, you can enable the virtual environment, like below, or create one
 
 ### WIP
 - [+] fix all FS-modifying tests to use the test fixture of the usually existing ramdisk (R:)
-- [ ] check for 8dot3name
 
 ### later
 
@@ -65,6 +64,7 @@ Alternatively, you can enable the virtual environment, like below, or create one
 
 ### done
 
+- [x] check for 8dot3name
 - [x] update should have the option to disable the steam check?
 - [-] usecase: create configuration? => probably not needed. the custom config covers our needs.
 - [-] wipes from the wipetool should propagate to EAH? do i need to alter EAHs database too? => no access to eah's dat files.

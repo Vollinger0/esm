@@ -385,6 +385,17 @@ def omg(i_am_darkestwarrior, i_am_vollinger, i_am_kreliz):
                 log.warning("Destruction of the galaxy ended prematurely. Please contact an expert.")
 
 
+@cli.command(name="check-requirements", short_help="checks various things and requirements")
+def checkIntegrity():
+    """Will do several checks, including:
+
+    - 8dot3name generation
+    """
+    with LogContext():
+        esm = ServiceRegistry.get(EsmMain)
+        esm.checkIntegrity()
+
+
 def init(fileLogLevel=logging.DEBUG, streamLogLevel=logging.INFO, customConfig="esm-custom-config.yaml", wait=False):
     # catch keyboard interrupts 
     signal.signal(signal.SIGINT, forcedExit)

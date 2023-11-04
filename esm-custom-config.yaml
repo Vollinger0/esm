@@ -14,33 +14,7 @@ server:
 
 ramdisk:
   size: "1G"
-  synchronizeRamToMirrorInterval: 60 
-
-backups:
-  additionalBackupPaths: 
-    # list of full paths to source files or directories to backup additionally. Those will all end up in the folder "Additional" in the backup.
-    - 'C:\Servers\Empyrion\Tools\esm\esm-custom-config.yaml' # our own configuration
-    #- 'C:\Servers\Empyrion\Content\Mods\EncryptoidModPack' # the whole modpack
-
-updates: 
-  additional:
-    # additional stuff to copy when doing an esm-update action. 
-    # If a path is relative, it will be assumed to be relative to the installation path.
-    # if dst is not a directory, a directory with that name will be created and used as target for the source.
-    # if src is a directory, it will be copied recursively into the target folder. src may be a glob pattern
-    # existing files/directories in the target will be overwritten!
-    #
-    # update the scenario 
-    - {src: 'c:\Servers\Scenarios\ProjectA\' , dst: 'c:\Servers\empyrion\Content\Scenarios\'}
-    # copy all item icons from the scenario to EAH
-    - {src: 'c:\Servers\Scenarios\project-a\SharedData\Content\Bundles\ItemIcons\*.*', dst: 'c:\Servers\Empyrion\DedicatedServer\EmpyrionAdminHelper\Items\'}
-
-deletes:
-  additionalDeletes: # additional paths of stuff to delete when using the "deleteall" command
-    # paths to files/directories could point to like mod data, etc.. This accepts filesystem globbing (wildcards) like *.dat or similar.
-    # if a path is relative, it will be assumed to be relative to the installation path.
-    # - 'test.txt'
-    # - 'Content\Mods\EncryptoidModPack\Mods\AdminTetherport\Database'
+  synchronizeRamToMirrorInterval: 60
 
 galaxy:
   territories: #faction Territory Definitions (look up their definitions in the file "$scenario/Content/Configuration/GalaxyConfig.ecf" of your scenario)
