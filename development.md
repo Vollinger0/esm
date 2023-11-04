@@ -2,29 +2,29 @@
 
 ## running locally 
 
-- once: install requirements: $ pip install -r requirements.txt
-- start esm: $ py -m esm
+- once: install requirements: `$ pip install -r requirements.txt`
+- start esm: `$ py -m esm`
 
 Alternatively, you can enable the virtual environment, like below, or create one and install the requirements.
 
 ### on linux/macOs for development:
 
-- install venv: $ py -m venv .venv
-- activate venv: $ .\\.venv\Scripts\activate
-- install requirements: $ pip install -r requirements.txt
-- start esm: $ esm
+- install venv: `$ py -m venv .venv`
+- activate venv: `$ .\\.venv\Scripts\activate`
+- install requirements: `$ pip install -r requirements.txt`
+- start esm: `$ esm`
 
 ### on windows for development:
 
 - start standard cmd console (not powershell!)
-- install venv: $ py -m venv .venv
-- activate venv: $ .\\.venv\Scripts\activate.bat
-- install requirements: $ pip install -r requirements.txt
-- start esm: $ esm
+- install venv: `$ py -m venv .venv`
+- activate venv: `$ .\\.venv\Scripts\activate.bat`
+- install requirements: `$ pip install -r requirements.txt`
+- start esm: `$ esm`
 
 ## releasing
 
-- execute a $ pip freeze >> requirements.txt
+- execute a `$ pip freeze >> requirements.txt`
   - check the computed requirements, clean up as necessary
 - //TODO
 
@@ -34,14 +34,14 @@ Alternatively, you can enable the virtual environment, like below, or create one
 
 ### later
 
+- [ ] provide full installation package with install bat, that installs esm, the tools (osfmount, peazip, epm, python, etc.)
+- [ ] use pyinstaller to create a distributable program without any installation overhead: <https://pyinstaller.org/>
+- [ ] add more epmclient functions, especially the sync event announcements.
 - [+] fix all FS-modifying tests to use the test fixture of the usually existing ramdisk (R:)
 - [ ] implement warning/talkback via tickets for when an admin is required (e.g. low disk space, etc.)
 - [ ] implement warning/talkback to server chat for syncs, backups probably even random stuff with funny hamster sentences.
-- [ ] provide full installation package with install bat, that installs esm, the tools (osfmount, peazip, epm, python, etc.)
-- [ ] use pyinstaller to create a distributable program without any installation overhead: <https://pyinstaller.org/>
 - [ ] game-install should have the option to install the scenario? or...
 - [ ] tool to purge a list of playfields passed in the command line and/or file?
-- [ ] add more epmclient functions, especially the sync event announcements.
 - [ ] offer some kind of better interactive mode for different stuff
   - [ ] interactive mode for wipe galaxy tool?
   - [ ] actually make any option have a -batchmode when there are interactive prompts, defaulting to the most defensive option.
