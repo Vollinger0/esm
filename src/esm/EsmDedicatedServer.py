@@ -130,7 +130,7 @@ class EsmDedicatedServer:
         # give the dedicated process a few seconds before we start to look for it
         time.sleep(3)
         # find the dedicated process and remember its process info
-        self.process = self.findDedicatedExeProcess(timeoutInSeconds=self.config.server.launcher.maxStartupTimeout, checkIntervalInSeconds=3, raiseException=True)
+        self.process = self.findDedicatedExeProcess(timeoutInSeconds=self.config.server.launcherMaxStartupTimeout, checkIntervalInSeconds=3, raiseException=True)
         log.debug(f"found process of dedicated server: {self.process}")
         return self.process
 

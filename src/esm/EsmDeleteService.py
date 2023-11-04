@@ -86,7 +86,7 @@ class EsmDeleteService:
 
         # delete the cache
         cache = self.fileSystem.getAbsolutePathTo("saves.cache")
-        cacheSavegame = f"{cache}/{self.config.server.savegame}"
+        cacheSavegame = f"{cache}/{self.config.dedicatedYaml.GameConfig.GameName}"
         log.info(f"Marking for deletion: the cache at {cacheSavegame}")
         self.fileSystem.markForDelete(cacheSavegame)
         
@@ -170,4 +170,4 @@ class EsmDeleteService:
         else:
             date = datetime.now()
         formattedDate = date.strftime("%Y%m%d_%H%M%S")
-        return f"{formattedDate}_{self.config.server.savegame}_logs.zip"
+        return f"{formattedDate}_{self.config.dedicatedYaml.GameConfig.GameName}_logs.zip"

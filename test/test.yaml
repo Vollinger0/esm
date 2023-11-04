@@ -4,6 +4,9 @@ database:
   username: myuser
   password: mypassword
 
+server:
+  dedicatedYaml: "test-dedicated.yaml"
+
 app:
   name: My App
   debug: true

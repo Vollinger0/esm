@@ -8,7 +8,6 @@ paths:
 
 server:
   dedicatedYaml: 'esm-dedicated.yaml'
-  savegame: 'EsmDediGame'
   gfxMode: True
   minDiskSpaceForStartup: 500M
 

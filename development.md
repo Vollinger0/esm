@@ -31,14 +31,13 @@ Alternatively, you can enable the virtual environment, like below, or create one
 ## TODOS
 
 ### WIP
-- [+] fix all FS-modifying tests to use the test fixture of the usually existing ramdisk (R:)
-
-### later
-
-- [+] remove redundant configuration that can be read from the dedicated yaml instead, and do that?
 - [ ] integrity check: checks if things fit together (e.g. dedicated.yaml config), our own config when running multiple instances, etc.
   - or adapt config to dedicated.yaml, especially when paths change. probably as a sanity check implementation
   - may also just check the config, e.g. if all paths exist
+
+### later
+
+- [+] fix all FS-modifying tests to use the test fixture of the usually existing ramdisk (R:)
 - [ ] implement warning/talkback via tickets for when an admin is required (e.g. low disk space, etc.)
 - [ ] implement warning/talkback to server chat for syncs, backups probably even random stuff with funny hamster sentences.
 - [ ] provide full installation package with install bat, that installs esm, the tools (osfmount, peazip, epm, python, etc.)
@@ -53,7 +52,7 @@ Alternatively, you can enable the virtual environment, like below, or create one
 - [ ] implement allowMultpleServerInstances switch? Once enabled, do not check for instances of the game before starting, do not start if startmode is set to direct, etc.
 - [+] create separate windows-gui thingy that resides in the taskbar or similar and provides a shortcut to the cli tool.
 - [ ] provide tool to fix item icons as good as possible in EWA, current process:
-   1. open item list in eah, CTRL+A, CTRL+C and copy into text file.
+   1. open item list in eah, CTRL+A, CTRL+C and copy into text file? Or find out how the item list in epf was created
    1. read itemid, itemname, devicename from that eah list
    1. find block by matching devicename with blocktype
    1. find customicon name
@@ -64,6 +63,7 @@ Alternatively, you can enable the virtual environment, like below, or create one
 
 ### done
 
+- [x] remove redundant configuration that can be read from the dedicated yaml instead, and do that?
 - [x] check for 8dot3name
 - [x] update should have the option to disable the steam check?
 - [-] usecase: create configuration? => probably not needed. the custom config covers our needs.
