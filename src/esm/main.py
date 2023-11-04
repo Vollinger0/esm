@@ -45,9 +45,9 @@ def cli(verbose, config, wait):
     e.g. "esm tool-wipe-empty-playfields --help"
     """
     if verbose:
-        init(streamLogLevel=logging.DEBUG, customConfig=config, wait=wait)
+        init(streamLogLevel=logging.DEBUG, customConfig=config, waitForPort=wait)
     else:
-        init(streamLogLevel=logging.INFO, customConfig=config, wait=wait)
+        init(streamLogLevel=logging.INFO, customConfig=config, waitForPort=wait)
 
 
 @cli.command(name='version', short_help="shows the scripts version")
@@ -63,6 +63,7 @@ def ramdiskPrepare():
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)
         try:
+            esm.checkAndWaitForOtherInstances()
             esm.ramdiskPrepare()
         except Exception as ex:
             log.error(f"Error trying to prepare: {ex}")
@@ -75,6 +76,7 @@ def ramdiskSetup():
     """
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)
+        esm.checkAndWaitForOtherInstances()
         esm.ramdiskSetup()
 
 
@@ -85,6 +87,7 @@ def ramdiskRemount():
     """
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)
+        esm.checkAndWaitForOtherInstances()
         esm.ramdiskRemount()
 
 
@@ -97,6 +100,7 @@ def ramdiskUninstall(force):
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)
         try:
+            esm.checkAndWaitForOtherInstances()
             esm.ramdiskUninstall(force=force)
         except Exception as ex:
             log.error(f"Error trying to uninstall: {ex}")
@@ -109,6 +113,7 @@ def startServer():
     """
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)
+        esm.checkAndWaitForOtherInstances()
         start = getTimer()
         with EsmLogger.console.status("Server running...") as status:
             esm.startServerAndWait()
@@ -132,6 +137,7 @@ def resumeServer():
     """Looks for a running server and restarts inner processes accordingly (e.g. the ram synchronizer). Will end when the server shuts down, just like server-start."""
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)
+        esm.checkAndWaitForOtherInstances()
         try:
             with EsmLogger.console.status("Server running...") as status:
                 esm.resumeServerAndWait()
@@ -162,6 +168,7 @@ def installGame():
     """Installs the game via steam using the configured paths."""
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)
+        esm.checkAndWaitForOtherInstances()
         esm.installGame()
 
 
@@ -171,6 +178,7 @@ def updateGame(nosteam):
     """Updates the game via steam and executes the additional copy tasks listed in the configuration"""
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)
+        esm.checkAndWaitForOtherInstances()
         esm.updateGame(nosteam)
 
 
@@ -183,6 +191,7 @@ def deleteAll():
     """
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)
+        esm.checkAndWaitForOtherInstances()
         esm.deleteAll()
 
 
@@ -206,7 +215,7 @@ def wipeEmptyPlayfields(dblocation, territory, wipetype, nodryrun, showtypes, sh
     """
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)  
-
+        esm.checkAndWaitForOtherInstances()
         if showtypes:
             click.echo("Supported wipe types are:\n" + "\n".join(f"{wt.value.val}\t\t-\t{wt.value.desc}" for wt in list(WipeType)))
             return
@@ -244,6 +253,7 @@ def purgeEmptyPlayfields(dblocation, nodryrun, nocleardiscoveredby, minimumage, 
     """
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)  
+        esm.checkAndWaitForOtherInstances()
 
         if nodryrun and dblocation:
             log.error(f"--nodryrun and --dblocation can not be used together for safety reasons.")
@@ -269,6 +279,7 @@ def purgeWipedPlayfields(nodryrun, leavetemplates, force):
     """
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)  
+        esm.checkAndWaitForOtherInstances()
         try:
             esm.purgeWipedPlayfields(nodryrun=nodryrun, leavetemplates=leavetemplates, force=force)
         except WrongParameterError as ex:
@@ -288,6 +299,7 @@ def purgeRemovedEntities(dblocation, nodryrun, force):
     """
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)  
+        esm.checkAndWaitForOtherInstances()
 
         if nodryrun and dblocation:
             log.error(f"--nodryrun and --dblocation can not be used together for safety reasons.")
@@ -313,6 +325,7 @@ def cleanupShared(dblocation, nodryrun, force):
     """
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)  
+        esm.checkAndWaitForOtherInstances()
 
         if nodryrun and dblocation:
             log.error(f"--nodryrun and --dblocation can not be used together for safety reasons.")
@@ -342,6 +355,8 @@ def clearDiscoveredByInfos(dblocation, nodryrun, file, names):
     """
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)  
+        esm.checkAndWaitForOtherInstances()
+        
         if not file and not names:
             log.error(f"neither a file nor names were provided, but at least one is required.")
         else:
@@ -402,7 +417,7 @@ def checkIntegrity(nonadmin):
         esm.checkIntegrity(nonadmin)
 
 
-def init(fileLogLevel=logging.DEBUG, streamLogLevel=logging.INFO, customConfig="esm-custom-config.yaml", wait=False):
+def init(fileLogLevel=logging.DEBUG, streamLogLevel=logging.INFO, customConfig="esm-custom-config.yaml", waitForPort=False):
     # catch keyboard interrupts 
     signal.signal(signal.SIGINT, forcedExit)
     
@@ -410,20 +425,11 @@ def init(fileLogLevel=logging.DEBUG, streamLogLevel=logging.INFO, customConfig="
                 configFileName="esm-base-config.yaml",
                 customConfigFileName=customConfig,
                 fileLogLevel=fileLogLevel,
-                streamLogLevel=streamLogLevel
+                streamLogLevel=streamLogLevel,
+                waitForPort=waitForPort
                 )
     ServiceRegistry.register(esm)
     
-    # enable multiple instance check and wait
-    port = esm.config.general.bindingPort
-    if wait:
-        interval = esm.config.general.multipleInstanceWaitInterval
-        tries = esm.config.general.multipleInstanceWaitTries
-        esm.openSocket(port, interval=interval, tries=tries)
-    else:
-        esm.openSocket(port)
-
-
 def forcedExit(*args):
     log.warning("Script execution interrupted via SIGINT. If the server is still running, you may resume execution via the server-resume command")
     exit(ExitCodes.SCRIPT_INTERRUPTED)
