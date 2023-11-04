@@ -1,9 +1,10 @@
 # From Zero to Hero
 
 This guides you step-by-step through the whole installation process, if you didn't have a server to begin with.
-If you already have a running empyrion game server and even an existing savegame, its even easier since you just have to skip a few steps.
+If you already have a running empyrion game server and even an existing savegame, its even easier since you can skip a few steps.
 
 ## Installing ESM and Empyrion
+
 ### Install ESM
 
 - TODO
@@ -52,5 +53,7 @@ If you are NOT using a ramdisk (and disabled it in the config), skip this sectio
 #### via EAH
 - start eah
 - start server
+
+**PROFIT**
 
 ##### copyright by Vollinger 2023
