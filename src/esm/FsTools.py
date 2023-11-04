@@ -15,13 +15,12 @@ from esm.Exceptions import SafetyException
 log = logging.getLogger(__name__)
 
 class FsTools:
-
-    # used to check that a path has at least 3 parts before we delete it, just to make sure no error/misconfiguriation deletes a whole drive.
-    MIN_PATH_DEPTH_FOR_DELETE = 3
-
     """
     Tools to work with the file system, includes handling of hardlink/jointpoint
     """
+    MIN_PATH_DEPTH_FOR_DELETE = 3 
+    """used to check that a path has at least 3 parts before we delete it, just to make sure no error/misconfiguriation deletes a whole drive."""
+
     @staticmethod
     def createLink(linkPath, targetPath):
         """

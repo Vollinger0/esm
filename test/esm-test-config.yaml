@@ -1,12 +1,11 @@
 general:
-  #debugMode: True
   debugMode: False
   externalizeTemplates: True
   useRamdisk: True
 
 ramdisk:
   drive: "T:"
-  size: "2G" # ramdisk size to use, e.g. '5G' or '32G', etc. If you change this, the ramdisk needs to be re-mounted, and the setup needs to run again.
+  size: "500M" # ramdisk size to use, e.g. '5G' or '32G', etc. If you change this, the ramdisk needs to be re-mounted, and the setup needs to run again.
   synchronizeRamToMirrorInterval: 60 # interval in seconds at which to do a ram2hdd sync for the savegame. if interval=0 the sync will be disabled! Recommended to leave at 3600 (1h)
 
 server:
@@ -16,7 +15,7 @@ server:
   startMode: 'launcher' # use 'launcher' if you want to start the game the usual way. The launcher itself will then start the dedicated server.
   gfxMode: True # if True, enables the blue graphics overlay of the server, probably not needed when you use EAH or something else to manage the server
   startUpSleepTime: 15 # min amount of time in seconds to wait for a server start up before we try doing anything else with it
-  minDiskSpaceForStartup: 500M # if disk space on the drive with the savegame (or ramdisk) is below this, do NOT start the server to avoid savegame corruption. gnu notation
+  minDiskSpaceForStartup: 100M # if disk space on the drive with the savegame (or ramdisk) is below this, do NOT start the server to avoid savegame corruption. gnu notation
   launcher:
     maxStartupTimeout: 15 # max amount of time in seconds to find the dedicated exe after calling the launcher.
   sendExitTimeout: 60 # amount of seconds to wait until we give up stopping the server and throw an error
@@ -27,8 +26,8 @@ backups:
   marker: 'esm_this_is_the_latest_backup' # filename used for the marker that marks as backup as being the latest.
   additionalBackupPaths: 
     # list of full paths to source files or directories to backup additionally. Those will all end up in the folder "Additional" in the backup.
-    - 'C:\Servers\Tools\esm\esm-config.yaml' # our own configuration
-    - 'C:\Servers\Empyrion\Content\Mods\EncryptoidModPack' # the whole modpack
+    - 'R:\Servers\Tools\esm\esm-config.yaml' # our own configuration
+    - 'R:\Servers\Empyrion\Content\Mods\EncryptoidModPack' # the whole modpack
   staticBackupPeaZipOptions: "a -tzip -mtp=0 -mm=Deflate64 -mmt=on -mx1 -mfb=32 -mpass=1 -sccUTF-8 -mcu=on -mem=AES256 -bb0 -bse0 -bsp2" #make sure to use the fastest compression options
   minDiskSpaceForStaticBackup: 500M # if disk space on the drive with the backups has less free space than this, do not create a backup. gnu notation.
 
@@ -39,7 +38,7 @@ updates:
     # if dst is not a directory, a directory with that name will be created and used as target for the source.
     # if src is a directory, it will be copied recursively into the target folder.
     # existing files/directories in the target will be overwritten!
-    - {src: 'C:\Servers\Tools\esm\test.py', dst: 'esm'}
+    - {src: 'R:\Servers\Tools\esm\test.py', dst: 'esm'}
     #- {src: 'D:\EGS\Empyrion\test.txt', dst: 'content\configuration'}
     #- {src: 'D:\EGS\Empyrion\test.txt', dst: 'D:\temp'}
 
@@ -54,11 +53,12 @@ deletes:
     # - 'Content\Mods\EncryptoidModPack\Mods\AdminTetherport\Database'
 
 paths:
-  install: 'C:\Servers\Empyrion'
+  install: 'R:\Servers\Empyrion'
+  eah: 'R:\Servers\Empyrion\DedicatedServer\EmpyrionAdminHelper'
+  # the following are only used to call, so we can use the real ones.
   osfmount: 'C:\Servers\Tools\OSFMount\osfmount.com'
   peazip: 'C:\Servers\Tools\PeaZip\res\bin\7z\7z.exe'
-  epmremoteclient: 'c:\Servers\Tools\\EmpyrionPrime.RemoteClient.Console.exe'
-  eah: 'C:\Servers\Empyrion\DedicatedServer\EmpyrionAdminHelper'
+  epmremoteclient: 'C:\Servers\Tools\\EmpyrionPrime.RemoteClient.Console.exe'
   steamcmd: 'C:\Servers\Tools\steamcmd\steamcmd.exe'
 
 foldernames:

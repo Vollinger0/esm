@@ -7,9 +7,11 @@ from esm.EsmBackupService import EsmBackupService
 from esm.EsmConfigService import EsmConfigService
 from esm.FsTools import FsTools
 from esm.ServiceRegistry import ServiceRegistry
+from TestTools import TestTools
 
 log = logging.getLogger(__name__)
 
+@unittest.skipUnless(TestTools.ramdiskAvailable(), "needs the ramdrive to be mounted at r")
 class test_EsmBackupService(unittest.TestCase):
 
     @unittest.skip("this needs a rewrite, use a fresh created virtual filesystem instead")

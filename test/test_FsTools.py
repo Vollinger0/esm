@@ -5,14 +5,16 @@ import shutil
 import unittest
 from esm.Exceptions import SafetyException
 from esm.FsTools import FsTools
+from TestTools import TestTools
 
 log = logging.getLogger(__name__)
 
+@unittest.skipUnless(TestTools.ramdiskAvailable(), "needs the ramdrive to be mounted at r")
 class test_FsTools(unittest.TestCase):
 
     def test_createLink(self):
-        target = Path("test-linktarget")
-        link = Path("test-link")
+        target = Path(f"{TestTools.TESTRAMDRIVELETTER}\\test-linktarget")
+        link = Path(f"{TestTools.TESTRAMDRIVELETTER}\\test-link")
         # make sure its cleaned up first
         self.cleanTestFolders([target, link])
 
@@ -30,8 +32,8 @@ class test_FsTools(unittest.TestCase):
         self.cleanTestFolders([target, link])
 
     def test_deleteLink(self):
-        target = Path("test-linktarget")
-        link = Path("test-link")
+        target = Path(f"{TestTools.TESTRAMDRIVELETTER}\\test-linktarget")
+        link = Path(f"{TestTools.TESTRAMDRIVELETTER}\\test-link")
         # make sure its cleaned up first
         self.cleanTestFolders([target, link])
 
@@ -54,8 +56,8 @@ class test_FsTools(unittest.TestCase):
         self.cleanTestFolders([target, link])
 
     def test_isHardLink(self):
-        target = Path("test-linktarget")
-        link = Path("test-link")
+        target = Path(f"{TestTools.TESTRAMDRIVELETTER}\\test-linktarget")
+        link = Path(f"{TestTools.TESTRAMDRIVELETTER}\\test-link")
         # make sure its cleaned up first
         self.cleanTestFolders([target, link])
 
@@ -90,12 +92,12 @@ class test_FsTools(unittest.TestCase):
                     FsTools.deleteLink(dir)
 
     def test_multipleLinks(self):
-        target1 = Path("test-linktarget1")
-        target2 = Path("test-linktarget2")
-        link1 = Path("test-link1")
-        link2 = Path("test-link2")
-        link3 = Path("test-link3")
-        link4 = Path("test-link4")
+        target1 = Path(f"{TestTools.TESTRAMDRIVELETTER}\\test-linktarget1")
+        target2 = Path(f"{TestTools.TESTRAMDRIVELETTER}\\test-linktarget2")
+        link1 = Path(f"{TestTools.TESTRAMDRIVELETTER}\\test-link1")
+        link2 = Path(f"{TestTools.TESTRAMDRIVELETTER}\\test-link2")
+        link3 = Path(f"{TestTools.TESTRAMDRIVELETTER}\\test-link3")
+        link4 = Path(f"{TestTools.TESTRAMDRIVELETTER}\\test-link4")
         # make sure its cleaned up first
         dirs = [link1, link2, link3, link4, target1, target2]
         self.cleanTestFolders(dirs)
@@ -137,7 +139,7 @@ class test_FsTools(unittest.TestCase):
         #                 log.debug(f"linktarget of {entry}, {fixedLinkInfo} and {target1} are the same file")
 
         # the actual method we want to test ;)
-        links = FsTools.getLinksToTarget(directory=Path("."), targetFolder=target1)
+        links = FsTools.getLinksToTarget(directory=Path(f"{TestTools.TESTRAMDRIVELETTER}\."), targetFolder=target1)
         # self.assertEqual(links, [link1.absolute(), link2.absolute()])
         self.assertListEqual(links, [link1, link2])
 
@@ -199,16 +201,16 @@ class test_FsTools(unittest.TestCase):
 
     def test_hasEnoughFreeDiskSpace(self):
         self.assertTrue(FsTools.hasEnoughFreeDiskSpace("C:", "1M")[0])
-        self.assertFalse(FsTools.hasEnoughFreeDiskSpace("C:", "1P")[0]) # "should be enough for everybody "
+        self.assertFalse(FsTools.hasEnoughFreeDiskSpace("C:", "1P")[0]) # "should be enough for everybody"
 
     def test_copyFileToFile(self):
-        parent = Path("copy_test")
+        parent = Path(f"{TestTools.TESTRAMDRIVELETTER}\copy_test")
         if parent.exists(): 
             shutil.rmtree(parent)
         parent.mkdir()
-        srcFile = Path("copy_test/src_file.txt")
+        srcFile = Path(f"{TestTools.TESTRAMDRIVELETTER}\copy_test/src_file.txt")
         srcFile.write_text("blabla")
-        dstFile = Path("copy_test/target_file.txt")
+        dstFile = Path(f"{TestTools.TESTRAMDRIVELETTER}\copy_test/target_file.txt")
 
         # file to file
         FsTools.copy(source=srcFile, destination=dstFile)
@@ -216,14 +218,14 @@ class test_FsTools(unittest.TestCase):
         shutil.rmtree(parent)
 
     def test_copyFileToDir(self):
-        parent = Path("copy_test")
+        parent = Path(f"{TestTools.TESTRAMDRIVELETTER}\copy_test")
         if parent.exists(): 
             shutil.rmtree(parent)
         
         parent.mkdir()
-        srcFile = Path("copy_test/src_file.txt")
+        srcFile = Path(f"{TestTools.TESTRAMDRIVELETTER}\copy_test/src_file.txt")
         srcFile.write_text("blabla")
-        dstDir = Path("copy_test/targetDir")
+        dstDir = Path(f"{TestTools.TESTRAMDRIVELETTER}\copy_test/targetDir")
         dstDir.mkdir()
 
         # file to file
@@ -234,14 +236,14 @@ class test_FsTools(unittest.TestCase):
 
 
     def test_copyDirToFile(self):
-        parent = Path("copy_test")
+        parent = Path(f"{TestTools.TESTRAMDRIVELETTER}\copy_test")
         if parent.exists(): 
             shutil.rmtree(parent)
         
         parent.mkdir()
-        srcDir = Path("copy_test/src_dir")
+        srcDir = Path(f"{TestTools.TESTRAMDRIVELETTER}\copy_test/src_dir")
         srcDir.mkdir()
-        dstFile = Path("copy_test/target_file.txt")
+        dstFile = Path(f"{TestTools.TESTRAMDRIVELETTER}\copy_test/target_file.txt")
         dstFile.write_text("omg")
 
         # file to file SHOULD FAIL!
@@ -250,50 +252,50 @@ class test_FsTools(unittest.TestCase):
         shutil.rmtree(parent)
 
     def test_copyDirToDir(self):
-        parent = Path("copy_test")
+        parent = Path(f"{TestTools.TESTRAMDRIVELETTER}\copy_test")
         if parent.exists(): 
             shutil.rmtree(parent)
         
         parent.mkdir()
-        srcDir = Path("copy_test/src_dir")
+        srcDir = Path(f"{TestTools.TESTRAMDRIVELETTER}\copy_test/src_dir")
         srcDir.mkdir()
-        srcDirFile = Path("copy_test/src_dir/file2.txt")
+        srcDirFile = Path(f"{TestTools.TESTRAMDRIVELETTER}\copy_test/src_dir/file2.txt")
         srcDirFile.write_text("bar")
-        dstDir = Path("copy_test/target_dir")
+        dstDir = Path(f"{TestTools.TESTRAMDRIVELETTER}\copy_test/target_dir")
 
         # file to file
         FsTools.copyDir(source=srcDir, destination=dstDir)
-        self.assertTrue(Path("copy_test/target_dir/file2.txt").exists())
+        self.assertTrue(Path(f"{TestTools.TESTRAMDRIVELETTER}\copy_test/target_dir/file2.txt").exists())
         shutil.rmtree(parent)
 
     def test_copyDirToDirTargetExists(self):
-        parent = Path("copy_test")
+        parent = Path(f"{TestTools.TESTRAMDRIVELETTER}\copy_test")
         if parent.exists(): 
             shutil.rmtree(parent)
         
         parent.mkdir()
-        srcDir = Path("copy_test/src_dir")
+        srcDir = Path(f"{TestTools.TESTRAMDRIVELETTER}\copy_test/src_dir")
         srcDir.mkdir()
-        srcDirFile = Path("copy_test/src_dir/file2.txt")
+        srcDirFile = Path(f"{TestTools.TESTRAMDRIVELETTER}\copy_test/src_dir/file2.txt")
         srcDirFile.write_text("bar")
-        dstDir = Path("copy_test/target_dir")
+        dstDir = Path(f"{TestTools.TESTRAMDRIVELETTER}\copy_test/target_dir")
         dstDir.mkdir()
 
         # file to file
         FsTools.copyDir(source=srcDir, destination=dstDir)
-        self.assertTrue(Path("copy_test/target_dir/src_dir/file2.txt").exists())
+        self.assertTrue(Path(f"{TestTools.TESTRAMDRIVELETTER}\copy_test/target_dir/src_dir/file2.txt").exists())
         shutil.rmtree(parent)
 
     def test_isGlobPattern(self):
-        self.assertFalse(FsTools.isGlobPattern(r"D:\EGS\Empyrion"))
-        self.assertTrue(FsTools.isGlobPattern(r"D:\EGS\Empyrion\*"))
-        self.assertFalse(FsTools.isGlobPattern(r"D:\EGS\Empyrion\bla.txt"))
+        self.assertFalse(FsTools.isGlobPattern(r"X:\EGS\Empyrion"))
+        self.assertTrue(FsTools.isGlobPattern(r"X:\EGS\Empyrion\*"))
+        self.assertFalse(FsTools.isGlobPattern(r"X:\EGS\Empyrion\bla.txt"))
         self.assertFalse(FsTools.isGlobPattern("some/path"))
         self.assertTrue(FsTools.isGlobPattern("some/path/with/**/glob/stuff/*.dat"))
         self.assertFalse(FsTools.isGlobPattern("some/path/with/no/glob/stuff.txt"))
 
-        self.assertTrue(FsTools.isGlobPattern("D:/some/path/*.txt"))
-        self.assertFalse(FsTools.isGlobPattern("D:/some/path/foo.txt"))
+        self.assertTrue(FsTools.isGlobPattern("X:/some/path/*.txt"))
+        self.assertFalse(FsTools.isGlobPattern("X:/some/path/foo.txt"))
 
     def test_resolveGlobbedPatternsAndExtendWithAbsolute(self):
         parentDir = Path(".").resolve()
@@ -341,10 +343,10 @@ class test_FsTools(unittest.TestCase):
         self.assertFalse(FsTools.pathContainsSubPath(path=path1, subPath=path6))
         self.assertTrue(FsTools.pathContainsSubPath(path=path1, subPath=path7))
 
-    @unittest.skip("only execute this manually, it requires extreme caution!")
+    #@unittest.skip("only execute this manually, it requires extreme caution!")
     def test_deleteSafetyMeasures(self):
-        moep = Path(r"C:\foo_bar_baz\bla\moep")
-        foo = Path(r"C:\foo_bar_baz")
+        moep = Path(f"{TestTools.TESTRAMDRIVELETTER}\\foo_bar_baz\\bla\\moep")
+        foo = Path(f"{TestTools.TESTRAMDRIVELETTER}\\foo_bar_baz")
         moep.mkdir(exist_ok=True, parents=True)
 
         # this should work.        
