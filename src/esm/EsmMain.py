@@ -570,7 +570,7 @@ class EsmMain:
                     log.error(f"Looks like the tool is already running!")
                     exit(ExitCodes.INSTANCE_RUNNING)
 
-    def checkIntegrity(self):
+    def checkIntegrity(self, noadmin=False):
         """
         does a series of tests for integrity of the scripts, config, game, os and whatnot.
         """
@@ -625,3 +625,9 @@ class EsmMain:
                 self.dedicatedServer.assertEnoughFreeDiskspace()
             except AdminRequiredException as ex:
                 log.error(f"{ex}")
+
+        if not noadmin and self.config.general.useRamdisk:
+            log.info(f"Checking if you have the required privileges to run access ramdisks at all")
+            ramdriveMounted = self.ramdiskManager.checkRamdrive(simpleCheck=False)
+            if not ramdriveMounted:
+                log.error(f"Could either not execute or not access the ramdisk with osf mount. You require admin privileges for ramdisk mode.")
