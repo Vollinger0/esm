@@ -9,10 +9,11 @@ from esm.EsmFileSystem import EsmFileSystem
 from esm.EsmRamdiskManager import EsmRamdiskManager
 from esm.FsTools import FsTools
 from esm.ServiceRegistry import ServiceRegistry
-import dotsi
+from TestTools import TestTools
 
 log = logging.getLogger(__name__)
 
+@unittest.skipUnless(TestTools.ramdiskAvailable(), "needs the ramdrive to be mounted at r")
 class test_EsmRamdiskManager(unittest.TestCase):
 
     @unittest.skip("only execute this manually, since it is too easy to break things")
@@ -20,25 +21,6 @@ class test_EsmRamdiskManager(unittest.TestCase):
         ServiceRegistry.register(EsmMain)
         # TODO: set own configservice, or mock it
         #self.config = EsmConfigService(configFilePath="test/esm-test-config.yaml")
-        self.config = dotsi.Dict({
-            "paths": {
-                "install": "./unittest_installdir"
-            },
-            "saves": {
-                "games": {
-                    "savegame": {
-                        "_parent": "unittest_dedigame",
-                        "globaldb": "unittest_global.db"
-                    }
-                },
-                "gamesmirror": {
-                    "savegamemirror": "unittest_dedigamemirror"
-                }
-            },
-            "filenames": {
-                "buildNumber": "unittest_BuildNumber.txt"
-            }
-        })
         self.fs = EsmFileSystem(self.config)
         self.rdm = EsmRamdiskManager(config=self.config, fileSystem=self.fs)
 

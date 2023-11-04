@@ -31,14 +31,15 @@ Alternatively, you can enable the virtual environment, like below, or create one
 ## TODOS
 
 ### WIP
+- [+] fix all FS-modifying tests to use the test fixture of the usually existing ramdisk (R:)
 - [ ] check for 8dot3name
+
+### later
+
 - [+] remove redundant configuration that can be read from the dedicated yaml instead, and do that?
 - [ ] integrity check: checks if things fit together (e.g. dedicated.yaml config), our own config when running multiple instances, etc.
   - or adapt config to dedicated.yaml, especially when paths change. probably as a sanity check implementation
   - may also just check the config, e.g. if all paths exist
-
-### later
-
 - [ ] implement warning/talkback via tickets for when an admin is required (e.g. low disk space, etc.)
 - [ ] implement warning/talkback to server chat for syncs, backups probably even random stuff with funny hamster sentences.
 - [ ] provide full installation package with install bat, that installs esm, the tools (osfmount, peazip, epm, python, etc.)

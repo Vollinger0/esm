@@ -2,7 +2,7 @@ import importlib
 import logging
 import signal
 import click
-from halo import Halo
+from esm.EsmLogger import EsmLogger
 from esm.Exceptions import ExitCodes, WrongParameterError
 from esm.DataTypes import Territory, WipeType
 from esm.ServiceRegistry import ServiceRegistry
@@ -110,9 +110,9 @@ def startServer():
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)
         start = getTimer()
-        with Halo(text="Server running", spinner="dots") as spinner:
+        with EsmLogger.console.status("Server running...") as status:
             esm.startServerAndWait()
-            spinner.succeed("Server shut down")
+            status.stop()
         log.info(f"Server was running for {getElapsedTime(start)} and has stopped now.")
 
 
@@ -133,11 +133,12 @@ def resumeServer():
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)
         try:
-            with Halo(text="Server running", spinner="dots") as spinner:
-                esm.resumeServerAndWait()                
-                spinner.succeed("Server shut down")
+            with EsmLogger.console.status("Server running...") as status:
+                esm.resumeServerAndWait()
+                status.stop()
         except TimeoutError as ex:
             log.error(f"Could not resume server. Is it running at all? {ex}")
+            EsmLogger.console.log("Resume failed")
 
 
 @cli.command(name="backup-create", short_help="creates a fast rolling backup")
@@ -375,12 +376,12 @@ def omg(i_am_darkestwarrior, i_am_vollinger, i_am_kreliz):
         except:
             log.info(f"It's all your fault now")
 
-        with Halo(text="Destroying worlds", spinner="dots") as spinner:
+        with EsmLogger.console.status("Destroying worlds...") as status:
             try:
                 while True:
                     pass
             except KeyboardInterrupt:
-                spinner.fail("Stopped")
+                status.stop()
                 log.warning("Destruction of the galaxy ended prematurely. Please contact an expert.")
 
 

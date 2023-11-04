@@ -14,7 +14,7 @@ server:
 
 ramdisk:
   size: "1G"
-  synchronizeRamToMirrorInterval: 600 
+  synchronizeRamToMirrorInterval: 60 
 
 backups:
   additionalBackupPaths: 
@@ -34,9 +34,6 @@ updates:
     - {src: 'c:\Servers\Scenarios\ProjectA\' , dst: 'c:\Servers\empyrion\Content\Scenarios\'}
     # copy all item icons from the scenario to EAH
     - {src: 'c:\Servers\Scenarios\project-a\SharedData\Content\Bundles\ItemIcons\*.*', dst: 'c:\Servers\Empyrion\DedicatedServer\EmpyrionAdminHelper\Items\'}
-    #- {src: 'D:\EGS\Empyrion\test.txt', dst: 'esm'}
-    #- {src: 'D:\EGS\Empyrion\test.txt', dst: 'content\configuration'}
-    #- {src: 'D:\EGS\Empyrion\test.txt', dst: 'D:\temp'}
 
 deletes:
   additionalDeletes: # additional paths of stuff to delete when using the "deleteall" command
