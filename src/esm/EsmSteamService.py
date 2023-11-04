@@ -24,7 +24,7 @@ class EsmSteamService:
         $ %steamCmdPath% +force_install_dir %installPath% +login anonymous +app_update 530870 validate +quit"
         """
         # steam install
-        steamcmdExe = self.getSteamCmdExecutable()
+        steamcmdExe = self.checkAndGetSteamCmdExecutable()
         installPath = self.config.paths.install
         cmd = [steamcmdExe]
         cmd.extend(str(f"+force_install_dir {installPath} +login anonymous +app_update 530870 validate +quit").split(" "))
@@ -50,7 +50,7 @@ class EsmSteamService:
         # additional copying according to configuration
         self.copyAdditionalUpdateStuff()
 
-    def getSteamCmdExecutable(self):
+    def checkAndGetSteamCmdExecutable(self):
         """
         checks that the steam executable exists and returns its path.
         """

@@ -6,7 +6,7 @@ from esm.Exceptions import RequirementsNotFulfilledError
 from esm.EsmConfigService import EsmConfigService
 
 from esm.ServiceRegistry import Service, ServiceRegistry
-from esm.Tools import isDebugMode
+from esm.Tools import byteArrayToString, isDebugMode
 
 log = logging.getLogger(__name__)
 
@@ -21,7 +21,7 @@ class EsmEpmRemoteClientService:
     def config(self) -> EsmConfigService:
         return ServiceRegistry.get(EsmConfigService)
 
-    def getEpmRemoteClientPath(self):
+    def checkAndGetEpmRemoteClientPath(self):
         epmRC = self.config.paths.epmremoteclient
         if Path(epmRC).exists():
             return epmRC
@@ -34,7 +34,7 @@ class EsmEpmRemoteClientService:
         returns the completed process of the remote client.
         """
         # use the epmremoteclient and send a 'saveandexit x' where x is the timeout in minutes. a 0 will stop it immediately.
-        epmrc = self.getEpmRemoteClientPath()
+        epmrc = self.checkAndGetEpmRemoteClientPath()
         cmd = [epmrc, "run", "-q", f"saveandexit {timeout}"]
         if isDebugMode(self.config):
             cmd = [epmrc, "run", f"saveandexit {timeout}"]
@@ -43,8 +43,10 @@ class EsmEpmRemoteClientService:
         log.debug(f"process returned: {process}")
         # this returns when epmrc ends, not the server!
         if process.returncode > 0:
-            if process.stdout and len(process.stdout)>0 and len(process.sterr)>0:
-                log.error(f"error executing the epm client: stdout: \n{process.stdout}\n, stderr: \n{process.stderr}\n")
+            stdout = byteArrayToString(process.stdout).strip()
+            stderr = byteArrayToString(process.stderr).strip()
+            if len(stdout)>0 or len(stderr)>0:
+                log.error(f"error executing the epm client: stdout: '{stdout}', stderr: '{stderr}'")
             else:
                 log.error(f"error executing the epm client, but no output was provided")
         return process
@@ -57,7 +59,7 @@ class EsmEpmRemoteClientService:
         Unluckily, this is currently only a server message.
         """
         # use the epmremoteclient and send a 'say "message"'
-        epmrc = self.getEpmRemoteClientPath()
+        epmrc = self.checkAndGetEpmRemoteClientPath()
         string = f"say '{name}: {message}'"
         cmd = [epmrc, "run", "-q", string]
         if isDebugMode(self.config):

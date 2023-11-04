@@ -31,9 +31,6 @@ Alternatively, you can enable the virtual environment, like below, or create one
 ## TODOS
 
 ### WIP
-- [ ] integrity check: checks if things fit together (e.g. dedicated.yaml config), our own config when running multiple instances, etc.
-  - or adapt config to dedicated.yaml, especially when paths change. probably as a sanity check implementation
-  - may also just check the config, e.g. if all paths exist
 
 ### later
 
@@ -63,6 +60,9 @@ Alternatively, you can enable the virtual environment, like below, or create one
 
 ### done
 
+- [x] integrity check: checks if things fit together (e.g. dedicated.yaml config), our own config when running multiple instances, etc.
+  - or adapt config to dedicated.yaml, especially when paths change. probably as a sanity check implementation
+  - may also just check the config, e.g. if all paths exist
 - [x] remove redundant configuration that can be read from the dedicated yaml instead, and do that?
 - [x] check for 8dot3name
 - [x] update should have the option to disable the steam check?

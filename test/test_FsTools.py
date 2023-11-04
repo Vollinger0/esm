@@ -31,6 +31,30 @@ class test_FsTools(unittest.TestCase):
         # clean up
         self.cleanTestFolders([target, link])
 
+    def test_createLinkShouldFail(self):
+        target = Path(f"{TestTools.TESTRAMDRIVELETTER}\\test-linktarget")
+        link = Path(f"{TestTools.TESTRAMDRIVELETTER}\\test-link")
+        # make sure its cleaned up first
+        self.cleanTestFolders([target, link])
+
+        self.assertFalse(target.exists())
+        self.assertFalse(link.exists())
+        
+        target.mkdir()
+        result = FsTools.createLink(linkPath=link, targetPath=target)
+        self.assertTrue(result)
+        
+        self.assertTrue(target.exists())
+        self.assertTrue(link.exists())
+
+        # this one should fail
+        result = FsTools.createLink(linkPath=link, targetPath=target)
+        self.assertFalse(result)
+
+        #subprocess.run("rmdir /S /Q test-link", shell=True)
+        # clean up
+        self.cleanTestFolders([target, link])
+
     def test_deleteLink(self):
         target = Path(f"{TestTools.TESTRAMDRIVELETTER}\\test-linktarget")
         link = Path(f"{TestTools.TESTRAMDRIVELETTER}\\test-link")

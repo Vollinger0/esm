@@ -277,7 +277,7 @@ class EsmBackupService:
         self.assertEnoughFreeSpace()
 
         zipFile = f"{backupDirectory}\\{zipFileName}"
-        peaZipExecutable = self.getPeaZipPath()
+        peaZipExecutable = self.checkAndGetPeaZipPath()
         cmd = [peaZipExecutable]
         cmd.extend(str(self.config.backups.staticBackupPeaZipOptions).split(" "))
         cmd.extend([f"-w{backupDirectory}", zipFile, f"{source}\\*"])
@@ -316,7 +316,7 @@ class EsmBackupService:
         # on test: 500MB savegame -> 9 seconds, 66MB
         # "%zipCmdPath%" a -t7z -m0=Deflate -mmt=on -mx1 -mfb=32 -mpass=1 -ms=8m -mqs=on -sccUTF-8 -bb0 -bse0 -bsp2 "-w%backupDirPath%" "%backupDirPath%\%backupZipName%" "!backupDir!" >>%zipLogfile%
 
-    def getPeaZipPath(self):
+    def checkAndGetPeaZipPath(self):
         """
         checks that the pea zip executable exists and returns its path.
         """

@@ -3,7 +3,8 @@ import logging
 from pathlib import Path
 import socket
 import time
-from esm.Exceptions import AdminRequiredException, ExitCodes, ServerNeedsToBeStopped, UserAbortedException, WrongParameterError
+from esm.EsmEpmRemoteClientService import EsmEpmRemoteClientService
+from esm.Exceptions import AdminRequiredException, ExitCodes, RequirementsNotFulfilledError, ServerNeedsToBeStopped, UserAbortedException, WrongParameterError
 from esm.DataTypes import Territory, WipeType
 from esm.EsmBackupService import EsmBackupService
 from esm.EsmDeleteService import EsmDeleteService
@@ -574,3 +575,53 @@ class EsmMain:
         does a series of tests for integrity of the scripts, config, game, os and whatnot.
         """
         self.fileSystem.check8Dot3NameGeneration()
+
+        self.fileSystem.testLinkGeneration()
+
+        try:
+            path = self.ramdiskManager.checkAndGetOsfMountPath()
+            log.info(f"{path} found")
+        except RequirementsNotFulfilledError as ex:
+            log.error(f"{ex}")
+
+        try:
+            path = self.backupService.checkAndGetPeaZipPath()
+            log.info(f"{path} found")
+        except RequirementsNotFulfilledError as ex:
+            log.error(f"{ex}")
+
+        erc = ServiceRegistry.get(EsmEpmRemoteClientService)
+        try:
+            path = erc.checkAndGetEpmRemoteClientPath()
+            log.info(f"{path} found")
+        except RequirementsNotFulfilledError as ex:
+            log.error(f"{ex}")
+
+        try:
+            path = self.steamService.checkAndGetSteamCmdExecutable()
+            log.info(f"{path} found")
+        except RequirementsNotFulfilledError as ex:
+            log.error(f"{ex}")
+
+        log.info(f"Checking if there is enough space available for backups.")
+        try:
+            self.backupService.assertEnoughFreeSpace()
+        except AdminRequiredException as ex:
+            log.error(f"{ex}")
+
+
+        log.info(f"Checking if there is enough space to start the game.")
+        if self.config.general.useRamdisk:
+            ramdriveMounted = self.ramdiskManager.checkRamdrive(simpleCheck=True)
+            if ramdriveMounted:
+                try:
+                    self.dedicatedServer.assertEnoughFreeDiskspace()
+                except AdminRequiredException as ex:
+                    log.error(f"{ex}")
+            else:
+                log.warning(f"no ramdisk mounted, can't check its free space now. You may want to run ramdisk-setup first.")
+        else:
+            try:
+                self.dedicatedServer.assertEnoughFreeDiskspace()
+            except AdminRequiredException as ex:
+                log.error(f"{ex}")

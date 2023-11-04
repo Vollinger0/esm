@@ -101,3 +101,10 @@ def extractSystemAndPlayfieldNames(names: List[str]):
         else:
             playfields.append(name)
     return solarsystems, playfields
+
+def byteArrayToString(byteArray: bytearray, encoding="UTF-8"):
+    try:
+        decoded_string = byteArray.decode(encoding)
+        return decoded_string
+    except UnicodeDecodeError:
+        return None
