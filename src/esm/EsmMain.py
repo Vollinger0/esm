@@ -568,3 +568,9 @@ class EsmMain:
                     log.debug(f"If you need to use another port for this application, set it in the config.")
                     log.error(f"Looks like the tool is already running!")
                     exit(ExitCodes.INSTANCE_RUNNING)
+
+    def checkIntegrity(self):
+        """
+        does a series of tests for integrity of the scripts, config, game, os and whatnot.
+        """
+        self.fileSystem.check8Dot3NameGeneration()

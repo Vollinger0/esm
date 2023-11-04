@@ -232,3 +232,20 @@ class EsmFileSystem:
         # empty list of pending deletes
         self.clearPendingDeletePaths()
         return True, elapsedTime
+    
+    def check8Dot3NameGeneration(self):
+        """
+        will check if 8dot3name (aka shortname) generation on the game's installation drive is enabled
+
+        for this we create a temporary directory in the FS, then one with a very long name and try to access it via its short name
+        """
+        testParentDir = Path(f"{self.config.paths.install}/{self.config.foldernames.esmtests}").resolve()
+        driveLetter = testParentDir.drive
+        testDir = Path(f"{testParentDir}\\thisisalongdirectoryname-check8Dot3NameGeneration")
+        testDir.mkdir(parents=True, exist_ok=True)
+        checkDir = Path(f"{testParentDir}\\THISIS~1")
+        result = checkDir.exists()
+        if result:
+            log.info(f"8dot3name generation on drive {driveLetter} is enabled. If you disable it, this will make file operations for large amount of files and directories up to ~3 times faster! See https://learn.microsoft.com/de-de/archive/blogs/josebda/windows-server-2012-file-server-tip-disable-8-3-naming-and-strip-those-short-names-too")
+        else:
+            log.info(f"8dot3name generation is disabled on {driveLetter}. This is good :)")
