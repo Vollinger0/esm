@@ -1,8 +1,13 @@
+import logging
+from pathlib import Path
 import dotsi
 import yaml
+from esm.Exceptions import AdminRequiredException
 
 from esm.ServiceRegistry import Service
 from esm.Tools import mergeDicts
+
+log = logging.getLogger(__name__)
 
 @Service
 class EsmConfigService:
@@ -10,8 +15,14 @@ class EsmConfigService:
     Contains all the relevant config for esm, backed by a yaml file. 
 
     Extended to be a dotsi dictionary that can be accessed directly with the dot-notation.
+    configuration may contain the base config, configfile will be merged with it, customConfig will be merged after that.
+    the context given will be kept as config.context and may be extended with context relevant information
     """
-    def __init__(self, configuration=None, configFilePath=None, context=None, customConfigFilePath=None):
+    def __init__(self, configuration: dict=None, configFilePath=None, context=None, customConfigFilePath=None, raiseExceptionOnMissingDedicated=True):
+        """
+        since this is a service class, it will be created without any parameters first and later replaced with a parameterized version
+        """
+
         if configuration is None:
             config = {}
         else:
@@ -32,9 +43,50 @@ class EsmConfigService:
         if context:
             mergeDicts(config["context"], context)
 
+        # if a dedicated yaml was defined (has to), read and merge it into the config
+        if len(config) > 0:
+            self.mergeWithDedicatedYaml(config, raiseExceptionOnMissingDedicated)
+
         # convert to dotsi dict, that allows the dictionary to be accessed via dotPath notation as attributes
         self.config = dotsi.Dict(config)
     
     def __getattr__(self, attr):
         return self.config.get(attr)
     
+
+    def mergeWithDedicatedYaml(self, config: dict, raiseExceptionOnMissingDedicated):
+        """
+        after init, this config should contain the path to the dedicated yaml, we'll look for some infos there, namely:
+        - savegame name
+        - path to saves
+        """
+        serverConfig = config.get("server")
+        if serverConfig is not None and not serverConfig.get('dedicatedYaml'):
+            self.raiseOrLog(raiseExceptionOnMissingDedicated, f"could not find configured path to dedicated.yaml. This is fatal, please make sure the path to it in the configuration is correct under server.dedicatedYaml.")
+            return
+
+        dedicatedYamlPath = Path(config.get("server").get('dedicatedYaml')).resolve()
+        if not dedicatedYamlPath.exists():
+            self.raiseOrLog(raiseExceptionOnMissingDedicated, f"could not find dedicated yaml at {dedicatedYamlPath}. This is fatal, please make sure the path to it in the configuration is correct and the file exists.")
+            return
+
+        with open(dedicatedYamlPath, "r") as configFile:
+            dedicated = yaml.safe_load(configFile)
+
+        # add config to our config
+        dedicatedConfig = {"dedicatedYaml": dedicated}
+        mergeDicts(config, dedicatedConfig)
+
+    def raiseOrLog(self, raiseExceptionOnMissingDedicated, message):
+        if raiseExceptionOnMissingDedicated:
+            raise AdminRequiredException(message)
+        else:
+            log.error(message)
+
+        # the most interesting configs from there will be:
+        #dedicated.ServerConfig.SaveDirectory
+        #dedicated.ServerConfig.AdminConfigFile
+        #dedicated.GameConfig.GameName
+        #dedicated.GameConfig.CustomScenario
+
+

@@ -2,6 +2,7 @@ import logging
 from pathlib import Path
 import unittest
 from esm.EsmConfigService import EsmConfigService
+from esm.Exceptions import AdminRequiredException
 from esm.ServiceRegistry import ServiceRegistry
 
 log = logging.getLogger(__name__)
@@ -10,7 +11,7 @@ class test_EsmConfigService(unittest.TestCase):
 
     def test_accessibleConfig(self):
         configFile = Path("./test/test.yaml").absolute()
-        config = EsmConfigService(configFilePath=configFile)
+        config = EsmConfigService(configFilePath=configFile, raiseExceptionOnMissingDedicated=False)
         log.debug(f"config: {config}")
         log.debug(f"config.database: {config.database}")
         log.debug(f"config.database.host: {config.database.host}")
@@ -55,7 +56,7 @@ class test_EsmConfigService(unittest.TestCase):
 
     def test_loadingCustomConfig(self):
         configFile = Path("./test/test.yaml").absolute()
-        config = EsmConfigService(configFilePath=configFile)
+        config = EsmConfigService(configFilePath=configFile, raiseExceptionOnMissingDedicated=False)
         self.assertEqual(config.app.name, "My App")
         self.assertIsNone(config.onlyInCustom)
         self.assertEqual(config.onlyInBase, "bar")
@@ -67,7 +68,7 @@ class test_EsmConfigService(unittest.TestCase):
         # now with custom config overwriting the base config
         newConfigFile = Path("./test/test.yaml").absolute()
         newCustomFile = Path("./test/custom.yaml").absolute()
-        newConfig = EsmConfigService(configFilePath=newConfigFile, customConfigFilePath=newCustomFile)
+        newConfig = EsmConfigService(configFilePath=newConfigFile, customConfigFilePath=newCustomFile, raiseExceptionOnMissingDedicated=False)
         self.assertEqual(newConfig.app.name, "My Custom App Config")
         self.assertEqual(newConfig.onlyInCustom, "foo")
         self.assertEqual(newConfig.onlyInBase, "bar")
@@ -81,14 +82,24 @@ class test_EsmConfigService(unittest.TestCase):
 
     def test_loadingRealConfig(self):
         config = EsmConfigService(configFilePath="esm-base-config.yaml", customConfigFilePath="esm-custom-config.yaml")
-        self.assertEqual(config.server.savegame, "EsmDediGame")
+        self.assertEqual(config.dedicatedYaml.GameConfig.GameName, "EsmDediGame")
         self.assertEqual(config.server.minDiskSpaceForStartup, "500M")
 
-    @unittest.skip("not yet implemented")
     def test_loadingConfigReadsDedicatedYaml(self):
         configFilePath="test/esm-test-config.yaml"
         config = EsmConfigService(configFilePath=configFilePath)
-        #TODO: implement
-        raise NotImplementedError("todo")
-        self.assertEqual(config.server.savegame, "EsmDediGame")
-        self.assertEqual(config.folderNames.save, "Saves")
+        
+        with self.assertRaises(KeyError):
+            self.assertIsNone(config.server.savegame)
+        with self.assertRaises(KeyError):            
+            self.assertIsNone(config.foldernames.saves)
+        
+        self.assertEqual(config.dedicatedYaml.GameConfig.GameName, "EsmDediGame")
+        self.assertEqual(config.dedicatedYaml.ServerConfig.AdminConfigFile, "adminconfig.yaml")
+        self.assertEqual(config.dedicatedYaml.ServerConfig.SaveDirectory, "Saves")
+
+    def test_loadingConfigReadsDedicatedYamlBreaksWhenNotAvailable(self):
+        configFilePath="test/esm-test-broken-config.yaml"
+        
+        with self.assertRaises(AdminRequiredException):
+            config = EsmConfigService(configFilePath=configFilePath, raiseExceptionOnMissingDedicated=True)

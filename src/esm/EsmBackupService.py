@@ -163,7 +163,7 @@ class EsmBackupService:
         """
         actually back up the savegame using the source given
         """
-        targetBackupFolderSaves = f"{targetBackupFolder}/{self.config.foldernames.saves}/{self.config.server.savegame}"
+        targetBackupFolderSaves = f"{targetBackupFolder}/{self.config.dedicatedYaml.ServerConfig.SaveDirectory}/{self.config.dedicatedYaml.GameConfig.GameName}"
         self.fileSystem.executeRobocopy(sourcePath=savegameSource, destinationPath=targetBackupFolderSaves)
     
     def backupGameConfig(self, targetBackupFolder):
@@ -171,12 +171,13 @@ class EsmBackupService:
         backs up some important game configs, like dedicated.yaml, adminconfig.yaml, etc.
         """
         # saves/adminconfig.yaml
-        adminConfig = Path(f"{self.fileSystem.getAbsolutePathTo('saves')}/adminconfig.yaml")
-        targetAdminConfig = Path(f"{targetBackupFolder}/{self.config.foldernames.saves}/adminconfig.yaml")
+        adminConfigFileName = self.config.dedicatedYaml.ServerConfig.AdminConfigFile
+        adminConfig = Path(f"{self.fileSystem.getAbsolutePathTo('saves')}/{adminConfigFileName}")
+        targetAdminConfig = Path(f"{targetBackupFolder}/{self.config.dedicatedYaml.ServerConfig.SaveDirectory}/{adminConfigFileName}")
         if adminConfig.exists():
             FsTools.copyFile(adminConfig, targetAdminConfig)
         else:
-            log.warning(f"adminconfig.yaml at {adminConfig} does not exist. You probably should have one or something is misconfigured.")
+            log.warning(f"{adminConfigFileName} at {adminConfig} does not exist. You probably should have one or something is misconfigured.")
 
         # dedicated.yaml
         dedicatedYaml = Path(f"{self.config.paths.install}/{self.config.server.dedicatedYaml}")
@@ -263,7 +264,7 @@ class EsmBackupService:
         else:
             date = datetime.now()
         formattedDate = date.strftime("%Y%m%d_%H%M%S")
-        return f"{formattedDate}_{self.config.server.savegame}.zip"
+        return f"{formattedDate}_{self.config.dedicatedYaml.GameConfig.GameName}.zip"
 
     def createZip(self, source, backupDirectory, zipFileName):
         """

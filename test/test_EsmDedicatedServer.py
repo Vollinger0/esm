@@ -3,11 +3,13 @@ from pathlib import Path
 import unittest
 from esm.EsmDedicatedServer import EsmDedicatedServer, GfxMode, StartMode
 from esm.EsmConfigService import EsmConfigService
+from TestTools import TestTools
 
 log = logging.getLogger(__name__)
 
 class test_EsmDedicatedServer(unittest.TestCase):
 
+    @unittest.skipUnless(TestTools.ramdiskAvailable(), "needs the ramdrive to be mounted at r")
     def test_createLogFileName(self):
         esmConfig = EsmConfigService(configFilePath='test/esm-test-config.yaml')
         
@@ -60,6 +62,7 @@ class test_EsmDedicatedServer(unittest.TestCase):
             commandStrings.append(str(thing))
         self.assertEqual(f"{esmConfig.paths.install}\EmpyrionLauncher.exe -startDediWithGfx -dedicated esm-dedicated.yaml", " ".join(commandStrings))
 
+    @unittest.skipUnless(TestTools.ramdiskAvailable(), "needs the ramdrive to be mounted at r")
     def test_getCommandForDirectMode(self):
         esmConfig = EsmConfigService(configFilePath='test/esm-test-config.yaml')
         # create the buildnumber file in the testdata first
@@ -78,6 +81,7 @@ class test_EsmDedicatedServer(unittest.TestCase):
         #self.assertEqual(expected, actual)
         self.assertTrue(actual.startswith(expected))
 
+    @unittest.skipUnless(TestTools.ramdiskAvailable(), "needs the ramdrive to be mounted at r")
     def test_getCommandForDirectModeNoGfx(self):
         esmConfig = EsmConfigService(configFilePath='test/esm-test-config.yaml')
         # create the buildnumber file in the testdata first

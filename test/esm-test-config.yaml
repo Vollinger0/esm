@@ -10,14 +10,12 @@ ramdisk:
 
 server:
   dedicatedYaml: 'esm-dedicated.yaml'
-  savegame: 'EsmTestDediGame'
   #startMode: 'direct'  # use 'direct' if you want to bypass the launcher, e.g. if you want to run multiple instances of the server on the same machine.
   startMode: 'launcher' # use 'launcher' if you want to start the game the usual way. The launcher itself will then start the dedicated server.
   gfxMode: True # if True, enables the blue graphics overlay of the server, probably not needed when you use EAH or something else to manage the server
   startUpSleepTime: 15 # min amount of time in seconds to wait for a server start up before we try doing anything else with it
   minDiskSpaceForStartup: 100M # if disk space on the drive with the savegame (or ramdisk) is below this, do NOT start the server to avoid savegame corruption. gnu notation
-  launcher:
-    maxStartupTimeout: 15 # max amount of time in seconds to find the dedicated exe after calling the launcher.
+  launcherMaxStartupTimeout: 15 # max amount of time in seconds to find the dedicated exe after calling the launcher.
   sendExitTimeout: 60 # amount of seconds to wait until we give up stopping the server and throw an error
   sendExitInterval: 5 # how many seconds to wait before retrying to send another 'saveandexit' to the server to stop it
 
@@ -62,7 +60,6 @@ paths:
   steamcmd: 'C:\Servers\Tools\steamcmd\steamcmd.exe'
 
 foldernames:
-  #saves: 'Saves' # will be dynamically injected from dedicated.yaml
   games: 'Games'
   backup: 'Backup'
   playfields: "Playfields"

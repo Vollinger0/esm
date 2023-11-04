@@ -1,0 +1,3 @@
+server:
+  #dedicatedYaml: 'esm-dedicated.yaml'
+  dedicatedYaml: 'doesnotexist.yaml'

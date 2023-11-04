@@ -41,7 +41,7 @@ class EsmFileSystem:
         dotPathStructure = {
             "ramdisk": {
                 "_parent": config.ramdisk.drive,
-                "savegame": config.server.savegame
+                "savegame": config.dedicatedYaml.GameConfig.GameName
             },
             "backup": {
                 "_parent": config.foldernames.backup,
@@ -52,12 +52,12 @@ class EsmFileSystem:
                 "_parent": config.foldernames.dedicatedserver
             },
             "saves": {
-                "_parent": config.foldernames.saves, 
+                "_parent": config.dedicatedYaml.ServerConfig.SaveDirectory, 
                 "cache": "Cache",
                 "games": {
                     "_parent": config.foldernames.games,
                     "savegame": {
-                        "_parent": config.server.savegame,
+                        "_parent": config.dedicatedYaml.GameConfig.GameName,
                         "templates": config.foldernames.templates,
                         "playfields": config.foldernames.playfields,
                         "shared": config.foldernames.shared,
@@ -67,10 +67,10 @@ class EsmFileSystem:
                 "gamesmirror": {
                     "_parent": config.foldernames.gamesmirror,
                     "savegamemirror": {
-                        "_parent": f"{config.server.savegame}{config.foldernames.savegamemirrorpostfix}",
+                        "_parent": f"{config.dedicatedYaml.GameConfig.GameName}{config.foldernames.savegamemirrorpostfix}",
                         "globaldb": config.filenames.globaldb
                     },
-                    "savegametemplate": f"{config.server.savegame}{config.foldernames.savegametemplatepostfix}"
+                    "savegametemplate": f"{config.dedicatedYaml.GameConfig.GameName}{config.foldernames.savegametemplatepostfix}"
                 }
             }
         }

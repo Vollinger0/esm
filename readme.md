@@ -24,7 +24,7 @@ The main features being fully automated support for running the game on a ramdis
 
 ## All about performance and the ramdisk
 
-Definitely a [must read](performance.md).
+[This](performance.md) will tell you all you need to know about it.
 
 ## All about the backups
 
@@ -36,6 +36,6 @@ Please follow this [path](install.md).
 
 ## developing and contributing
 
-Please follow this [rabbit hole](development.md).
+Go down this [rabbit hole](development.md).
 
 #### copyright by Vollinger 2023
