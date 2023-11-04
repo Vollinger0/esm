@@ -31,6 +31,7 @@ Alternatively, you can enable the virtual environment, like below, or create one
 ## TODOS
 
 ### WIP
+- [ ] make sure the async-able commands do not check the binding port.
 
 ### later
 

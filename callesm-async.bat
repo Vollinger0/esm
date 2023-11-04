@@ -11,6 +11,7 @@ REM path to esm tool installation
 REM ************** UNCOMMENT THE FOLLOWING LINE AND MAKE SURE THE PATH POINTS TO THE ESM INSTALLATION **************
 REM set "esmPath=C:\Servers\Tools\esm"
 
+REM esm command to execute asynchroneously in the background
 set "esmCommand=esm -v version"
 
 REM ################################################################################################################
