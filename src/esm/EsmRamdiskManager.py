@@ -155,10 +155,19 @@ class EsmRamdiskManager:
         if process.check_returncode():
             log.info(f"Successfully mounted ramdisk as {driveLetter} with size {driveSize}")
 
-    def checkRamdrive(self, driveLetter):
+    def checkRamdrive(self, ramdiskDriveLetter=None, simpleCheck=False):
         """
-        returns True if there is a drive mounted as 'driveLetter' and it is a osfmount ramdrive.
+        returns True if there is a drive mounted as 'driveLetter' and it is a osfmount ramdrive, by calling osfmount (requires admin privileges)
+        if simpleCheck==True, will only check if the driveletter exists.
         """
+        driveLetter = ramdiskDriveLetter
+        if ramdiskDriveLetter == None:
+            driveLetter = self.config.ramdisk.drive
+
+        if simpleCheck: 
+            # just check if the drive is there, no way to check if its proper osf mounted ramdrive?
+            return Path(driveLetter).exists()
+
         osfMount = self.checkAndGetOsfMountPath()
         cmd = [osfMount, "-l", "-m", driveLetter]
         log.info(f"Executing {cmd}. This will require admin privileges")

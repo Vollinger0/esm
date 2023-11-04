@@ -11,6 +11,7 @@ from typing import List
 import humanize
 
 from esm.Exceptions import SafetyException
+from esm.Tools import byteArrayToString
 
 log = logging.getLogger(__name__)
 
@@ -25,11 +26,23 @@ class FsTools:
     def createLink(linkPath, targetPath):
         """
         create a windows hardlink (jointpoint) as link to the linktarget using mklink
+
+        return True if creating the link was successful
         """
         # looks like none of the python-libraries can do this without running into problems
         # calling the shell command works flawlessly...
         log.debug(f"mklink /H /J \"{linkPath}\" \"{targetPath}\"")
-        return subprocess.run(f"mklink /H /J \"{linkPath}\" \"{targetPath}\"", capture_output=True, shell=True)
+        process = subprocess.run(f"mklink /H /J \"{linkPath}\" \"{targetPath}\"", capture_output=True, shell=True)
+        if process.returncode > 0:
+            stdout = byteArrayToString(process.stdout).strip()
+            stderr = byteArrayToString(process.stderr).strip()
+            if len(stdout)>0 or len(stderr)>0:
+                log.error(f"error executing the mklink command: stdout: '{stdout}', stderr: '{stderr}'")
+            else:
+                log.error(f"error executing the mklink command, but no output was provided")
+            return False
+        else:
+            return True
 
     @staticmethod
     def deleteLink(linkPath):

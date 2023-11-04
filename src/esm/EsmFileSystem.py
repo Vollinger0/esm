@@ -238,6 +238,8 @@ class EsmFileSystem:
         will check if 8dot3name (aka shortname) generation on the game's installation drive is enabled
 
         for this we create a temporary directory in the FS, then one with a very long name and try to access it via its short name
+
+        returns True if generation is disabled (which is good), False if is enabled (which is bad)
         """
         testParentDir = Path(f"{self.config.paths.install}/{self.config.foldernames.esmtests}").resolve()
         driveLetter = testParentDir.drive
@@ -249,3 +251,28 @@ class EsmFileSystem:
             log.info(f"8dot3name generation on drive {driveLetter} is enabled. If you disable it, this will make file operations for large amount of files and directories up to ~3 times faster! See https://learn.microsoft.com/de-de/archive/blogs/josebda/windows-server-2012-file-server-tip-disable-8-3-naming-and-strip-those-short-names-too")
         else:
             log.info(f"8dot3name generation is disabled on {driveLetter}. This is good :)")
+        return not result
+
+    def testLinkGeneration(self):
+        """
+        will check if we are able to create hardlinks, because if not, ramdisk mode will not be possible.
+        
+        returns true if successful
+        """
+        testParentDir = Path(f"{self.config.paths.install}/{self.config.foldernames.esmtests}").resolve()
+
+        targetPath = Path(f"{testParentDir}\\this-is-the-link-target-directory")
+        targetPath.mkdir(parents=True, exist_ok=True)
+        linkPath = Path(f"{testParentDir}\\this-is-the-link")
+        FsTools.deleteLink(linkPath)
+        result = FsTools.createLink(linkPath=linkPath, targetPath=targetPath)
+        if not result:
+            log.warning(f"could not create hardlinks")
+            return False
+        
+        result = FsTools.isHardLink(linkPath)
+        if result:
+            log.info(f"Creating a hardlink (jointpoint) with mklink successful")
+        else:
+            log.error(f"Creating a hardlink (jointpoint) with mklink failed. Will not be able to run the game in ramdisk mode.")
+        return result

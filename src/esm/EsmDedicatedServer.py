@@ -323,6 +323,7 @@ class EsmDedicatedServer:
             driveToCheck = Path(self.config.paths.install).drive
 
         minimumSpaceHuman = self.config.server.minDiskSpaceForStartup
+        log.debug(f"Checking space on drive {driveToCheck}. Configured minimum for startup is {minimumSpaceHuman}")
         hasEnough, freeSpace, freeSpaceHuman = FsTools.hasEnoughFreeDiskSpace(driveToCheck, minimumSpaceHuman)
         log.debug(f"Free space on drive {driveToCheck} is {freeSpaceHuman}. Configured minimum for startup is {minimumSpaceHuman}")
         if not hasEnough:

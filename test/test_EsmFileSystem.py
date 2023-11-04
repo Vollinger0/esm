@@ -137,3 +137,10 @@ class test_EsmFileSystem(unittest.TestCase):
         self.assertFalse(file2.exists())
 
         FsTools.quickDelete("delete_test")
+
+    def test_testLinkGeneration(self):
+        esmConfig = EsmConfigService(configFilePath="esm-base-config.yaml")
+        esmfs = EsmFileSystem(config=esmConfig)
+
+        result = esmfs.testLinkGeneration()        
+        self.assertTrue(result)

@@ -16,3 +16,14 @@ class test_Tools(unittest.TestCase):
 
         self.assertListEqual(sorted(expectedSSs), sorted(systemNames))
         self.assertListEqual(sorted(expectedPfs), sorted(playfieldNames))
+
+    def test_byteArrayToString(self):
+        input = b'asdfadfasdf aadf adsf adf s'
+        expected = "asdfadfasdf aadf adsf adf s"
+        actual = Tools.byteArrayToString(input)
+        self.assertEqual(expected, actual)
+
+        input = b'  \t  asdfadfasdf aadf adsf adf s   \n'
+        expected = "asdfadfasdf aadf adsf adf s"
+        actual = Tools.byteArrayToString(input).strip()
+        self.assertEqual(expected, actual)
