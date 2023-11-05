@@ -103,6 +103,8 @@ def extractSystemAndPlayfieldNames(names: List[str]):
     return solarsystems, playfields
 
 def byteArrayToString(byteArray: bytearray, encoding="UTF-8"):
+    if byteArray == None or len(byteArray) < 1:
+        return ""
     try:
         decoded_string = byteArray.decode(encoding)
         return decoded_string
