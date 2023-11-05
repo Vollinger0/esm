@@ -10,12 +10,6 @@ from esm.ServiceRegistry import Service, ServiceRegistry
 
 log = logging.getLogger(__name__)
 
-class Priority(Enum):
-    ALERT = 0       # red alert with the alert sound, top centered
-    WARNING = 1     # yellow warning with the *pling*, top centered
-    INFO = 2        # white info box without sound, top centered
-    OTHER = 3       # just the plain message in the middle of the screen, probably a bug
-
 @Service
 class EsmCommunicationService:
     """
@@ -42,8 +36,7 @@ class EsmCommunicationService:
         startMessage, endMessage = self.getRandomSyncChatLine()
         self.currentSyncLineStart = startMessage
         self.currentSyncLineEnd = endMessage
-        
-        self.serverChat(self.currentSyncLineStart)
+        self.epmClient.sendMessage(self.syncName, self.currentSyncLineStart)
 
     def announceSyncEnd(self):
         """used to announce that a sync ended on the server via chat message"""
@@ -51,34 +44,10 @@ class EsmCommunicationService:
             log.debug("for some reason the endsync line is not set, get a random one then")
             startMessage, endMessage = self.getRandomSyncChatLine()
             self.currentSyncLineEnd = endMessage
-        self.serverChat(self.currentSyncLineEnd)
+        self.epmClient.sendMessage(self.syncName, self.currentSyncLineEnd)
         # reset the current sync lins so the don't get reused.
         self.currentSyncLineStart = None
         self.currentSyncLineEnd = None
-
-    def announce(self, message, priority: Priority=Priority.INFO, time: int=5000, quietMode=True):
-        """
-        announce something on the server, using the provided message and priority and time of the message to stay visible (in ms?)
-
-        This displays the message banner in the top middle of the player view.
-        Priority: 0 - (red) alert along with a sound
-        Warning: 1 - (yellow) warning
-        Info: 2 - white banner
-        Other: >=3 - text will appear centered without any borders (probably a bug)
-        """
-        # request InGameMessageAllPlayers "{ \"msg\": \"alert from test.bat prio: %%i\", \"prio\": 0, \"time\": 3000 }"
-        payload = "{"+f'"msg": "{message}", "prio": {str(priority.value)}, "time": {str(time)}'+"}"
-        return self.epmClient.epmrcExecute(command="request InGameMessageAllPlayers", payload=payload, quietMode=quietMode)
-
-    def serverChat(self, message, quietMode=True):
-        """
-        sends a "say 'message'" to the server via the epmremoteclient and returns immediately. 
-        returns the completed process of the remote client.4
-
-        Unluckily, this is currently only a server message.
-        """
-        # use the epmremoteclient and send a 'say "message"'
-        return self.epmClient.epmrcExecute("run", f"say '{message}'", quietMode)
 
     def getRandomSyncChatLine(self):
         """returns the start and end line of a random line in the sync file"""

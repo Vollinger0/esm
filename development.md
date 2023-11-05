@@ -54,6 +54,7 @@ Alternatively, you can enable the virtual environment, like below, or create one
    1. find block by matching devicename with blocktype
    1. find customicon name
    1. save customicon as itemid for EWA.
+- add a AI-powered chatbot, chatgpt-like that roleplays as a spacefaring hamster :)
 
 ### optional
 
