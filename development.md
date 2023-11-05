@@ -31,6 +31,8 @@ Alternatively, you can enable the virtual environment, like below, or create one
 ## TODOS
 
 ### WIP
+- [+] implement warning/talkback via tickets for when an admin is required (e.g. low disk space, etc.)
+- [+] implement warning/talkback to server chat for syncs, backups probably even random stuff with funny hamster sentences.
 
 ### later
 
@@ -38,8 +40,6 @@ Alternatively, you can enable the virtual environment, like below, or create one
 - [ ] use pyinstaller to create a distributable program without any installation overhead: <https://pyinstaller.org/>
 - [ ] add more epmclient functions, especially the sync event announcements.
 - [+] fix all FS-modifying tests to use the test fixture of the usually existing ramdisk (R:)
-- [ ] implement warning/talkback via tickets for when an admin is required (e.g. low disk space, etc.)
-- [ ] implement warning/talkback to server chat for syncs, backups probably even random stuff with funny hamster sentences.
 - [ ] game-install should have the option to install the scenario? or...
 - [ ] tool to purge a list of playfields passed in the command line and/or file?
 - [ ] offer some kind of better interactive mode for different stuff
@@ -49,7 +49,7 @@ Alternatively, you can enable the virtual environment, like below, or create one
 - [ ] implement allowMultpleServerInstances switch? Once enabled, do not check for instances of the game before starting, do not start if startmode is set to direct, etc.
 - [+] create separate windows-gui thingy that resides in the taskbar or similar and provides a shortcut to the cli tool.
 - [ ] provide tool to fix item icons as good as possible in EWA, current process:
-   1. open item list in eah, CTRL+A, CTRL+C and copy into text file? Or find out how the item list in epf was created
+   1. open item list in eah, CTRL+A, CTRL+C and copy into text file? Or find out how the item list file in epf got created
    1. read itemid, itemname, devicename from that eah list
    1. find block by matching devicename with blocktype
    1. find customicon name
