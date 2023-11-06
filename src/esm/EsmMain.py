@@ -228,11 +228,11 @@ class EsmMain:
         """
         return self.steamService.installGame()
     
-    def updateGame(self, nosteam=False):
+    def updateGame(self, nosteam=False, noadditionals=False):
         """
         calls steam to update the game via steam and call any additionally configured steps (like updating the scenario, copying files etc.)
         """
-        return self.steamService.updateGame(nosteam=nosteam)
+        return self.steamService.updateGame(nosteam=nosteam, noadditionals=noadditionals)
     
     def deleteAll(self):
         """
