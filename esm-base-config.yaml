@@ -29,8 +29,8 @@ backups:
   minDiskSpaceForStaticBackup: 2G # if disk space on the drive with the backups has less free space than this, do not create a backup. gnu notation.
   additionalBackupPaths: 
     # list of full paths to source files or directories to backup additionally. Those will all end up in the folder "Additional" in the backup.
-    - 'C:\Servers\Empyrion\Content\Mods\EncryptoidModPack' # the whole modpack
-    - 'C:\Servers\Tools\esm\esm-custom-config.yaml' # our own configuration
+    - 'D:\Servers\Empyrion\Content\Mods\EncryptoidModPack' # the whole modpack
+    - 'D:\Servers\Tools\esm\esm-custom-config.yaml' # our own configuration
 
 updates: 
   additional:
@@ -41,9 +41,9 @@ updates:
     # existing files/directories in the target will be overwritten!
 
     # update the scenario 
-    - {src: 'c:\Servers\Scenarios\ProjectA\' , dst: 'c:\Servers\Empyrion\Content\Scenarios\'}
+    - {src: 'D:\Servers\Scenarios\ProjectA\' , dst: 'D:\Servers\Empyrion\Content\Scenarios\'}
     # copy all item icons from the scenario to EAH
-    - {src: 'c:\Servers\Scenarios\project-a\SharedData\Content\Bundles\ItemIcons\*.*', dst: 'c:\Servers\Empyrion\DedicatedServer\EmpyrionAdminHelper\Items\'}
+    - {src: 'D:\Servers\Scenarios\project-a\SharedData\Content\Bundles\ItemIcons\*.*', dst: 'D:\Servers\Empyrion\DedicatedServer\EmpyrionAdminHelper\Items\'}
 
 deletes:
   backupGameLogs: True # backup all game logs on deleteall command?
@@ -55,12 +55,12 @@ deletes:
     - 'Content\Mods\EncryptoidModPack\Mods\AdminTetherport\Database'
 
 paths:
-  install: 'C:\Servers\Empyrion\'
-  osfmount: 'C:\Servers\Tools\OSFMount\osfmount.com'
-  peazip: 'C:\Servers\Tools\PeaZip\res\bin\7z\7z.exe'
-  epmremoteclient: 'C:\Servers\Tools\esm\EmpyrionPrime.RemoteClient.Console.exe'
-  eah: 'C:\Servers\Empyrion\DedicatedServer\EmpyrionAdminHelper'
-  steamcmd: 'C:\Servers\Tools\steamcmd.exe'
+  install: 'D:\Servers\Empyrion\'
+  osfmount: 'D:\Servers\Tools\OSFMount\osfmount.com'
+  peazip: 'D:\Servers\Tools\PeaZip\res\bin\7z\7z.exe'
+  epmremoteclient: 'D:\Servers\Tools\esm\EmpyrionPrime.RemoteClient.Console.exe'
+  eah: 'D:\Servers\Empyrion\DedicatedServer\EmpyrionAdminHelper'
+  steamcmd: 'D:\Servers\Tools\steamcmd.exe'
 
 foldernames:
   games: 'Games'
