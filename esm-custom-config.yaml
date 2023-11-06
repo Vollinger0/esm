@@ -1,10 +1,10 @@
 paths:
-  install: 'C:\Servers\Empyrion\'
-  osfmount: 'C:\Servers\Tools\OSFMount\osfmount.com'
-  peazip: 'C:\Servers\Tools\PeaZip\res\bin\7z\7z.exe'
-  epmremoteclient: 'c:\Servers\Tools\\EmpyrionPrime.RemoteClient.Console.exe'
-  eah: 'C:\Servers\Empyrion\DedicatedServer\EmpyrionAdminHelper'
-  steamcmd: 'C:\Servers\Tools\steamcmd\steamcmd.exe'
+  install: 'D:\Servers\Empyrion\'
+  osfmount: 'D:\Servers\Tools\OSFMount\osfmount.com'
+  peazip: 'D:\Servers\Tools\PeaZip\res\bin\7z\7z.exe'
+  epmremoteclient: 'D:\Servers\Tools\\EmpyrionPrime.RemoteClient.Console.exe'
+  eah: 'D:\Servers\Empyrion\DedicatedServer\EmpyrionAdminHelper'
+  steamcmd: 'D:\Servers\Tools\steamcmd\steamcmd.exe'
 
 server:
   gfxMode: True

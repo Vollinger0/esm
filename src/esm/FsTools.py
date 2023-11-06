@@ -47,7 +47,7 @@ class FsTools:
     @staticmethod
     def deleteLink(linkPath):
         linkPath = Path(linkPath)
-        if linkPath.is_dir:
+        if linkPath.is_dir():
             linkPath.rmdir()
         else:
             linkPath.unlink(missing_ok=True)

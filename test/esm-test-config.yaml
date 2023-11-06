@@ -54,10 +54,10 @@ paths:
   install: 'R:\Servers\Empyrion'
   eah: 'R:\Servers\Empyrion\DedicatedServer\EmpyrionAdminHelper'
   # the following are only used to call, so we can use the real ones.
-  osfmount: 'C:\Servers\Tools\OSFMount\osfmount.com'
-  peazip: 'C:\Servers\Tools\PeaZip\res\bin\7z\7z.exe'
-  epmremoteclient: 'C:\Servers\Tools\\EmpyrionPrime.RemoteClient.Console.exe'
-  steamcmd: 'C:\Servers\Tools\steamcmd\steamcmd.exe'
+  osfmount: 'D:\Servers\Tools\OSFMount\osfmount.com'
+  peazip: 'D:\Servers\Tools\PeaZip\res\bin\7z\7z.exe'
+  epmremoteclient: 'D:\Servers\Tools\\EmpyrionPrime.RemoteClient.Console.exe'
+  steamcmd: 'D:\Servers\Tools\steamcmd\steamcmd.exe'
 
 foldernames:
   games: 'Games'
