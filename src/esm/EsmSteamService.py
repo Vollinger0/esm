@@ -37,7 +37,7 @@ class EsmSteamService:
         if process.returncode > 0:
             log.error(f"error executing steamcmd: stdout: \n{process.stdout}\n, stderr: \n{process.stderr}\n")
     
-    def updateGame(self, nosteam=False):
+    def updateGame(self, nosteam=False, noadditionals=False):
         """
         calls steam to update the game via steam and call any additionally configured steps (like updating the scenario, copying files etc.)
 
@@ -47,8 +47,9 @@ class EsmSteamService:
         if not nosteam:
             self.installGame()
 
-        # additional copying according to configuration
-        self.copyAdditionalUpdateStuff()
+        if not noadditionals:
+            # additional copying according to configuration
+            self.copyAdditionalUpdateStuff()
 
     def checkAndGetSteamCmdExecutable(self):
         """

@@ -33,6 +33,7 @@ Alternatively, you can enable the virtual environment, like below, or create one
 ### WIP
 - [+] implement warning/talkback via tickets for when an admin is required (e.g. low disk space, etc.)
 - [+] implement warning/talkback to server chat for syncs, backups probably even random stuff with funny hamster sentences.
+- [ ] make epmrc client log the return codes properly
 
 ### later
 
