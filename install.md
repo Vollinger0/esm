@@ -21,6 +21,7 @@ If you already have a running empyrion game server and even an existing savegame
 If you already have a installed and working dedicated server, you can skip this step.
 
 - call `esm game-install`. This will download and install the game using steamcmd, this might take a bit.
+- go to your installation `_CommonRedist\vcredist\2019\` and install the c++ redistributable for your OS, probably `Microsoft Visual C++ 2019 x64.cmd`
 
 ### Configure Empyrion
 
