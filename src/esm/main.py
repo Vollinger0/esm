@@ -391,13 +391,17 @@ def omg(i_am_darkestwarrior, i_am_vollinger, i_am_kreliz):
         except:
             log.info(f"It's all your fault now")
 
-        with EsmLogger.console.status("Destroying worlds...") as status:
-            try:
-                while True:
-                    pass
-            except KeyboardInterrupt:
-                status.stop()
-                log.warning("Destruction of the galaxy ended prematurely. Please contact an expert.")
+        try:
+            esm.openSocket(raiseException=True)
+            with EsmLogger.console.status("Destroying worlds...") as status:
+                try:
+                    while True:
+                        pass
+                except KeyboardInterrupt:
+                    status.stop()
+                    log.warning("Destruction of the galaxy ended prematurely. Please contact an expert.")
+        except:
+            log.error("Looks like someone else is already destroying the world already!")
 
 
 @cli.command(name="check-requirements", short_help="checks various configs and requirements")
