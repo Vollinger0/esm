@@ -546,7 +546,7 @@ class EsmMain:
         except UserAbortedException:
             log.info(f"User aborted clean up execution.")
 
-    def openSocket(self, port=6969, interval=0, tries=0):
+    def openSocket(self, port=6969, interval=0, tries=0, raiseException=False):
         """
         open a socket for this application to make sure only one instance can run at a time (with given port).
         supports interval and tries if you want to check and wait for a longer period.
@@ -565,10 +565,14 @@ class EsmMain:
                 elif timeLeft == 0:
                     log.error(f"Giving up on waiting. You will have to check yourself why there is another script running.")
                     timeLeft = -1
+                    if raiseException:
+                        raise AdminRequiredException(f"Giving up on waiting. You will have to check yourself why there is another script running.")
                     exit(ExitCodes.INSTANCE_RUNNING_GAVE_UP)
                 else:
                     log.debug(f"If you need to use another port for this application, set it in the config.")
                     log.error(f"Looks like the tool is already running!")
+                    if raiseException:
+                        raise AdminRequiredException("Looks like the tool is already running!")
                     exit(ExitCodes.INSTANCE_RUNNING)
 
     def checkIntegrity(self, noadmin=False):
