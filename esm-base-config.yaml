@@ -83,7 +83,10 @@ filenames:
   launcherExe: 'EmpyrionLauncher.exe'
 
 communication:
-  synceventname: 'Hamster'
+  announceSyncEvents: True # if true, sync events (syncStart, syncEnd) will be announced in the chat
+  announceSyncProbability: 0.3 # probability factor that a sync will be announced at all, this is to avoid it being too spammy. something between 0.0 and 1.0
+  synceventname: '[0fa336]Hamster-News' # the name to be used when announcing a sync on the server, may contain bb-code for colors and such
+  synceventmessageprefix: '[aaaaaa]' # this string will be prepended to all sync event messages, you can use this to set a bb-color code
   synceventsfile: 'hamster_sync_lines.csv' #should contain a csv file with two columns, each containing the first and second sentence. The first will be used when starting a sync, the secnd when its finished.
 
 robocopy:

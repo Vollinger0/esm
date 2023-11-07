@@ -33,20 +33,29 @@ class Channel(Enum):
     SinglePlayer = "SinglePlayer"   # needs recipient-id, check epmrc help
     Server = "Server"               # server channel, doesn't work? - probably should not be used 
 
+class ErrorCodes(Enum):
+    NoError = 0
+    UnknownError = 1
+    ServerConnection = 20
+    RequestError = 21
+    CommandSettings = 30
+    CommandPayload = 31
+    Unknown = 99
+
+    @staticmethod
+    def byNumber(number):
+        for et in list(ErrorCodes):
+            if et.value == number:
+                return et
+        return ErrorCodes.Unknown
+
+
 @Service
 class EsmEpmRemoteClientService:
     """
     service that provides easy way to talk with the server
 
     uses the emp remote client for this.
-
-    its returncodes are:
-    None = 0,      
-    Unknown = 1,
-    ServerConnection = 20,
-    RequestError = 21,
-    CommandSettings = 30,
-    CommandPayload = 31,
     """
     @cached_property
     def config(self) -> EsmConfigService:
@@ -73,12 +82,13 @@ class EsmEpmRemoteClientService:
         log.debug(f"process returned: {process}")
         # this returns when epmrc ends, not the server!
         if process.returncode > 0:
+            errorCode = ErrorCodes.byNumber(process.returncode)
             stdout = byteArrayToString(process.stdout).strip()
             stderr = byteArrayToString(process.stderr).strip()
             if len(stdout)>0 or len(stderr)>0:
-                log.error(f"error executing the epm client: stdout: {stdout}, stderr: {stderr}")
+                log.error(f"error {errorCode} executing the epm client: stdout: {stdout}, stderr: {stderr}")
             else:
-                log.error(f"error executing the epm client, but no output was provided")
+                log.error(f"error {errorCode} executing the epm client, but no output was provided")
         return process
     
     def sendServerChat(self, message, quietMode=True):
@@ -106,7 +116,7 @@ class EsmEpmRemoteClientService:
             when senderName is set, sender-type becomes irrelevant
             senderName and message can contain bb-code for coloring, e.g. "[783456]so[345678]many[567834]colors"
 
-         # message --sender-name "SenderNameOverride" --channel SinglePlayer --sender-type ServerInfo "Hello World!"
+          - message --sender-name "SenderNameOverride" --channel SinglePlayer --sender-type ServerInfo "Hello World!"
         """
         commands = ["message"]
         if senderName:

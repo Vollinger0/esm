@@ -11,13 +11,14 @@ from esm.ServiceRegistry import ServiceRegistry
 
 log = logging.getLogger(__name__)
 
+@unittest.skip("only for manual execution, since you won't see anything if you aren't looking ingame.")
 class test_EsmEpmRemoteClientService(unittest.TestCase):
 
-    @unittest.skip("only for manual execution, since you won't see anything if you aren't looking ingame.")
     def test_serverChatAndAnnouncements(self):
         esmConfig = EsmConfigService(configFilePath='esm-base-config.yaml')
         ServiceRegistry.register(esmConfig)
         epmrc = ServiceRegistry.get(EsmEpmRemoteClientService)
+        epmrc.config = esmConfig
         # no way to assert this, start the game and look at the chat.
         epmrc.sendServerChat(message=f"hello from esm, dear watcher of the server chat!", quietMode=False)
         time.sleep(2)
@@ -49,3 +50,10 @@ class test_EsmEpmRemoteClientService(unittest.TestCase):
         for channel in Channel:
             epmrc.sendMessage(senderName="Tester2", message=f"i am channel type {channel}", channel=channel)
             time.sleep(.3)
+
+    def test_manual(self):
+        esmConfig = EsmConfigService(configFilePath='esm-base-config.yaml')
+        ServiceRegistry.register(esmConfig)
+        epmrc = ServiceRegistry.get(EsmEpmRemoteClientService)
+        epmrc.config = esmConfig
+        epmrc.sendMessage(senderName="[0fa336]Hamster-AI", message="[aaaaaa]asdf adf asdf sd f")

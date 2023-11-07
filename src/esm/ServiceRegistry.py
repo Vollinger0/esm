@@ -1,5 +1,8 @@
+import logging
 from typing import TypeVar
 from esm.Exceptions import ServiceNotFoundError
+
+log = logging.getLogger(__name__)
 
 class ServiceRegistryMeta(type):
     _instances = {}
@@ -19,13 +22,13 @@ class ServiceRegistry(metaclass=ServiceRegistryMeta):
         ServiceRegistry._registry[serviceClass.__name__] = serviceClass()
 
     @staticmethod
-    def register(instance=None):
-        iClass = instance.__class__
-        if instance is None:
-            ServiceRegistry._registry[iClass.__name__] = iClass()
-        else:
-            ServiceRegistry._registry[iClass.__name__] = instance
-        return ServiceRegistry._registry[iClass.__name__]
+    def register(instance):
+        iClassName = instance.__class__.__name__
+        if ServiceRegistry._registry.__contains__(iClassName):
+            previous = ServiceRegistry._registry[iClassName]
+            log.debug(f"warning, overwriting registered class {iClassName} ({previous}) with instance {instance}")
+        ServiceRegistry._registry[iClassName] = instance
+        return instance
     
     @staticmethod
     def get(serviceClass: T) -> T:
@@ -41,4 +44,3 @@ def Service(orgClass):
     """
     ServiceRegistry.registerDecorated(orgClass)  # Register the service class
     return orgClass  # Return the original class, unmodified
-
