@@ -14,6 +14,9 @@ ramdisk:
   size: "1G"
   synchronizeRamToMirrorInterval: 60
 
+communication:
+  announceSyncProbability: 1
+
 galaxy:
   territories: #faction Territory Definitions (look up their definitions in the file "$scenario/Content/Configuration/GalaxyConfig.ecf" of your scenario)
     - faction: "blade"

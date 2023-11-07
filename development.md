@@ -31,12 +31,11 @@ Alternatively, you can enable the virtual environment, like below, or create one
 ## TODOS
 
 ### WIP
-- [+] implement warning/talkback via tickets for when an admin is required (e.g. low disk space, etc.)
-- [+] implement warning/talkback to server chat for syncs, backups probably even random stuff with funny hamster sentences.
-- [ ] make epmrc client log the return codes properly
+- [ ] update scenario should use rsync -c --del so that only the real changes are copied, to avoid data-redownloads.
 
 ### later
 
+- [ ] implement warning/talkback via tickets for when an admin is required (e.g. low disk space, etc.)
 - [ ] provide full installation package with install bat, that installs esm, the tools (osfmount, peazip, epm, python, etc.)
 - [ ] use pyinstaller to create a distributable program without any installation overhead: <https://pyinstaller.org/>
 - [ ] add more epmclient functions, especially the sync event announcements.
@@ -56,12 +55,15 @@ Alternatively, you can enable the virtual environment, like below, or create one
    1. find customicon name
    1. save customicon as itemid for EWA.
 - add a AI-powered chatbot, chatgpt-like that roleplays as a spacefaring hamster :)
+- add cb:shield:$id function to be able to get a ships shield values?
 
 ### optional
 
 
 ### done
 
+- [x] implement warning/talkback to server chat for syncs, backups probably even random stuff with funny hamster sentences.
+- [x] make epmrc client log the return codes properly
 - [x] make sure the async-able commands do not check the binding port.
 - [x] integrity check: checks if things fit together (e.g. dedicated.yaml config), our own config when running multiple instances, etc.
   - or adapt config to dedicated.yaml, especially when paths change. probably as a sanity check implementation

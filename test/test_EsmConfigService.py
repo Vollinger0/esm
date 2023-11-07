@@ -103,3 +103,16 @@ class test_EsmConfigService(unittest.TestCase):
         
         with self.assertRaises(AdminRequiredException):
             config = EsmConfigService(configFilePath=configFilePath, raiseExceptionOnMissingDedicated=True)
+
+    def test_overrideConfigWorks(self):
+        config = EsmConfigService(configFilePath="esm-base-config.yaml", customConfigFilePath="esm-custom-config.yaml")
+        self.assertEqual(config.dedicatedYaml.GameConfig.GameName, "EsmDediGame")
+        self.assertEqual(config.server.minDiskSpaceForStartup, "500M")
+        override = {
+            'server': {
+                'minDiskSpaceForStartup': '1G'
+            }
+        }
+        config = EsmConfigService(configFilePath="esm-base-config.yaml", customConfigFilePath="esm-custom-config.yaml", override=override)
+        self.assertEqual(config.dedicatedYaml.GameConfig.GameName, "EsmDediGame")
+        self.assertEqual(config.server.minDiskSpaceForStartup, "1G")

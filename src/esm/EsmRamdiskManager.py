@@ -4,6 +4,7 @@ import subprocess
 import time
 from pathlib import Path
 from threading import Event, Thread
+from esm.EsmCommunicationService import EsmCommunicationService
 from esm.Exceptions import AdminRequiredException, NoSaveGameFoundException, NoSaveGameMirrorFoundException, RequirementsNotFulfilledError, NoSaveGameMirrorFoundException, SaveGameFoundException
 from esm.EsmConfigService import EsmConfigService
 from esm.EsmFileSystem import EsmFileSystem
@@ -35,6 +36,10 @@ class EsmRamdiskManager:
     @cached_property
     def fileSystem(self) -> EsmFileSystem:
         return ServiceRegistry.get(EsmFileSystem)
+
+    @cached_property
+    def communication(self) -> EsmCommunicationService:
+        return ServiceRegistry.get(EsmCommunicationService)
 
     def prepare(self):
         """
@@ -274,9 +279,14 @@ class EsmRamdiskManager:
             timePassed = timePassed + 1
             if timePassed % syncInterval == 0:
                 log.info(f"Synchronizing from ram to mirror")
+                announceSync = self.communication.shallAnnounceSync()
+                if announceSync:
+                    self.communication.announceSyncStart()
                 with Timer() as timer:
                     self.syncRamToMirror()
                 log.info(f"Sync done, will wait for {syncInterval} seconds. Time needed {timer.elapsedTime}")
+                if announceSync:
+                    self.communication.announceSyncEnd()
             if event.is_set():
                 break
         log.debug("synchronizer shut down")
