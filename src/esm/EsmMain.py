@@ -612,26 +612,26 @@ class EsmMain:
 
         try:
             path = self.ramdiskManager.checkAndGetOsfMountPath()
-            log.info(f"{path} found")
+            log.info(f"'{path}' found")
         except RequirementsNotFulfilledError as ex:
             log.error(f"{ex}")
 
         try:
             path = self.backupService.checkAndGetPeaZipPath()
-            log.info(f"{path} found")
+            log.info(f"'{path}' found")
         except RequirementsNotFulfilledError as ex:
             log.error(f"{ex}")
 
         erc = ServiceRegistry.get(EsmEpmRemoteClientService)
         try:
             path = erc.checkAndGetEpmRemoteClientPath()
-            log.info(f"{path} found")
+            log.info(f"'{path}' found")
         except RequirementsNotFulfilledError as ex:
             log.error(f"{ex}")
 
         try:
             path = self.steamService.checkAndGetSteamCmdExecutable()
-            log.info(f"{path} found")
+            log.info(f"'{path}' found")
         except RequirementsNotFulfilledError as ex:
             log.error(f"{ex}")
 
