@@ -1,12 +1,15 @@
 import logging
 import os
 from pathlib import Path
+import shutil
+import time
 import unittest
 
 from esm.EsmConfigService import EsmConfigService
 
 from esm.EsmFileSystem import EsmFileSystem
 from esm.FsTools import FsTools
+from TestTools import TestTools
 
 log = logging.getLogger(__name__)
 
@@ -144,3 +147,84 @@ class test_EsmFileSystem(unittest.TestCase):
 
         result = esmfs.testLinkGeneration()        
         self.assertTrue(result)
+
+    @unittest.skipUnless(TestTools.ramdiskAvailable(), "needs the ramdrive to be mounted at r")
+    def test_synchronization(self):
+        def setFixedCTime(path: Path, ctime):
+            os.utime(path, (ctime, ctime))
+
+        esmConfig = EsmConfigService(configFilePath="esm-base-config.yaml")
+        esmfs = EsmFileSystem(config=esmConfig)
+        basedir = Path(f"{TestTools.TESTRAMDRIVELETTER}/test_synchronization/")
+        if basedir.exists():
+            shutil.rmtree(basedir)
+        sourceFileStructure = {"test_scenario": {
+            "folder1": {
+                "folder1.1": {
+                    "folder1.1.1": {
+                        "file1.1.1.1": "gnaa"
+                    },
+                    "file1.1.1": "schubidoo"
+                },
+                "file1.1.Updated": "newcontent"
+            },
+            "folder2": {
+                "file2.1": "moep1",
+                "file2.2": "moep2",
+                "file2.3.New": "moep3",
+            },
+            "folder3": {},
+            "folder4.New": {},
+            "file1": "blabla",
+            "file2": "blubb"
+        }}
+        destinationFileStructure = {"test_scenario_  destination": {
+            "folder1": {
+                "folder1.1": {
+                    "folder1.1.1": {
+                        "file1.1.1.1": "gnaa"
+                    },
+                    "file1.1.1": "schubidoo"
+                },
+                "file1.1.Updated": "oldcontent",
+                "folder1.1.Old": {}
+            },
+            "folder2": {
+                "file2.1": "moep1",
+                "file2.2": "moep2",
+                "file2.3.Old": "moep3"
+            },
+            "folder3": {},
+            "file1": "blabla",
+            "file2": "blubb"
+        }}
+        ctime = time.time()-200000
+        TestTools.createFileStructure(sourceFileStructure, basedir, setFixedCTime, ctime)
+        sourcePath = Path(f"{basedir}/test_scenario/")
+        ctime = time.time()-300000
+        TestTools.createFileStructure(destinationFileStructure, basedir, setFixedCTime, ctime)
+        destinationPath = Path(f"{basedir}/test_scenario_  destination/")
+        
+        # differences
+        self.assertTrue(Path(f"{sourcePath}/folder1/file1.1.Updated").exists()) 
+        self.assertEqual(Path(f"{sourcePath}/folder1/file1.1.Updated").read_text(), "newcontent")
+        self.assertTrue(Path(f"{sourcePath}/folder2/file2.3.New").exists()) 
+        self.assertTrue(Path(f"{sourcePath}/folder4.New").exists()) 
+
+        self.assertTrue(Path(f"{destinationPath}/folder1/file1.1.Updated").exists()) 
+        self.assertEqual(Path(f"{destinationPath}/folder1/file1.1.Updated").read_text(), "oldcontent")
+        self.assertTrue(Path(f"{destinationPath}/folder1/folder1.1.Old").exists()) 
+        self.assertTrue(Path(f"{destinationPath}/folder2/file2.3.Old").exists()) 
+        self.assertFalse(Path(f"{destinationPath}/folder2/file2.3.New").exists()) 
+        self.assertFalse(Path(f"{destinationPath}/folder4.New").exists()) 
+
+        # now do the actual call
+        esmfs.synchronize(sourcePath=sourcePath, destinationPath=destinationPath)
+
+        # check results
+        self.assertTrue(Path(f"{destinationPath}/folder1/file1.1.Updated").exists()) # updated file still exists
+        self.assertEqual(Path(f"{destinationPath}/folder1/file1.1.Updated").read_text(), "newcontent") # content has been updated
+        self.assertFalse(Path(f"{destinationPath}/folder1/folder1.1.Old").exists()) # directory has been deleted
+        self.assertFalse(Path(f"{destinationPath}/folder2/file2.3.Old").exists()) # file has been deleted
+        self.assertTrue(Path(f"{destinationPath}/folder2/file2.3.New").exists()) # file has been created
+        self.assertTrue(Path(f"{destinationPath}/folder4.New").exists()) # directory has been created

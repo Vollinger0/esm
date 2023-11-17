@@ -33,17 +33,20 @@ backups:
     - 'D:\Servers\Tools\esm\esm-custom-config.yaml' # our own configuration
 
 updates: 
+  scenariosource: 'D:\Servers\Scenarios\ProjectA'
   additional:
     # additional stuff to copy when doing an esm-update action. 
     # If a path is relative, it will be assumed to be relative to the installation path.
-    # if dst is not a directory, a directory with that name will be created and used as target for the source.
+    # source path globs (wildcards) are supported
+    # if dst does not exist and is not a directory, a directory with that name will be created and used as target for the source.
     # if src is a directory, it will be copied recursively into the target folder.
     # existing files/directories in the target will be overwritten!
-
-    # update the scenario 
-    - {src: 'D:\Servers\Scenarios\ProjectA\' , dst: 'D:\Servers\Empyrion\Content\Scenarios\'}
+    #
     # copy all item icons from the scenario to EAH
-    - {src: 'D:\Servers\Scenarios\project-a\SharedData\Content\Bundles\ItemIcons\*.*', dst: 'D:\Servers\Empyrion\DedicatedServer\EmpyrionAdminHelper\Items\'}
+    - {src: 'D:\Servers\Scenarios\ProjectA\SharedData\Content\Bundles\ItemIcons\*.*', dst: 'D:\Servers\Empyrion\DedicatedServer\EmpyrionAdminHelper\Items\'}
+    # copy custom sqlqueries to the game config
+    - {src: 'D:\Servers\Misc\server_rankings\SqlQueries_disabled.txt', dst: 'D:\Servers\Empyrion\Content\Configuration\SqlQueries.txt'}
+
 
 deletes:
   backupGameLogs: True # backup all game logs on deleteall command?
