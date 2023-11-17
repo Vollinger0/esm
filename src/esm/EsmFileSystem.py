@@ -8,7 +8,7 @@ from esm.EsmConfigService import EsmConfigService
 from esm.FsTools import FsTools
 from esm.ServiceRegistry import Service, ServiceRegistry
 from esm.Tools import askUser, getElapsedTime, getTimer, isDebugMode
-from esm.Exceptions import UserAbortedException
+from esm.Exceptions import AdminRequiredException, UserAbortedException
 
 log = logging.getLogger(__name__)
 
@@ -276,3 +276,57 @@ class EsmFileSystem:
         else:
             log.error(f"Creating a hardlink (jointpoint) with mklink failed. Will not be able to run the game in ramdisk mode.")
         return result
+
+    def copyAdditionalUpdateStuff(self):
+        """
+        copies any additionally configured stuff in the config under updates.additional
+        """
+        additionalStuffList = self.config.updates.additional
+        if additionalStuffList is None or len(additionalStuffList) <= 0:
+            return
+        
+        copiedFiles = 0
+        copiedDirs = 0
+        
+        for additionalStuff in additionalStuffList:
+            sourcePath = Path(additionalStuff.src)
+            if not Path(sourcePath).is_absolute():
+                sourcePath = Path(f"{self.config.paths.install}/{sourcePath}")
+            
+            destinationPath = Path(additionalStuff.dst)
+            if not Path(destinationPath).is_absolute():
+                destinationPath = Path(f"{self.config.paths.install}/{destinationPath}")
+
+            log.info(f"copying {sourcePath} to {destinationPath}")
+            
+            sourcePaths = FsTools.resolveGlobs([sourcePath])
+            for source in sourcePaths:
+                if source.exists():
+                    if source.is_dir():
+                        # its a dir
+                        log.debug(f"copying directory {source} into {destinationPath}")  
+                        FsTools.copyDir(source=source, destination=destinationPath)
+                        copiedDirs += 1
+                    else:
+                        # its a file
+                        log.debug(f"copying file {source} into {destinationPath}")  
+                        FsTools.copy(source=source, destination=destinationPath)
+                        copiedFiles += 1
+                else:
+                    log.warning(f"Configured additional path {source} does not exist.")
+        log.info(f"Copied {copiedDirs} folders and {copiedFiles} files.")
+
+    def synchronize(self, sourcePath: Path, destinationPath: Path):
+        """
+        synchronizes sourcePath with destinationPath
+        only new files or files whose size or content differ are copied, deleted files in the destination are removed.
+        """
+        if not sourcePath.is_dir():
+            raise AdminRequiredException(f"{sourcePath} is not a directory. Please check the configuration.")
+        
+        if not destinationPath.is_dir():
+            raise AdminRequiredException(f"{destinationPath} is not a directory. Please check the configuration.")
+
+        # use this strange old library to sync the directories.
+        from dirsync import sync
+        sync(sourcePath, destinationPath, action='sync', verbose=True, purge=True, create=True, content=True)

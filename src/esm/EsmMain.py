@@ -234,6 +234,20 @@ class EsmMain:
         """
         return self.steamService.updateGame(nosteam=nosteam, noadditionals=noadditionals)
     
+    def updateScenario(self):
+        """
+        synchronizes the source scenario folder with the games scenario folder.
+        only new files or files whose size or content differ are copied, deleted files in the destination are removed.
+        """
+        sourcePath = Path(self.config.updates.scenariosource).resolve()
+        destinationPath = Path(f"{self.paths.install}/Content/Scenarios/").resolve()
+
+        if not sourcePath.exists():
+            raise AdminRequiredException(f"Path to scenario source not properly configured, {sourcePath} does not exist.")
+        if not destinationPath.exists():
+            raise AdminRequiredException(f"Path to game scenarios folder {destinationPath} does not exist. Is the game installed and the install dir configured correctly?")
+        return self.fileSystem.synchronize(sourcePath, destinationPath)
+    
     def deleteAll(self):
         """
         Deletes the savegame, the related rolling backups, all eah data, logs etc.
