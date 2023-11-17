@@ -4,10 +4,19 @@ import unittest
 from esm.EsmDedicatedServer import EsmDedicatedServer, GfxMode, StartMode
 from esm.EsmConfigService import EsmConfigService
 from TestTools import TestTools
+from esm.FsTools import FsTools
 
 log = logging.getLogger(__name__)
 
 class test_EsmDedicatedServer(unittest.TestCase):
+
+    @unittest.skipUnless(TestTools.ramdiskAvailable(), "needs the ramdrive to be mounted at r")
+    @classmethod
+    def setUpClass(self):
+        sourcePath = "./esm-dedicated.yaml"
+        destinationPath = Path("R:/Servers/Empyrion")
+        destinationPath.mkdir(parents=True,exist_ok=True)
+        FsTools.copyFile(sourcePath, f"{destinationPath}/esm-dedicated.yaml")
 
     @unittest.skipUnless(TestTools.ramdiskAvailable(), "needs the ramdrive to be mounted at r")
     def test_createLogFileName(self):

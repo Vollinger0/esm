@@ -23,12 +23,12 @@ class test_EsmConfigService(unittest.TestCase):
         self.assertEqual(config.numbers.integers, [1,2,3])
 
     def test_loadsCustomPath(self):
-        config = EsmConfigService(configFilePath="test/esm-test-config.yaml")
+        config = EsmConfigService(configFilePath="test/esm-test-config.yaml", raiseExceptionOnMissingDedicated=False)
         self.assertEqual(config.backups.amount, 4)
         self.assertEqual(config.ramdisk.drive, "T:")
 
     def test_loadFromRegistry(self):
-        instance = EsmConfigService(configFilePath="test/esm-test-config.yaml")
+        instance = EsmConfigService(configFilePath="test/esm-test-config.yaml", raiseExceptionOnMissingDedicated=False)
         ServiceRegistry.register(instance)
         config = ServiceRegistry.get(EsmConfigService)
         self.assertEqual(config.backups.amount, 4)
@@ -47,7 +47,7 @@ class test_EsmConfigService(unittest.TestCase):
             'foo': 'bar',
             'baz': 42
         }
-        config = EsmConfigService(configFilePath=configFilePath, context=context)
+        config = EsmConfigService(configFilePath=configFilePath, context=context, raiseExceptionOnMissingDedicated=False)
         self.assertEqual(config.context.configFilePath, configFilePath)
         self.assertEqual(config.context.foo, "bar")
         self.assertEqual(config.context.baz, 42)
@@ -86,8 +86,7 @@ class test_EsmConfigService(unittest.TestCase):
         self.assertEqual(config.server.minDiskSpaceForStartup, "500M")
 
     def test_loadingConfigReadsDedicatedYaml(self):
-        configFilePath="test/esm-test-config.yaml"
-        config = EsmConfigService(configFilePath=configFilePath)
+        config = EsmConfigService(configFilePath="esm-base-config.yaml", customConfigFilePath="esm-custom-config.yaml")        
         
         with self.assertRaises(KeyError):
             self.assertIsNone(config.server.savegame)
@@ -115,4 +114,5 @@ class test_EsmConfigService(unittest.TestCase):
         }
         config = EsmConfigService(configFilePath="esm-base-config.yaml", customConfigFilePath="esm-custom-config.yaml", override=override)
         self.assertEqual(config.dedicatedYaml.GameConfig.GameName, "EsmDediGame")
+        self.assertEqual(config.dedicatedYaml.GameConfig.CustomScenario, "ProjectA")
         self.assertEqual(config.server.minDiskSpaceForStartup, "1G")

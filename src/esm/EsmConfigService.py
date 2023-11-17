@@ -9,7 +9,7 @@ from esm.Tools import mergeDicts
 
 log = logging.getLogger(__name__)
 
-#@Service
+#@Service  # this is no service any more. We need this to be always properly initialized with a config
 class EsmConfigService:
     """
     Contains all the relevant config for esm, backed by a yaml file. 
@@ -70,15 +70,22 @@ class EsmConfigService:
         - path to saves
         """
         serverConfig = config.get("server")
-        if serverConfig is not None and not serverConfig.get('dedicatedYaml'):
+        if serverConfig is None or 'dedicatedYaml' not in serverConfig:
             self.raiseOrLog(raiseExceptionOnMissingDedicated, f"could not find configured path to dedicated.yaml. This is fatal, please make sure the path to it in the configuration is correct under server.dedicatedYaml.")
             return
+        
+        pathConfig = config.get("paths")
+        if pathConfig is None or 'install' not in pathConfig:
+            self.raiseOrLog(raiseExceptionOnMissingDedicated, f"could not find configured installation dir. This is fatal, please make sure the path to it in the configuration is correct under paths.install.")
+            return
 
-        dedicatedYamlPath = Path(config.get("server").get('dedicatedYaml')).resolve()
+        installDir = Path(config.get("paths").get("install")).resolve()
+        dedicatedYamlPath = Path(f"{installDir}/{config.get("server").get('dedicatedYaml')}").resolve()
         if not dedicatedYamlPath.exists():
             self.raiseOrLog(raiseExceptionOnMissingDedicated, f"could not find dedicated yaml at {dedicatedYamlPath}. This is fatal, please make sure the path to it in the configuration is correct and the file exists.")
             return
 
+        log.debug(f"reading dedicated yaml from {dedicatedYamlPath}")
         with open(dedicatedYamlPath, "r") as configFile:
             dedicated = yaml.safe_load(configFile)
 
@@ -97,5 +104,3 @@ class EsmConfigService:
         #dedicated.ServerConfig.AdminConfigFile
         #dedicated.GameConfig.GameName
         #dedicated.GameConfig.CustomScenario
-
-
