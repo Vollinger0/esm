@@ -18,9 +18,9 @@ class LogContext:
         log.debug(f"Script started")
         log.debug(f"Logging to: {self.esm.logFile}")
         if self.esm.customConfigFileName:
-            log.debug(f"Using base config file: {self.esm.configFilePath} and custom config: {self.esm.customConfigFilePath}")
+            log.debug(f"Using base config file: '{self.esm.configFilePath}' and custom config: '{self.esm.customConfigFilePath}'")
         else:
-            log.debug(f"Using base config file: {self.esm.configFilePath}")
+            log.debug(f"Using base config file: '{self.esm.configFilePath}'")
 
     def __exit__(self, exc_type, exc_value, traceback):
         log.info(f"Script finished. Check the logfile ({self.esm.logFile}) if you missed something. Bye!")

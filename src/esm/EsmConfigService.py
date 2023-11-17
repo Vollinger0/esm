@@ -54,14 +54,13 @@ class EsmConfigService:
 
         # overwrite all values from the override - should be used for testing purposes only, o.c.
         if override is not None and len(override) > 0:
-            mergeDicts(config, override)
+            mergeDicts(config, override, logOverwrites=True)
 
         # convert to dotsi dict, that allows the dictionary to be accessed via dotPath notation as attributes
         self.config = dotsi.Dict(config)
     
     def __getattr__(self, attr):
         return self.config.get(attr)
-    
 
     def mergeWithDedicatedYaml(self, config: dict, raiseExceptionOnMissingDedicated):
         """
@@ -82,10 +81,10 @@ class EsmConfigService:
         installDir = Path(config.get("paths").get("install")).resolve()
         dedicatedYamlPath = Path(f"{installDir}/{config.get("server").get('dedicatedYaml')}").resolve()
         if not dedicatedYamlPath.exists():
-            self.raiseOrLog(raiseExceptionOnMissingDedicated, f"could not find dedicated yaml at {dedicatedYamlPath}. This is fatal, please make sure the path to it in the configuration is correct and the file exists.")
+            self.raiseOrLog(raiseExceptionOnMissingDedicated, f"could not find dedicated yaml at '{dedicatedYamlPath}'. This is fatal, please make sure the path to it in the configuration is correct and the file exists.")
             return
 
-        log.debug(f"reading dedicated yaml from {dedicatedYamlPath}")
+        log.debug(f"Reading dedicated yaml from '{dedicatedYamlPath}'")
         with open(dedicatedYamlPath, "r") as configFile:
             dedicated = yaml.safe_load(configFile)
 
