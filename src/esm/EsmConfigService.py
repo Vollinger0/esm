@@ -84,7 +84,8 @@ class EsmConfigService:
             self.raiseOrLog(raiseExceptionOnMissingDedicated, f"could not find dedicated yaml at '{dedicatedYamlPath}'. This is fatal, please make sure the path to it in the configuration is correct and the file exists.")
             return
 
-        log.debug(f"Reading dedicated yaml from '{dedicatedYamlPath}'")
+        #log.debug(f"Reading dedicated yaml from '{dedicatedYamlPath}'")
+        mergeDicts(config, {'context': {'dedicatedYamlPath': dedicatedYamlPath}})
         with open(dedicatedYamlPath, "r") as configFile:
             dedicated = yaml.safe_load(configFile)
 
