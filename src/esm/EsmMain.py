@@ -240,12 +240,16 @@ class EsmMain:
         only new files or files whose size or content differ are copied, deleted files in the destination are removed.
         """
         sourcePath = Path(self.config.updates.scenariosource).resolve()
-        destinationPath = Path(f"{self.paths.install}/Content/Scenarios/").resolve()
+        scenarioName = self.config.dedicatedYaml.GameConfig.CustomScenario
+        destinationPath = Path(f"{self.config.paths.install}/Content/Scenarios/{scenarioName}").resolve()
 
         if not sourcePath.exists():
             raise AdminRequiredException(f"Path to scenario source not properly configured, {sourcePath} does not exist.")
         if not destinationPath.exists():
-            raise AdminRequiredException(f"Path to game scenarios folder {destinationPath} does not exist. Is the game installed and the install dir configured correctly?")
+            log.warning(f"Path to game scenarios folder {destinationPath} does not exist. Will create the directory assuming the configuration is correct.")
+            destinationPath.mkdir(parents=False, exist_ok=False)
+
+        log.info(f"Synchronizing scenario from {sourcePath} to {destinationPath}")
         return self.fileSystem.synchronize(sourcePath, destinationPath)
     
     def deleteAll(self):
@@ -593,6 +597,15 @@ class EsmMain:
         """
         does a series of tests for integrity of the scripts, config, game, os and whatnot.
         """
+        # check gamename, this will make sure the yaml was read, parsed and contains a valid game name.
+        try:
+            gameName = self.config.dedicatedYaml.GameConfig.GameName
+            scenario = self.config.dedicatedYaml.GameConfig.CustomScenario
+            dedicatedYaml = Path(f"{self.config.paths.install}/{self.config.server.dedicatedYaml}").absolute()
+            log.info(f"Game name is '{gameName}' scenario is '{scenario}' - (read from dedicated yaml at '{dedicatedYaml}')")
+        except KeyError as ex:
+            log.error(f"{ex}")
+
         self.fileSystem.check8Dot3NameGeneration()
 
         self.fileSystem.testLinkGeneration()
