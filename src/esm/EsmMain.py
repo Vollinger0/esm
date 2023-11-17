@@ -73,8 +73,6 @@ class EsmMain:
         self.configFilePath = Path(configFileName).absolute().resolve()
         self.customConfigFilePath = Path(customConfigFileName).absolute().resolve()
         context = {           
-            'configFilePath': self.configFilePath,
-            'customConfigFileName': self.customConfigFilePath,
             'logFile': self.logFile,
             'caller': self.caller
         }
@@ -84,6 +82,7 @@ class EsmMain:
         # in debug mode, monkey patch all functions that may alter the file system or execute other programs.
         if isDebugMode(esmConfig):
             monkeyPatchAllFSFunctionsForDebugMode()
+            log.debug(f"context: {esmConfig.get(context)}")
 
         
     def createNewSavegame(self):
@@ -239,6 +238,9 @@ class EsmMain:
         synchronizes the source scenario folder with the games scenario folder.
         only new files or files whose size or content differ are copied, deleted files in the destination are removed.
         """
+        if self.dedicatedServer.isRunning():
+            raise ServerNeedsToBeStopped("Can not update scenario while the server is running. Please stop it first.")
+
         sourcePath = Path(self.config.updates.scenariosource).resolve()
         scenarioName = self.config.dedicatedYaml.GameConfig.CustomScenario
         destinationPath = Path(f"{self.config.paths.install}/Content/Scenarios/{scenarioName}").resolve()

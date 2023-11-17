@@ -182,18 +182,20 @@ def updateGame(nosteam, noadditionals):
         esm.checkAndWaitForOtherInstances()
         esm.updateGame(nosteam, noadditionals)
 
+
 @cli.command(name="scenario-update", short_help="updates the configured scenario on the server from the local copy")
 def updateScenario():
-    """Updates the scenario on the server using the configured source folder. This will make sure that only that only files that actually have different content are updated to minimize redownloads.
+    """Updates the scenario on the server using the configured source folder. This will make sure that only files that actually have different content are updated to minimize client downloads.
 
-    Since steam does not allow for anonymouse downloads, you'll need to get the scenario yourself and copy it to the destination folder yourself.
+    Since steam does not allow for anonymouse downloads, you'll need to get the scenario and copy it to the scenario source folder yourself.
 
-    It is recommended that the server is shut down for this.
+    The server may not be running for this.
     """
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)
         esm.checkAndWaitForOtherInstances()
         esm.updateScenario()
+
 
 @cli.command(name="delete-all", short_help="deletes everything related to the currently configured savegame interactively")
 def deleteAll():
