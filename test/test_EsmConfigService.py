@@ -3,7 +3,9 @@ from pathlib import Path
 import unittest
 from esm.EsmConfigService import EsmConfigService
 from esm.Exceptions import AdminRequiredException
+from esm.FsTools import FsTools
 from esm.ServiceRegistry import ServiceRegistry
+from TestTools import TestTools
 
 log = logging.getLogger(__name__)
 
@@ -34,7 +36,13 @@ class test_EsmConfigService(unittest.TestCase):
         self.assertEqual(config.backups.amount, 4)
         self.assertEqual(config.ramdisk.drive, "T:")
 
+    @unittest.skipUnless(TestTools.ramdiskAvailable(), "needs the ramdrive to be mounted at r")
     def test_containsContext(self):
+        sourcePath = "./esm-dedicated.yaml"
+        destinationPath = Path("R:/Servers/Empyrion")
+        destinationPath.mkdir(parents=True,exist_ok=True)
+        FsTools.copyFile(sourcePath, f"{destinationPath}/esm-dedicated.yaml")
+
         configFilePath="test/esm-test-config.yaml"
         config = EsmConfigService(configFilePath=configFilePath)
         self.assertEqual(config.context.configFilePath, configFilePath)
