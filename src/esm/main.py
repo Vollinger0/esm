@@ -32,7 +32,7 @@ class LogContext:
 #
 @click.group(epilog='Brought to you by hamster, coffee and pancake symphatisants')
 @click.option('-c', '--config', default="esm-custom-config.yaml", metavar='<file>', show_default=True, help="set the custom config file")
-@click.option('-v', '--verbose', is_flag=True, help='set loglevel on console to DEBUG')
+@click.option('-v', '--verbose', is_flag=True, help='set loglevel on console to DEBUG. The logfile already is set to DEBUG.')
 @click.option('-w', '--wait', is_flag=True, help="if set, will wait and retry to start command, if there is already an instance running. You can set the interval and amount of tries in the configuration.")
 def cli(verbose, config, wait):
     """ 
