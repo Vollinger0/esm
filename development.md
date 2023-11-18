@@ -31,12 +31,12 @@ Alternatively, you can enable the virtual environment, like below, or create one
 ## TODOS
 
 ### WIP
+- [ ] provide full installation package with install bat, that installs esm, the tools (osfmount, peazip, epm, python, etc.)
+- [ ] use pyinstaller to create a distributable program without any installation overhead: <https://pyinstaller.org/>
 
 ### later
 
 - [ ] implement warning/talkback via tickets for when an admin is required (e.g. low disk space, etc.)
-- [ ] provide full installation package with install bat, that installs esm, the tools (osfmount, peazip, epm, python, etc.)
-- [ ] use pyinstaller to create a distributable program without any installation overhead: <https://pyinstaller.org/>
 - [+] fix all FS-modifying tests to use the test fixture of the usually existing ramdisk (R:)
 - [ ] game-install should have the option to install the scenario? or...
 - [ ] tool to purge a list of playfields passed in the command line and/or file?
