@@ -5,6 +5,7 @@ __pycache__/
 src/esm.egg-info
 esm.egg-info
 build/
+dist/
 esm-cleardiscoveredby.csv
 namelist*.txt
 test/test.db-shm
