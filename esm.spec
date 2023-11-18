@@ -9,6 +9,7 @@ datas = [
         ('EmpyrionPrime.RemoteClient.Console.exe', '.'),
         ('callesm-async.bat', '.'),
         ('callesm-sync.bat', '.')
+        ('readme.md', '.')
         ]
 datas += copy_metadata('esm')
 
