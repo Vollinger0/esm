@@ -42,3 +42,5 @@ class ExitCodes:
     """when an instance of this script is already running, and we waited long enough for it to end"""
     SCRIPT_INTERRUPTED = 10
     """when the script was interrupted by the user, probably by ctrl+c (sigint)"""
+    MISSING_CONFIG = 20
+    """no config file found"""

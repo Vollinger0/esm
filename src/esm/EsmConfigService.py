@@ -1,8 +1,9 @@
 import logging
 from pathlib import Path
+import sys
 import dotsi
 import yaml
-from esm.Exceptions import AdminRequiredException
+from esm.Exceptions import AdminRequiredException, ExitCodes
 
 from esm.ServiceRegistry import Service
 from esm.Tools import mergeDicts
@@ -34,16 +35,23 @@ class EsmConfigService:
             config = configuration
 
         if configFilePath:
+            if not configFilePath.exists():
+                log.error(f"could not find configuration file at {configFilePath}. This is fatal")
+                sys.exit(ExitCodes.MISSING_CONFIG)
+
             with open(configFilePath, "r") as configFile:
                 baseConfig = yaml.safe_load(configFile)
             mergeDicts(config, baseConfig)
             mergeDicts(config, {'context': {'configFilePath': configFilePath}})
 
         if customConfigFilePath:
-            with open(customConfigFilePath, "r") as configFile:
-                customConfig = yaml.safe_load(configFile)
-            mergeDicts(config, customConfig)
-            mergeDicts(config, {'context': {'customConfigFilePath': customConfigFilePath}})
+            if customConfigFilePath.exists():
+                with open(customConfigFilePath, "r") as configFile:
+                    customConfig = yaml.safe_load(configFile)
+                mergeDicts(config, customConfig)
+                mergeDicts(config, {'context': {'customConfigFilePath': customConfigFilePath}})
+            else:
+                log.warning(f"No custom configuration file at {customConfigFilePath}. Script will run with default values!")
 
         if context:
             mergeDicts(config["context"], context)
