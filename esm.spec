@@ -8,7 +8,7 @@ datas = [
         ('hamster_sync_lines.csv', '.'),
         ('EmpyrionPrime.RemoteClient.Console.exe', '.'),
         ('callesm-async.bat', '.'),
-        ('callesm-sync.bat', '.')
+        ('callesm-sync.bat', '.'),
         ('readme.md', '.')
         ]
 datas += copy_metadata('esm')
