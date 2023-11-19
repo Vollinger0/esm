@@ -3,6 +3,7 @@ import logging
 from pathlib import Path
 import socket
 import time
+import sys
 from esm.EsmEpmRemoteClientService import EsmEpmRemoteClientService
 from esm.Exceptions import AdminRequiredException, ExitCodes, RequirementsNotFulfilledError, ServerNeedsToBeStopped, UserAbortedException, WrongParameterError
 from esm.DataTypes import Territory, WipeType
@@ -587,13 +588,13 @@ class EsmMain:
                     timeLeft = -1
                     if raiseException:
                         raise AdminRequiredException(f"Giving up on waiting. You will have to check yourself why there is another script running.")
-                    exit(ExitCodes.INSTANCE_RUNNING_GAVE_UP)
+                    sys.exit(ExitCodes.INSTANCE_RUNNING_GAVE_UP)
                 else:
                     log.debug(f"If you need to use another port for this application, set it in the config.")
                     log.error(f"Looks like the tool is already running!")
                     if raiseException:
                         raise AdminRequiredException("Looks like the tool is already running!")
-                    exit(ExitCodes.INSTANCE_RUNNING)
+                    sys.exit(ExitCodes.INSTANCE_RUNNING)
 
     def checkIntegrity(self, noadmin=False):
         """
