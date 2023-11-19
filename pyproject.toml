@@ -4,8 +4,11 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "esm"
-version = "0.1.1"
-description = "Your ESM command-line tool"
+version = "0.2.0"
+description = "Your ESM command-line tool for managing a empyrion galactic survival server like a pro"
+authors = [ {name = "Vollinger"} ]
+license = { file = "LICENSE" }
+readme = "readme.md"
 
 [project.scripts]
 # entry point when called as script
