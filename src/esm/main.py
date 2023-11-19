@@ -382,9 +382,9 @@ def clearDiscoveredByInfos(dblocation, nodryrun, file, names):
 
 
 @cli.command(name="terminate-galaxy", short_help="creates a singularity to destroy everything")
-@click.option('--i-am-darkestwarrior', is_flag=True, help="forces termination")
-@click.option('--i-am-vollinger', is_flag=True, help="graceful shutdown")
-@click.option('--i-am-kreliz', is_flag=True, help="have a coffee instead")
+@click.option('--i-am-darkestwarrior', is_flag=True, help="forces termination and laughs about it")
+@click.option('--i-am-vollinger', is_flag=True, help="quick and graceful shutdown")
+@click.option('--i-am-kreliz', is_flag=True, help="have some pancackes and a coffee instead")
 def omg(i_am_darkestwarrior, i_am_vollinger, i_am_kreliz):
     """Beware, this function will ^w^w^w
     

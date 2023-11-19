@@ -18,16 +18,18 @@ Its meant to run fully automated, so you only need to configure it once, then se
 - purge-tools to delete old playfield files, delete the related structures and templates - this will keep your savegame small if used regularly.
 - some other tools to clean up and remove obsolete files and data
 - can install the game for you (from steam)
-- can update the game for you (from steam) and do additional operations (like copy custom scenario files, etc.)
+- can update the game for you (from steam) and do additional operations (like copy custom files, etc.)
+- update-scenario command that will make sure only changed files updated (to minimize server file redownloads on scenario updates)
 - fully integrated to be used with EAH
 - supports a direct starting mode (without launcher), when you're running several instances of the game on one machine.
 - various tools to manage the galaxy
 - almost all features, limits, timeouts and paths are configurable
 - everything is logged in console and logfiles, so you can always see what the scripts do, did and what happened when.
+- in-game announcer for a few actions
 
 ## Requirements
 
-- installed steamcmd executable, see <https://developer.valvesoftware.com/wiki/SteamCMD>
+- 3rd party: installed steamcmd executable, see <https://developer.valvesoftware.com/wiki/SteamCMD>
 - 3rd party: osfmount as the free ramdisk driver (see <https://www.osforensics.com/tools/mount-disk-images.html>)
 - 3rd party: peazip as the open source packer for static backups (see <https://peazip.github.io/>)
 - ability to edit yaml and batch files (notepad will do, i'd recommend notepad++ or vscode though)
@@ -57,10 +59,10 @@ The custom backup system is compatible with EAH, so you can select them when res
 
 ### EAH limitations
 - EAH's "Run shell" task does not support passing parameters to scripts as command line arguments, so you have to create custom batch files for every command you want to execute there.
-- EAH's "Run shell" task calls are **synchroneous**. This means that EAH will be blocked until the script finished. Use the -async scripts to solve that.
-- If you configure your **own "dedicated.yaml"** in EAH **and** use a dedicated start script, it will **not use that dedicated.yaml** to start the server automatically! You will have to configure that in your own dedicated start script. If you use the esm-provided script, check its configuration.
+- EAH's "Run shell" task calls are **synchroneous**. This means that EAH will be **blocked** until the script finished. Use the -async scripts to solve that.
+- If you configure your **own "dedicated.yaml"** in EAH **and** use a dedicated start script, it will **not use that dedicated.yaml** to start the server automatically! You will have to configure that in your own dedicated start script. If you use the provided script, it will do that for you.
 - EAH's "wipe savegame" deletes only half the stuff that should be deleted (no cache, no EAH data, no logs, no backups etc.)
-- EAH's "wipe empty savegame" ignores terrain placeables and can take ~40 hours for a 30GB savegame
+- EAH's "wipe empty savegame" ignores terrain placeables and can take **~40 hours** for a 30GB savegame
 - EAH's backup system does not work properly for large savegames. Its "cleanup" method starts removing backups after a few hours already. Also, creating a full backup for a huge savegames can take **hours**. Deleting takes **hours** too - you guessed right, if you're unlucky, EAH could kill your server.
 
 ## RUNNING WITHOUT EAH
@@ -70,7 +72,7 @@ You can stop the server with either `esm server-stop`, EAH or clicking the 'save
 ## filesystem structure (default)
 This is how the file system tree looks like, when it is set up after ramdisk-prepare, ramdisk-setup and a few create-backup runs (default configuration, only important bits are shown)
 ```
-C:\Server\Empyrion (as an example for your Empyrion game install directory)
+D:\Server\Empyrion (as an example for your Empyrion game install directory)
 ├───Saves
 │   ├───Games
 │   │   └───*EsmDediGame              links to ramdisk -> R:\DediGame
@@ -95,7 +97,7 @@ R:\EsmDediGame (our savegame in the ramdisk)
 ├───Sectors
 ├───Shared
 ├───Stamps
-├───*Templates                        if externalizeTemplates is enabled, links to HDD -> C:\Server\Empyrion\Saves\GamesMirror\EsmDediGame_Templates
+├───*Templates                        if externalizeTemplates is enabled, links to HDD -> D:\Server\Empyrion\Saves\GamesMirror\EsmDediGame_Templates
 └───global.db
 ```
 
@@ -104,6 +106,7 @@ The ramdisk setup keeps a mirror of the savegame on the HDD, it also keeps the t
 
 ## TIPS
 - use the `esm --help` command, and get help for each command with `esm command --help`. This explains stuff and you can get the details directly from there.
+- do not edit the `esm-base-config.yaml`, it is meant as a base configuration file with a lot of explanations for you. Override these settings in your own esm-custom-config.yaml
 - open a windows console first, then start the scripts for the manual execution. This will avoid the console windows getting closed after the scripts finished so you can read the log.
 - all scripts generate logs of what they do, you can always read up anything there.
 - in windows consoles, disable the "quick edit mode", since this **will suspend the execution of scripts(!) and potentially break things**! See https://superuser.com/questions/459609/what-does-it-do-exactly-if-i-click-in-the-window-of-cmd

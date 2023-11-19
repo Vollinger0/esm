@@ -40,11 +40,9 @@ This will create the distributable script with all its dependencies in dist/
 
 ### WIP
 
-- [+] use pyinstaller to create a distributable program without any installation overhead: <https://pyinstaller.org/>
-- [ ] provide full installation package with install bat, that installs esm, the tools (osfmount, peazip, epm, python, etc.)
-
 ### later
 
+- [ ] provide full installation package with install bat, that installs esm, the tools (osfmount, peazip, epm, python, etc.)
 - [ ] implement warning/talkback via tickets for when an admin is required (e.g. low disk space, etc.)
 - [+] fix all FS-modifying tests to use the test fixture of the usually existing ramdisk (R:)
 - [ ] game-install should have the option to install the scenario? or...
@@ -69,6 +67,7 @@ This will create the distributable script with all its dependencies in dist/
 
 ### done
 
+- [x] use pyinstaller to create a distributable program without any installation overhead: <https://pyinstaller.org/>
 - [x] update scenario should provide a sync function so that only the real changes are copied, to avoid data-redownloads.
 - [x] add more epmclient functions, especially the sync event announcements.
 - [x] implement warning/talkback to server chat for syncs, backups probably even random stuff with funny hamster sentences.
