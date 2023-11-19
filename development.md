@@ -40,11 +40,10 @@ This will create the distributable files with all its dependencies in `dist/esm`
 
 ### WIP
 
-- [ ] check requirements should do a test copy with robocopy
 
 ### later
 
-- [ ] refactor configuration once again: put base-config as default-config into the module, and provide an example custom config. The game has to do some sanity checks on startup to make sure the required configurations are in place (like installdir, dedicated yaml, etc.) - Or use something more sophisticated, e.g. a proper getter for config properties that retrieve it from custom -> base -> fallback to a default.
+- [ ] refactor configuration once again: put base-config as default-config into the module, and provide an example custom config. The game has to do some sanity checks on startup to make sure the required configurations are in place (like installdir, dedicated yaml, etc.) - Or use something more sophisticated, e.g. a proper getter for config properties that retrieve it from custom -> base -> fallback to a default. => use pydantic!
 - [ ] refactor purge-tools, make them wipe instead, or make all tools have the option to additionally purge too.
 - [ ] tool to purge a list of playfields passed in the command line and/or file?
 - [ ] provide full installation package with install bat, that installs esm, the tools (osfmount, peazip, etc.)?
@@ -70,6 +69,7 @@ This will create the distributable files with all its dependencies in `dist/esm`
 
 ### done
 
+- [x] check requirements should do a test copy with robocopy
 - [x] when useRamdisk is enabled, enable checks for its file structure, when its not, do not start use the synchronizer (of course)
 - [-] game-install should have the option to install the scenario? or...
 - [x] use pyinstaller to create a distributable program without any installation overhead: <https://pyinstaller.org/>
