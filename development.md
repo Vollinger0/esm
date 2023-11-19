@@ -34,7 +34,7 @@ Make sure you are in the current env of the script, then execute:
 
 - `pyinstaller esm.spec --noconfirm`
 
-This will create the distributable script with all its dependencies in dist/
+This will create the distributable script with all its dependencies in `dist/`. Pack it up and distribute.
 
 ## TODOS
 
@@ -42,31 +42,33 @@ This will create the distributable script with all its dependencies in dist/
 
 ### later
 
-- [ ] provide full installation package with install bat, that installs esm, the tools (osfmount, peazip, epm, python, etc.)
+- [ ] provide full installation package with install bat, that installs esm, the tools (osfmount, peazip, etc.)?
 - [ ] implement warning/talkback via tickets for when an admin is required (e.g. low disk space, etc.)
 - [+] fix all FS-modifying tests to use the test fixture of the usually existing ramdisk (R:)
-- [ ] game-install should have the option to install the scenario? or...
 - [ ] tool to purge a list of playfields passed in the command line and/or file?
 - [ ] offer some kind of better interactive mode for different stuff
   - [ ] interactive mode for wipe galaxy tool?
   - [ ] actually make any option have a -batchmode when there are interactive prompts, defaulting to the most defensive option.
-- [+] when useRamdisk is enabled, enable checks for its file structure, when its not, do not start use the synchronizer (of course)
 - [ ] implement allowMultpleServerInstances switch? Once enabled, do not check for instances of the game before starting, do not start if startmode is set to direct, etc.
 - [+] create separate windows-gui thingy that resides in the taskbar or similar and provides a shortcut to the cli tool.
+- [ ] refactor purge-tools, make them wipe instead, or make all tools have the option to additionally purge too.
+
+### optional
+
+- [ ] add switch to backup-tool to make backups EWA-compatible
 - [ ] provide tool to fix item icons as good as possible in EWA, current process:
    1. open item list in eah, CTRL+A, CTRL+C and copy into text file? Or find out how the item list file in epf got created
    1. read itemid, itemname, devicename from that eah list
    1. find block by matching devicename with blocktype
    1. find customicon name
    1. save customicon as itemid for EWA.
-- add a AI-powered chatbot, chatgpt-like that roleplays as a spacefaring hamster :)
-- add cb:shield:$id function to be able to get a ships shield values?
-
-### optional
-
+- [ ] add cb:shield:$id function to be able to get a ships shield values?
+- [ ] add a AI-powered chatbot, chatgpt-like that roleplays as a spacefaring hamster that reacts to player chat?
 
 ### done
 
+- [x] when useRamdisk is enabled, enable checks for its file structure, when its not, do not start use the synchronizer (of course)
+- [-] game-install should have the option to install the scenario? or...
 - [x] use pyinstaller to create a distributable program without any installation overhead: <https://pyinstaller.org/>
 - [x] update scenario should provide a sync function so that only the real changes are copied, to avoid data-redownloads.
 - [x] add more epmclient functions, especially the sync event announcements.
