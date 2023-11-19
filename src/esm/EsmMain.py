@@ -479,7 +479,7 @@ class EsmMain:
             raise WrongParameterError(f"Minimum age in days is 1, you chose {minimumage}")
 
         try:
-            log.info(f"Calling purge empty playfields for dbLocation: '{dbLocation}', minimumage '{minimumage}', nodryrun '{nodryrun}', nocleardiscoveredby '{nocleardiscoveredby}', leavetemplates '{leavetemplates}', force '{force}")
+            log.info(f"Calling purge empty playfields for dbLocation: '{dbLocation}', minimumage '{minimumage}', nodryrun '{nodryrun}', nocleardiscoveredby '{nocleardiscoveredby}', leavetemplates '{leavetemplates}', force '{force}'")
             self.wipeService.purgeEmptyPlayfields(dbLocation=dbLocation, minimumage=minimumage, nodryrun=nodryrun, nocleardiscoveredby=nocleardiscoveredby, leavetemplates=leavetemplates, force=force)
         except UserAbortedException as ex:
             log.warning(f"User aborted the operation, nothing deleted.")
