@@ -7,11 +7,13 @@ If you already have a running empyrion game server and even an existing savegame
 
 ### Install ESM
 
-- TODO
+1. just unpack the zip to a folder of your choice, e.g. `D:\Servers\Tools\esm`
+2. open a windows console/terminal, cd into that directory and call `esm -v check-requirements`
+3. if you see colored output with timestamps, you succeeded.
 
 ### Configure ESM
 
-- edit [esm-custom-config.yaml](esm-custom-config.yaml)
+- edit [esm-custom-config.yaml](esm-custom-config.yaml) (do **not** edit the esm-base-config.yaml, you can use to read about all the config options though)
 - set all paths properly, especially the path to the empyrion installation directory
 - look at the settings in esm-base-config.yaml, all of these can be overwritten in the custom config, but each yaml "section" has to be copied completely.
 - call `esm check-requirements` to check if everything is fine.

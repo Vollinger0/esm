@@ -612,11 +612,14 @@ class EsmMain:
 
         self.fileSystem.testLinkGeneration()
 
-        try:
-            path = self.ramdiskManager.checkAndGetOsfMountPath()
-            log.info(f"'{path}' found")
-        except RequirementsNotFulfilledError as ex:
-            log.error(f"{ex}")
+        if self.config.general.useRamdisk:
+            try:
+                path = self.ramdiskManager.checkAndGetOsfMountPath()
+                log.info(f"'{path}' found")
+            except RequirementsNotFulfilledError as ex:
+                log.error(f"{ex}")
+        else:
+            log.info("ramdisk usage is disabled")
 
         try:
             path = self.backupService.checkAndGetPeaZipPath()
