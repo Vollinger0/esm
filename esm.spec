@@ -21,7 +21,7 @@ datas = [
 datas += copy_metadata('esm')
 
 a = Analysis(
-    ['wrapper.py'],
+    ['src/esm/__main__.py'],
     pathex=[],
     binaries=[],
     datas=datas,
