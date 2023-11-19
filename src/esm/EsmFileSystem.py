@@ -213,19 +213,19 @@ class EsmFileSystem:
         start = getTimer()
         for path, targetPath, native in self.pendingDeletePaths:
             if FsTools.isHardLink(path):
-                log.debug(f"deleting link at {path}")
+                log.debug(f"deleting link at '{path}'")
                 FsTools.deleteLink(path)
             else:
                 # for some reason, Path.is_dir() somtimes returns true on files. What a crappy quirk is that!
                 # This forces us to check twice with two different implementations...
                 if path.is_dir() and os.path.isdir(path):
-                    log.debug(f"deleting dir at {targetPath}")
+                    log.debug(f"deleting dir at '{targetPath}'")
                     if native:
                         FsTools.quickDeleteNative(path)
                     else:
                         FsTools.quickDelete(path)
                 else:
-                    log.debug(f"deleting file {targetPath}")
+                    log.debug(f"deleting file '{targetPath}'")
                     FsTools.deleteFile(path)
         log.debug(f"done deleting")
         elapsedTime = getElapsedTime(start)
@@ -248,9 +248,9 @@ class EsmFileSystem:
         checkDir = Path(f"{testParentDir}\\THISIS~1")
         result = checkDir.exists()
         if result:
-            log.info(f"8dot3name generation on drive {driveLetter} is enabled. If you disable it, this will make file operations for large amount of files and directories up to ~3 times faster! See https://learn.microsoft.com/de-de/archive/blogs/josebda/windows-server-2012-file-server-tip-disable-8-3-naming-and-strip-those-short-names-too")
+            log.warning(f"8dot3name generation on drive '{driveLetter}' is enabled. This is not bad, but if you disable it, this will make file operations for large amount of files and directories up to ~3 times faster! See https://learn.microsoft.com/de-de/archive/blogs/josebda/windows-server-2012-file-server-tip-disable-8-3-naming-and-strip-those-short-names-too")
         else:
-            log.info(f"8dot3name generation is disabled on {driveLetter}. This is good :)")
+            log.info(f"8dot3name generation is disabled on '{driveLetter}'. This is good.")
         return not result
 
     def testLinkGeneration(self):
@@ -276,6 +276,22 @@ class EsmFileSystem:
         else:
             log.error(f"Creating a hardlink (jointpoint) with mklink failed. Will not be able to run the game in ramdisk mode.")
         return result
+    
+    def testRobocopy(self):
+        """
+        creates some random stuff, copies that and makes sure the process did not fail
+        """
+        testParentDir = Path(f"{self.config.paths.install}/{self.config.foldernames.esmtests}").resolve()
+        sourcePath = testParentDir.joinpath("this-is-the-robocopy-source-directory")
+        sourcePath.mkdir(parents=True, exist_ok=True)
+        testFile = sourcePath.joinpath("testfileforrobocopytest")
+        testFile.write_text("robocopytest")
+        destinationPath = testParentDir.joinpath("this-is-the-robocopy-target-directory")
+        process = self.executeRobocopy(sourcePath=sourcePath, destinationPath=destinationPath)
+        if process.returncode > 3:
+            log.error(f"Failed copying with robocopy from '{sourcePath}' to '{destinationPath}'. Please check the robocopy logfile.")
+        else:
+            log.info("Robocopy copy test successful.")
 
     def copyAdditionalUpdateStuff(self):
         """
@@ -304,17 +320,17 @@ class EsmFileSystem:
                 if source.exists():
                     if source.is_dir():
                         # its a dir
-                        log.debug(f"copying directory {source} into {destinationPath}")  
+                        log.debug(f"copying directory '{source}' into '{destinationPath}'")  
                         FsTools.copyDir(source=source, destination=destinationPath)
                         copiedDirs += 1
                     else:
                         # its a file
-                        log.debug(f"copying file {source} into {destinationPath}")  
+                        log.debug(f"copying file '{source}' into '{destinationPath}'")  
                         FsTools.copy(source=source, destination=destinationPath)
                         copiedFiles += 1
                 else:
-                    log.warning(f"Configured additional path {source} does not exist.")
-        log.info(f"Copied {copiedDirs} folders and {copiedFiles} files.")
+                    log.warning(f"Configured additional path '{source}' does not exist.")
+        log.info(f"Copied '{copiedDirs}' folders and '{copiedFiles}' files.")
 
     def synchronize(self, sourcePath: Path, destinationPath: Path):
         """
@@ -322,10 +338,10 @@ class EsmFileSystem:
         only new files or files whose size or content differ are copied, deleted files in the destination are removed.
         """
         if not sourcePath.is_dir():
-            raise AdminRequiredException(f"{sourcePath} is not a directory. Please check the configuration.")
+            raise AdminRequiredException(f"'{sourcePath}' is not a directory. Please check the configuration.")
         
         if not destinationPath.is_dir():
-            raise AdminRequiredException(f"{destinationPath} is not a directory. Please check the configuration.")
+            raise AdminRequiredException(f"'{destinationPath}' is not a directory. Please check the configuration.")
 
         # use this strange old library to sync the directories.
         from dirsync import sync

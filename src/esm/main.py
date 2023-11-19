@@ -422,7 +422,7 @@ def omg(i_am_darkestwarrior, i_am_vollinger, i_am_kreliz):
 
 @cli.command(name="check-requirements", short_help="checks various configs and requirements")
 @click.option('--nonadmin', is_flag=True, help="skip checks that require admin privileges")
-def checkIntegrity(nonadmin):
+def checkRequirements(nonadmin):
     """Will do several checks, including:
     
     \b
@@ -434,7 +434,7 @@ def checkIntegrity(nonadmin):
     """
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)
-        esm.checkIntegrity(nonadmin)
+        esm.checkRequirements(nonadmin)
 
 
 def init(fileLogLevel=logging.DEBUG, streamLogLevel=logging.INFO, customConfig="esm-custom-config.yaml", waitForPort=False):

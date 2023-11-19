@@ -137,7 +137,7 @@ class EsmMain:
             syncInterval = self.config.ramdisk.synchronizeRamToMirrorInterval
             if syncInterval > 0:
                 # start the synchronizer
-                log.info(f"Starting ram2mirror synchronizer with interval {syncInterval}")
+                log.info(f"Starting ram2mirror synchronizer with interval '{syncInterval}'")
                 self.ramdiskManager.startSynchronizer(syncInterval)
     
     def waitForEnd(self, checkInterval=5):
@@ -247,12 +247,12 @@ class EsmMain:
         destinationPath = Path(f"{self.config.paths.install}/Content/Scenarios/{scenarioName}").resolve()
 
         if not sourcePath.exists():
-            raise AdminRequiredException(f"Path to scenario source not properly configured, {sourcePath} does not exist.")
+            raise AdminRequiredException(f"Path to scenario source not properly configured, '{sourcePath}' does not exist.")
         if not destinationPath.exists():
-            log.warning(f"Path to game scenarios folder {destinationPath} does not exist. Will create the directory assuming the configuration is correct.")
+            log.warning(f"Path to game scenarios folder '{destinationPath}' does not exist. Will create the directory assuming the configuration is correct.")
             destinationPath.mkdir(parents=False, exist_ok=False)
 
-        log.info(f"Synchronizing scenario from {sourcePath} to {destinationPath}")
+        log.info(f"Synchronizing scenario from '{sourcePath}' to '{destinationPath}'")
         return self.fileSystem.synchronize(sourcePath, destinationPath)
     
     def deleteAll(self):
@@ -290,8 +290,8 @@ class EsmMain:
 
         if mirrorExists:
             if savegameExists:
-                log.info(f"A savegame mirror exists at {mirrorPath}. The file system is either already prepared, there is a configuration error or the savegame mirror needs to be deleted.")
-                if askUser(f"Delete old savegame mirror at {mirrorPath}? [yes/no] ", "yes"):
+                log.info(f"A savegame mirror exists at '{mirrorPath}'. The file system is either already prepared, there is a configuration error or the savegame mirror needs to be deleted.")
+                if askUser(f"Delete old savegame mirror at '{mirrorPath}'? [yes/no] ", "yes"):
                     self.fileSystem.markForDelete(mirrorPath)
                     self.fileSystem.commitDelete()
                     self.ramdiskManager.prepare()
@@ -299,14 +299,14 @@ class EsmMain:
                     log.warning("Can not prepare the file system for ramdisk usage as long as a savegamemirror already exists. Maybe we don't need to prepare?")
                     raise UserAbortedException("User does not want to delete the savegame mirror")
             else:
-                log.info(f"A savegame mirror exists at {mirrorPath} and no savegame exists at {savegamePath}. Looks like we are already prepared for using a ramdisk. Will not do anything.")
+                log.info(f"A savegame mirror exists at '{mirrorPath}' and no savegame exists at '{savegamePath}'. Looks like we are already prepared for using a ramdisk. Will not do anything.")
                 return True
         else:
             if savegameExists:
                 log.info(f"Savegame exists and no mirror exists, calling prepare.")
                 self.ramdiskManager.prepare()
             else:
-                log.info(f"No savegame exists at {savegamePath}. This is either a configuration error or we need to create one first.")
+                log.info(f"No savegame exists at '{savegamePath}'. This is either a configuration error or we need to create one first.")
                 if askUser("Do you want to create a new savegame? [yes/no] ", "yes"):
                     log.debug("creating new savegame")
                     self.createNewSavegame()
@@ -347,8 +347,8 @@ class EsmMain:
 
         if mirrorExists:
             if savegameExists:
-                log.info(f"A savegame already exists at {savegamePath}. The ramdisk stuff is either already uninstalled, there is a configuration error or the savegame needs to be deleted.")
-                if askUser(f"Delete old savegame at {savegamePath}? [yes/no] ", "yes"):
+                log.info(f"A savegame already exists at '{savegamePath}'. The ramdisk stuff is either already uninstalled, there is a configuration error or the savegame needs to be deleted.")
+                if askUser(f"Delete old savegame at '{savegamePath}'? [yes/no] ", "yes"):
                     self.fileSystem.markForDelete(savegamePath)
                     self.fileSystem.commitDelete()
                     self.ramdiskManager.uninstall(force)
@@ -356,14 +356,14 @@ class EsmMain:
                     log.warning("Can not uninstall the file system as long as a savegame already exists. Maybe we don't need to uninstall?")
                     raise UserAbortedException("User does not want to delete the savegame")
             else:
-                log.info(f"A savegame mirror exists at {mirrorPath} and no savegame exists at {savegamePath}")
+                log.info(f"A savegame mirror exists at '{mirrorPath}' and no savegame exists at '{savegamePath}'")
                 self.ramdiskManager.uninstall(force)
         else:
             if savegameExists:
                 log.info(f"Savegame exists and no mirror exists. There file system is already ready to be used without a ramdisk.")
                 return False
             else:
-                log.info(f"No savegame exists at {savegamePath}. This is either a configuration error or none exists. You might need to create a new one later.")
+                log.info(f"No savegame exists at '{savegamePath}'. This is either a configuration error or none exists. You might need to create a new one later.")
                 return False
             
     def wipeEmptyPlayfields(self, dbLocation=None, wipeType=None, territory=None, nodryrun=False, nocleardiscoveredby=False):
@@ -416,7 +416,7 @@ class EsmMain:
         # just unmount the ramdisk, if it exists.
         ramdiskDriveLetter = self.config.ramdisk.drive
         if Path(ramdiskDriveLetter).exists():
-            log.info(f"Unmounting ramdisk at {ramdiskDriveLetter}.")
+            log.info(f"Unmounting ramdisk at '{ramdiskDriveLetter}'.")
             try:
                 self.ramdiskManager.unmountRamdisk(driveLetter=ramdiskDriveLetter)
             except AdminRequiredException as ex:
@@ -424,10 +424,10 @@ class EsmMain:
                 if self.ramdiskManager.checkRamdrive(driveLetter=ramdiskDriveLetter):
                     raise AdminRequiredException(f"Ramdisk is still mounted, can't recuperate from the error here. Exception: {ex}")
                 else:
-                    log.info(f"There is no more ramdisk mounted as {ramdiskDriveLetter}, will continue.")
-            log.info(f"Ramdisk at {ramdiskDriveLetter} unmounted")
+                    log.info(f"There is no more ramdisk mounted as '{ramdiskDriveLetter}', will continue.")
+            log.info(f"Ramdisk at '{ramdiskDriveLetter}' unmounted")
         else:
-            log.info(f"Ramdisk at {ramdiskDriveLetter} did not exist, will assume it is not mounted")
+            log.info(f"Ramdisk at '{ramdiskDriveLetter}' did not exist, will assume it is not mounted")
         
         log.info("Calling ramdisk setup to mount it again with the current configuration and sync the savegame again.")
         self.ramdiskSetup()
@@ -476,7 +476,7 @@ class EsmMain:
                 raise WrongParameterError(f"DbLocation '{dbLocation}' is not a valid database location path.")
 
         if minimumage < 1:
-            raise WrongParameterError(f"Minimum age in days is 1, you chose {minimumage}")
+            raise WrongParameterError(f"Minimum age in days is 1, you chose '{minimumage}'")
 
         try:
             log.info(f"Calling purge empty playfields for dbLocation: '{dbLocation}', minimumage '{minimumage}', nodryrun '{nodryrun}', nocleardiscoveredby '{nocleardiscoveredby}', leavetemplates '{leavetemplates}', force '{force}'")
@@ -505,11 +505,11 @@ class EsmMain:
         if nodryrun:
             if force:
                 result, elapsedTime = self.fileSystem.commitDelete(override="yes")
-                log.info(f"Deleted {count} folders with removed entities in the Shared folder, elapsed time: {elapsedTime}")
+                log.info(f"Deleted '{count}' folders with removed entities in the Shared folder, elapsed time: {elapsedTime}")
             else:
                 try:
                     result, elapsedTime = self.fileSystem.commitDelete()
-                    log.info(f"Deleted {count} folders with removed entities in the Shared folder, elapsed time: {elapsedTime}")
+                    log.info(f"Deleted '{count}' folders with removed entities in the Shared folder, elapsed time: {elapsedTime}")
                 except UserAbortedException as ex:
                     log.warning("User aborted operation, nothing was deleted.")
 
@@ -543,7 +543,7 @@ class EsmMain:
             fileName = f"esm-purgewipedplayfields.lst"
             with open(fileName, "w", encoding='utf-8') as file:
                 file.writelines([line + '\n' for line in wipedPlayfieldNames])
-            log.warning(f"Dry mode is active, exported list of playfields to purge as {fileName}")
+            log.warning(f"Dry mode is active, exported list of playfields to purge as '{fileName}'")
     
     def cleanupSharedFolder(self, dbLocation=None, nodryrun=False, force=False):
         """
@@ -596,7 +596,7 @@ class EsmMain:
                         raise AdminRequiredException("Looks like the tool is already running!")
                     sys.exit(ExitCodes.INSTANCE_RUNNING)
 
-    def checkIntegrity(self, noadmin=False):
+    def checkRequirements(self, noadmin=False):
         """
         does a series of tests for integrity of the scripts, config, game, os and whatnot.
         """
@@ -612,6 +612,8 @@ class EsmMain:
         self.fileSystem.check8Dot3NameGeneration()
 
         self.fileSystem.testLinkGeneration()
+
+        self.fileSystem.testRobocopy()
 
         if self.config.general.useRamdisk:
             try:
