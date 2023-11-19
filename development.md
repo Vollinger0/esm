@@ -2,31 +2,30 @@
 
 ## running locally 
 
-- once: install requirements: `$ pip install -r requirements.txt`
-- start esm: `$ py -m esm`
+- once: install requirements: `pip install -r requirements.txt`
+- start esm: `py -m esm`
 
 Alternatively, you can enable the virtual environment, like below, or create one and install the requirements.
 
 ### on linux/macOs for development:
 
-- install venv: `$ py -m venv .venv`
-- activate venv: `$ .\\.venv\Scripts\activate`
-- install requirements: `$ pip install -r requirements.txt`
-- start esm: `$ esm`
+- install venv: `py -m venv .venv`
+- activate venv: `.\\.venv\Scripts\activate`
+- install requirements: `pip install -r requirements.txt`
+- start esm: `esm`
 
 ### on windows for development:
 
 - start standard cmd console (not powershell!)
-- install venv: `$ py -m venv .venv`
-- activate venv: `$ .\\.venv\Scripts\activate.bat`
-- install requirements: `$ pip install -r requirements.txt`
-- start esm: `$ esm`
+- install venv: `py -m venv .venv`
+- activate venv: `.\\.venv\Scripts\activate.bat`
+- install requirements: `pip install -r requirements.txt`
+- start esm: `esm`
 
 ## releasing
 
-- execute a `$ pip freeze | sort -u >> requirements.txt`
-  - check the computed requirements, clean up as necessary
-- //TODO
+- execute a `pip freeze | sort -u >> requirements.txt`
+  - check the computed requirements, clean up as necessary. In doubt, start with a fresh venv to check if all is there.
 
 ### creating new binary distribution
 
@@ -41,18 +40,21 @@ This will create the distributable files with all its dependencies in `dist/esm`
 
 ### WIP
 
+- [ ] check requirements should do a test copy with robocopy
+
 ### later
 
+- [ ] refactor configuration once again: put base-config as default-config into the module, and provide an example custom config. The game has to do some sanity checks on startup to make sure the required configurations are in place (like installdir, dedicated yaml, etc.) - Or use something more sophisticated, e.g. a proper getter for config properties that retrieve it from custom -> base -> fallback to a default.
+- [ ] refactor purge-tools, make them wipe instead, or make all tools have the option to additionally purge too.
+- [ ] tool to purge a list of playfields passed in the command line and/or file?
 - [ ] provide full installation package with install bat, that installs esm, the tools (osfmount, peazip, etc.)?
 - [ ] implement warning/talkback via tickets for when an admin is required (e.g. low disk space, etc.)
 - [+] fix all FS-modifying tests to use the test fixture of the usually existing ramdisk (R:)
-- [ ] tool to purge a list of playfields passed in the command line and/or file?
 - [ ] offer some kind of better interactive mode for different stuff
   - [ ] interactive mode for wipe galaxy tool?
   - [ ] actually make any option have a -batchmode when there are interactive prompts, defaulting to the most defensive option.
 - [ ] implement allowMultpleServerInstances switch? Once enabled, do not check for instances of the game before starting, do not start if startmode is set to direct, etc.
 - [+] create separate windows-gui thingy that resides in the taskbar or similar and provides a shortcut to the cli tool.
-- [ ] refactor purge-tools, make them wipe instead, or make all tools have the option to additionally purge too.
 
 ### optional
 
@@ -99,7 +101,7 @@ This will create the distributable files with all its dependencies in `dist/esm`
 - [x] add some for spinner or similar when server is running, to see if the console-suspend-bug has hit again
 - [x] implement server-callback with epmremoteclient
 - [x] re-mount option for when ramdisk size has to be updated or ramdisk is down for some reason.
-- [x] print out wipetypep descriptions on help too.
+- [x] print out wipetype descriptions on help too.
 - [x] custom dblocation may not be given in conjunction with nodryrun.
 - [x] usecase: wipe galaxy - integrate other script
 - [x] split the config in a "basic" config, an custom config that overwrites the basic config.

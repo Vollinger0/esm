@@ -25,10 +25,10 @@ IF NOT EXIST !esmPath! (
 	exit /b 1
 )
 
-call:techo "Calling esm script: py -m !esmCommand!"
+call:techo "Calling esm script: !esmCommand!"
 
 cd %esmPath%
-start cmd /c py -m !esmCommand!
+start cmd /c !esmCommand!
 set scriptReturnCode=%ERRORLEVEL%
 
 REM handle the return code of the start command (not the esm command)
