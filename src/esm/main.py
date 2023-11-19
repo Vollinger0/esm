@@ -2,6 +2,7 @@ import importlib
 import logging
 import signal
 import click
+import sys
 from esm.EsmLogger import EsmLogger
 from esm.Exceptions import ExitCodes, WrongParameterError
 from esm.DataTypes import Territory, WipeType
@@ -451,7 +452,7 @@ def init(fileLogLevel=logging.DEBUG, streamLogLevel=logging.INFO, customConfig="
     
 def forcedExit(*args):
     log.warning("Script execution interrupted via SIGINT. If the server is still running, you may resume execution via the server-resume command")
-    exit(ExitCodes.SCRIPT_INTERRUPTED)
+    sys.exit(ExitCodes.SCRIPT_INTERRUPTED)
 
 # main cli entry point.
 def start():
