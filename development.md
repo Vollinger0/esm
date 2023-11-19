@@ -32,9 +32,10 @@ Alternatively, you can enable the virtual environment, like below, or create one
 
 Make sure you are in the current env of the script, then execute:
 
-- `pyinstaller esm.spec --noconfirm`
+- `pip install -e .` to make sure the module builds correctly
+- `pyinstaller esm.spec --noconfirm` creates the distribution
 
-This will create the distributable script with all its dependencies in `dist/`. Pack it up and distribute.
+This will create the distributable files with all its dependencies in `dist/esm`. Pack it up and distribute.
 
 ## TODOS
 
