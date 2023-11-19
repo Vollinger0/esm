@@ -1,6 +1,9 @@
 # -*- mode: python ; coding: utf-8 -*-
+from pathlib import Path
+import shutil
 from PyInstaller.utils.hooks import copy_metadata
 
+# all entries with dst == "." will end up next to the exe (see fix below)
 datas = [
         ('esm-base-config.yaml', '.'),
         ('esm-custom-config.yaml', '.'),
@@ -26,6 +29,7 @@ a = Analysis(
     noarchive=False,
     metadatas=['esm']
 )
+
 pyz = PYZ(a.pure)
 
 exe = EXE(
@@ -45,6 +49,7 @@ exe = EXE(
     codesign_identity=None,
     entitlements_file=None,
 )
+
 coll = COLLECT(
     exe,
     a.binaries,
@@ -54,3 +59,16 @@ coll = COLLECT(
     upx_exclude=[],
     name='wrapper',
 )
+
+
+# fix the location of the collected extra files that we want to have next to the exe, not in _internal.
+print(f"working directory is: {Path(".").resolve()}")
+for src, dst in datas:
+    if dst == ".":
+        print(f"processing datas entry {src, dst}") 
+        # move the file up one directory
+        srcDir = Path(f"./dist/wrapper/_internal/").resolve()
+        srcPath = Path(f"{srcDir}/{src}")
+        dstDir = Path(f"{srcDir.parent}")
+        print(f"moving {srcPath} -> {dstDir}")
+        shutil.move(srcPath, dstDir)
