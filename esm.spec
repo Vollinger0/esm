@@ -9,7 +9,7 @@ datas = [
         ('esm-custom-config.yaml', '.'),
         ('esm-dedicated.yaml', '.'),
         ('hamster_sync_lines.csv', '.'),
-        ('EmpyrionPrime.RemoteClient.Console.exe', '.'),
+        ('emprc/EmpyrionPrime.RemoteClient.Console.exe', './emprc'),
         ('callesm-async.bat', '.'),
         ('callesm-sync.bat', '.'),
         ('readme.md', '.'),
@@ -61,18 +61,19 @@ coll = COLLECT(
     strip=False,
     upx=True,
     upx_exclude=[],
-    name='wrapper',
+    name='esm',
 )
 
-
-# fix the location of the collected extra files that we want to have next to the exe, not in _internal.
+# fix the location of the collected extra files that we want to have next to the .exe, not in _internal.
 print(f"working directory is: {Path(".").resolve()}")
+srcDir = Path(f"./dist/esm/_internal/").resolve()
+dstDir = Path(f"{srcDir.parent}")
 for src, dst in datas:
-    if dst == ".":
+    if dst[0]==".":
         print(f"processing datas entry {src, dst}") 
         # move the file up one directory
-        srcDir = Path(f"./dist/wrapper/_internal/").resolve()
         srcPath = Path(f"{srcDir}/{src}")
-        dstDir = Path(f"{srcDir.parent}")
-        print(f"moving {srcPath} -> {dstDir}")
-        shutil.move(srcPath, dstDir)
+        dstPath = Path(f"{dstDir}/{src}")
+        print(f"moving {srcPath} -> {dstPath}")
+        if not Path(dstPath.parent).exists(): Path(dstPath.parent).mkdir(parents=True, exist_ok=True)
+        shutil.move(srcPath, dstPath)
