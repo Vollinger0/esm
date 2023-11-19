@@ -3,13 +3,14 @@ from pathlib import Path
 import shutil
 from PyInstaller.utils.hooks import copy_metadata
 
-# all entries with dst == "." will end up next to the exe (see fix below)
-datas = [
+
+# define the files to copy to the dist additionally
+datafiles = [
         ('esm-base-config.yaml', '.'),
         ('esm-custom-config.yaml', '.'),
         ('esm-dedicated.yaml', '.'),
         ('hamster_sync_lines.csv', '.'),
-        ('emprc/EmpyrionPrime.RemoteClient.Console.exe', './emprc'),
+        ('emprc/EmpyrionPrime.RemoteClient.Console.exe', 'emprc/EmpyrionPrime.RemoteClient.Console.exe'),
         ('callesm-async.bat', '.'),
         ('callesm-sync.bat', '.'),
         ('readme.md', '.'),
@@ -18,13 +19,12 @@ datas = [
         ('performance.md', '.'),
         ('development.md', '.'),
         ]
-datas += copy_metadata('esm')
 
 a = Analysis(
     ['src/esm/__main__.py'],
     pathex=[],
     binaries=[],
-    datas=datas,
+    datas=copy_metadata('esm'),
     hiddenimports=[],
     hookspath=[],
     hooksconfig={},
@@ -65,16 +65,14 @@ coll = COLLECT(
     name='esm',
 )
 
-# fix the location of the collected extra files that we want to have next to the .exe, not in _internal.
-print(f"working directory is: {Path(".").resolve()}")
-srcDir = Path(f"./dist/esm/_internal/").resolve()
-dstDir = Path(f"{srcDir.parent}")
-for src, dst in datas:
-    if dst[0]==".":
-        print(f"processing datas entry {src, dst}") 
-        # move the file up one directory
-        srcPath = Path(f"{srcDir}/{src}")
-        dstPath = Path(f"{dstDir}/{src}")
-        print(f"moving {srcPath} -> {dstPath}")
-        if not Path(dstPath.parent).exists(): Path(dstPath.parent).mkdir(parents=True, exist_ok=True)
-        shutil.move(srcPath, dstPath)
+# since the datafile-functinality of pyinstaller is sub-optimal, lets copy our datafiles to the dist folder ourselves.
+workspaceDir = Path(".").resolve()
+print(f"working directory is: {workspaceDir}")
+targetDir = workspaceDir.joinpath("dist/esm")
+for src, dst in datafiles:
+    print(f"processing datafiles entry {src, dst}") 
+    srcPath = workspaceDir.joinpath(src)
+    dstPath = targetDir.joinpath(dst)
+    print(f"copying {srcPath} -> {dstPath}")
+    if not Path(dstPath.parent).exists(): Path(dstPath.parent).mkdir(parents=True, exist_ok=True)
+    shutil.copy(srcPath, dstPath)
