@@ -35,7 +35,7 @@ class EsmConfigService:
             config = configuration
 
         if configFilePath:
-            if not configFilePath.exists():
+            if not Path(configFilePath).exists():
                 log.error(f"could not find configuration file at {configFilePath}. This is fatal")
                 sys.exit(ExitCodes.MISSING_CONFIG)
 
@@ -45,7 +45,7 @@ class EsmConfigService:
             mergeDicts(config, {'context': {'configFilePath': configFilePath}})
 
         if customConfigFilePath:
-            if customConfigFilePath.exists():
+            if Path(customConfigFilePath).exists():
                 with open(customConfigFilePath, "r") as configFile:
                     customConfig = yaml.safe_load(configFile)
                 mergeDicts(config, customConfig)
