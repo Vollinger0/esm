@@ -40,10 +40,10 @@ This will create the distributable files with all its dependencies in `dist/esm`
 
 ### WIP
 
+- [+] refactor configuration once again: put base-config as default-config into the module, and provide an example custom config. The game has to do some sanity checks on startup to make sure the required configurations are in place (like installdir, dedicated yaml, etc.) - Or use something more sophisticated, e.g. a proper getter for config properties that retrieve it from custom -> base -> fallback to a default. => use pydantic!
 
 ### later
 
-- [ ] refactor configuration once again: put base-config as default-config into the module, and provide an example custom config. The game has to do some sanity checks on startup to make sure the required configurations are in place (like installdir, dedicated yaml, etc.) - Or use something more sophisticated, e.g. a proper getter for config properties that retrieve it from custom -> base -> fallback to a default. => use pydantic!
 - [ ] refactor purge-tools, make them wipe instead, or make all tools have the option to additionally purge too.
 - [ ] tool to purge a list of playfields passed in the command line and/or file?
 - [ ] provide full installation package with install bat, that installs esm, the tools (osfmount, peazip, etc.)?

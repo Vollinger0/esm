@@ -1,3 +1,4 @@
+from pathlib import Path
 from threading import Thread
 import time
 import logging
@@ -56,7 +57,7 @@ def testStartServerWithSynchronizer():
         log.debug(f"task started, waiting {waittime} seconds before trying to stop the server.")
         time.sleep(waittime)
         log.debug("task sending exit to server")
-        esm.dedicatedServer.sendExitAndWait()
+        esm.dedicatedServer.sendExitRetryAndWait()
         log.debug("task finished ")
     thread = Thread(target=task, daemon=True)
     thread.start()
@@ -99,13 +100,12 @@ def testcleanupSharedFolder():
 ## main code start
 ######################################################
 # initialize config and logging
-esm = EsmMain(caller="esm-test",
-              configFileName="esm-base-config.yaml",
-              customConfigFileName="esm-custom-config.yaml",              
-              )
+esm = EsmMain(caller="esm-test", customConfigFilePath=Path("esm-custom-config.yaml"))
 
 log.debug(f"Script {__file__} started")
 log.debug(f"Logging to: {esm.logFile}")
+
+#esm.checkRequirements()
 
 #testInstallFromSteam()
 #testRamdiskPrepare()

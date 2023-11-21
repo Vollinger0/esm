@@ -1,9 +1,9 @@
-from enum import Enum
 from functools import cached_property
 import logging
 import csv
 from pathlib import Path
 import random
+from esm.ConfigModels import MainConfig
 from esm.EsmConfigService import EsmConfigService
 from esm.EsmEpmRemoteClientService import EsmEpmRemoteClientService
 from esm.ServiceRegistry import Service, ServiceRegistry
@@ -16,8 +16,8 @@ class EsmCommunicationService:
     provides methods to for server chat communication
     """
     @cached_property
-    def config(self) -> EsmConfigService:
-        return ServiceRegistry.get(EsmConfigService)
+    def config(self) -> MainConfig:
+        return ServiceRegistry.get(EsmConfigService).config
     
     @cached_property
     def epmClient(self) -> EsmEpmRemoteClientService:
@@ -65,7 +65,7 @@ class EsmCommunicationService:
         """
         returns all the lines from the sync event file as a list, or an empty one if something didn't work.
         """
-        syncEventsFilePath = Path(self.config.communication.synceventsfile).resolve().absolute()
+        syncEventsFilePath = Path(self.config.communication.synceventsfile).resolve()
 
         data = []
         if not syncEventsFilePath.exists():
@@ -81,3 +81,4 @@ class EsmCommunicationService:
                 else:
                     log.warning(f"{syncEventsFilePath} contains an invalid line at line {index} - it contains {len(row)} columns. Will ignore that line.")
         return data
+    

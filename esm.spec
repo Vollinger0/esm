@@ -6,18 +6,18 @@ from PyInstaller.utils.hooks import copy_metadata
 
 # define the files to copy to the dist additionally
 datafiles = [
-        ('esm-base-config.yaml', '.'),
-        ('esm-custom-config.yaml', '.'),
-        ('esm-dedicated.yaml', '.'),
+        ('esm-default-config.yaml.example', '.'),
+        ('esm-custom-config.yaml.example', '.'),
+        ('esm-dedicated.yaml.example', '.'),
         ('hamster_sync_lines.csv', '.'),
         ('emprc/EmpyrionPrime.RemoteClient.Console.exe', 'emprc/EmpyrionPrime.RemoteClient.Console.exe'),
-        ('callesm-async.bat', '.'),
-        ('callesm-sync.bat', '.'),
+        ('callesm-async.bat.example', '.'),
+        ('callesm-sync.bat.example', '.'),
         ('readme.md', '.'),
-        ('install.md', '.'),        
-        ('backups.md', '.'),        
-        ('performance.md', '.'),
-        ('development.md', '.'),
+        ('readme_install.md', '.'),        
+        ('readme_backups.md', '.'),        
+        ('readme_performance.md', '.'),
+        ('readme_development.md', '.'),
         ]
 
 a = Analysis(

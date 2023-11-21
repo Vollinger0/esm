@@ -3,7 +3,8 @@ from rich.logging import RichHandler
 from rich.console import Console
 
 class EsmLogger:
-    """provides facilities for logging
+    """
+    provides facilities for logging
     """
     console = None # global rich console to use for logging to console
 

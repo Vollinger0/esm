@@ -1,10 +1,11 @@
 import importlib
 import logging
+from pathlib import Path
 import signal
 import click
 import sys
 from esm.EsmLogger import EsmLogger
-from esm.Exceptions import ExitCodes, WrongParameterError
+from esm.Exceptions import EsmException, ExitCodes, WrongParameterError
 from esm.DataTypes import Territory, WipeType
 from esm.ServiceRegistry import ServiceRegistry
 from esm.EsmMain import EsmMain
@@ -17,14 +18,16 @@ class LogContext:
     def __enter__(self):
         self.esm = ServiceRegistry.get(EsmMain)
         log.debug(f"Script started")
-        log.debug(f"Logging to: {self.esm.logFile}")
-        if self.esm.customConfigFileName:
-            log.debug(f"Using base config file: '{self.esm.configFilePath}' and custom config: '{self.esm.customConfigFilePath}'")
-        else:
-            log.debug(f"Using base config file: '{self.esm.configFilePath}'")
+        log.debug(f"Logging to: '{Path(self.esm.logFile).absolute()}'")
 
     def __exit__(self, exc_type, exc_value, traceback):
-        log.info(f"Script finished. Check the logfile ({self.esm.logFile}) if you missed something. Bye!")
+        # if an EsmException happened, we want to stop the bubble up 
+        stopBubbleUp = False
+        if exc_type is not None and issubclass(exc_type, EsmException):
+            log.error(f"{exc_type.__name__}: {exc_value}")
+            stopBubbleUp = True
+        log.info(f"Script finished. Check the logfile ('{Path(self.esm.logFile).absolute()}') if you missed something. Bye!")
+        return stopBubbleUp
 
 #
 # start of cli (click) configuration for the script. see https://click.palletsprojects.com/ for help
@@ -233,7 +236,7 @@ def wipeEmptyPlayfields(dblocation, territory, wipetype, nodryrun, showtypes, sh
         esm = ServiceRegistry.get(EsmMain)  
         esm.checkAndWaitForOtherInstances()
         if showtypes:
-            click.echo("Supported wipe types are:\n" + "\n".join(f"{wt.value.val}\t\t-\t{wt.value.desc}" for wt in list(WipeType)))
+            click.echo("Supported wipe types are:\n" + "\n".join(f"{wt.value.name}\t\t-\t{wt.value.description}" for wt in list(WipeType)))
             return
         if showterritories:
             click.echo("Configured custom territories:\n" + "\n".join(f"{ct.name}" for ct in esm.wipeService.getAvailableTerritories()))
@@ -437,16 +440,15 @@ def checkRequirements(nonadmin):
         esm.checkRequirements(nonadmin)
 
 
-def init(fileLogLevel=logging.DEBUG, streamLogLevel=logging.INFO, customConfig="esm-custom-config.yaml", waitForPort=False):
+def init(fileLogLevel=logging.DEBUG, streamLogLevel=logging.INFO, waitForPort=False, customConfig=None):
     # catch keyboard interrupts 
     signal.signal(signal.SIGINT, forcedExit)
     
     esm = EsmMain(caller="esm",
-                configFileName="esm-base-config.yaml",
-                customConfigFileName=customConfig,
                 fileLogLevel=fileLogLevel,
                 streamLogLevel=streamLogLevel,
-                waitForPort=waitForPort
+                waitForPort=waitForPort,
+                customConfigFilePath=Path(customConfig)
                 )
     ServiceRegistry.register(esm)
     
@@ -456,4 +458,9 @@ def forcedExit(*args):
 
 # main cli entry point.
 def start():
-    cli()
+    # wrap *all* exceptions so they end up in the log at least. Anything that bubbled up to here is probably a bug.
+    try:
+        cli()
+    except Exception as ex:
+        log.error(ex, exc_info=True)
+        raise ex

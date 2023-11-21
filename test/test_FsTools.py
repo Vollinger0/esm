@@ -327,11 +327,13 @@ class test_FsTools(unittest.TestCase):
         userentries = [
             f"{parentDir}/requirements.txt",
             f"{parentDir}/h*.csv",
-            "../esm/esm-base-config.*",
+            "../esm/esm*.example",
             "../**/*.toml"
             ]
         expected = [
-            f"{parentDir}\\esm-base-config.yaml",
+            f"{parentDir}\\esm-custom-config.yaml.example",
+            f"{parentDir}\\esm-dedicated.yaml.example",
+            f"{parentDir}\\esm-default-config.yaml.example",
             f"{parentDir}\\hamster_sync_lines.csv",
             f"{parentDir}\\pyproject.toml",
             f"{parentDir}\\requirements.txt"

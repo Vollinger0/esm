@@ -6,7 +6,6 @@ from esm.EsmBackupService import EsmBackupService
 
 from esm.EsmConfigService import EsmConfigService
 from esm.FsTools import FsTools
-from esm.ServiceRegistry import ServiceRegistry
 from TestTools import TestTools
 
 log = logging.getLogger(__name__)
@@ -16,8 +15,7 @@ class test_EsmBackupService(unittest.TestCase):
 
     @unittest.skip("this needs a rewrite, use a fresh created virtual filesystem instead")
     def test_assertFileStructure(self):
-        config = EsmConfigService(configFilePath="test/esm-test-config.yaml")
-        ServiceRegistry.register(config)
+        config = EsmConfigService.fromCustomConfigFile("test/esm-test-config.yaml")
         bm = EsmBackupService()
         self.assertEqual(config.backups.amount, 4)
         backupParentDir = bm.fileSystem.getAbsolutePathTo("backup.backupmirrors")
@@ -35,8 +33,7 @@ class test_EsmBackupService(unittest.TestCase):
 
     @unittest.skip("this needs a rewrite, use a fresh created virtual filesystem instead")
     def test_getPreviousBackupNumberNoMarker(self):
-        config = EsmConfigService(configFilePath="test/esm-test-config.yaml")
-        ServiceRegistry.register(config)
+        config = EsmConfigService.fromCustomConfigFile(Path("test/esm-test-config.yaml"))
         bm = EsmBackupService()
         self.assertEqual(config.backups.amount, 4)
         backupParentDir = bm.fileSystem.getAbsolutePathTo("backup.backupmirrors")
@@ -47,8 +44,7 @@ class test_EsmBackupService(unittest.TestCase):
 
     @unittest.skip("this needs a rewrite, use a fresh created virtual filesystem instead")
     def test_getPreviousBackupNumberWithMarker(self):
-        config = EsmConfigService(configFilePath="test/esm-test-config.yaml")
-        ServiceRegistry.register(config)
+        config = EsmConfigService.fromCustomConfigFile(Path("test/esm-test-config.yaml"))
         bm = EsmBackupService()
         self.assertEqual(config.backups.amount, 4)
         backupParentDir = bm.fileSystem.getAbsolutePathTo("backup.backupmirrors")
@@ -61,8 +57,7 @@ class test_EsmBackupService(unittest.TestCase):
 
     @unittest.skip("this needs a rewrite, use a fresh created virtual filesystem instead")
     def test_getNextBackupNumber(self):
-        config = EsmConfigService(configFilePath="test/esm-test-config.yaml")
-        ServiceRegistry.register(config)
+        config = EsmConfigService.fromCustomConfigFile(Path("test/esm-test-config.yaml"))
         bm = EsmBackupService()
         self.assertEqual(config.backups.amount, 4)
 

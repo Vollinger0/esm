@@ -4,11 +4,12 @@ import logging
 from pathlib import Path
 import subprocess
 from typing import List
+from esm.ConfigModels import MainConfig
 from esm.Exceptions import RequirementsNotFulfilledError
 from esm.EsmConfigService import EsmConfigService
 
 from esm.ServiceRegistry import Service, ServiceRegistry
-from esm.Tools import byteArrayToString, isDebugMode
+from esm.Tools import byteArrayToString
 
 log = logging.getLogger(__name__)
 
@@ -58,8 +59,8 @@ class EsmEpmRemoteClientService:
     uses the emp remote client for this.
     """
     @cached_property
-    def config(self) -> EsmConfigService:
-        return ServiceRegistry.get(EsmConfigService)
+    def config(self) -> MainConfig:
+        return ServiceRegistry.get(EsmConfigService).config
 
     def checkAndGetEpmRemoteClientPath(self):
         epmRC = self.config.paths.epmremoteclient
@@ -73,7 +74,7 @@ class EsmEpmRemoteClientService:
         """
         epmrc = self.checkAndGetEpmRemoteClientPath()
         cmdLine = [epmrc] + commands
-        if quietMode and not isDebugMode(self.config):
+        if quietMode and not self.config.general.debugMode:
             cmdLine = cmdLine + ["-q"]
         if payload != None:
             cmdLine = cmdLine + [payload]

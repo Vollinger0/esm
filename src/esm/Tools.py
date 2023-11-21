@@ -8,6 +8,8 @@ from pathlib import Path
 from timeit import default_timer as timer
 from typing import List
 
+from esm.ConfigModels import MainConfig
+
 log = logging.getLogger(__name__)
 
 def monkeyPatchAllFSFunctionsForDebugMode():
@@ -32,9 +34,6 @@ def monkeyPatchAllFSFunctionsForDebugMode():
     Path.unlink = wrap_function
     Path.mkdir = wrap_function
     Path.stat = lambda *args, **kwargs: wrap_function(returnInstance=os.stat(Path("test")))
-
-def isDebugMode(config):
-    return config.general.debugMode
 
 def askUser(question, answerForTrue, override=None):
     """

@@ -1,13 +1,13 @@
 import logging
 import os
-import dotsi
 from functools import cached_property
 from pathlib import Path
 from esm import robocopy
+from esm.ConfigModels import MainConfig
 from esm.EsmConfigService import EsmConfigService
 from esm.FsTools import FsTools
 from esm.ServiceRegistry import Service, ServiceRegistry
-from esm.Tools import askUser, getElapsedTime, getTimer, isDebugMode
+from esm.Tools import askUser, getElapsedTime, getTimer
 from esm.Exceptions import AdminRequiredException, UserAbortedException
 
 log = logging.getLogger(__name__)
@@ -15,33 +15,30 @@ log = logging.getLogger(__name__)
 @Service
 class EsmFileSystem:
 
+    pendingDeletePaths = []
+
     """
     Represents the filesystem with the relevant bits that we manage
 
     allows to decorate this with convenient functions and operations, aswell as resolve
     them according to the configuration automatically
     """
-    def __init__(self, config=None):
-        if config:
-            self.config = config
-        self.clearPendingDeletePaths()
-
     @cached_property
-    def config(self) -> EsmConfigService:
-        return ServiceRegistry.get(EsmConfigService)
+    def config(self) -> MainConfig:
+        return ServiceRegistry.get(EsmConfigService).config
     
     @cached_property
-    def structure(self) -> dotsi.Dict:
+    def structure(self) -> dict:
         return self.getStructureFromConfig(self.config)
 
-    def getStructureFromConfig(self, config):
+    def getStructureFromConfig(self, config: MainConfig):
         """
         read the config info about folders and filenames, and populate the filestructure
         """
         dotPathStructure = {
             "ramdisk": {
                 "_parent": config.ramdisk.drive,
-                "savegame": config.dedicatedYaml.GameConfig.GameName
+                "savegame": config.dedicatedConfig.GameConfig.GameName
             },
             "backup": {
                 "_parent": config.foldernames.backup,
@@ -52,12 +49,12 @@ class EsmFileSystem:
                 "_parent": config.foldernames.dedicatedserver
             },
             "saves": {
-                "_parent": config.dedicatedYaml.ServerConfig.SaveDirectory, 
+                "_parent": config.dedicatedConfig.ServerConfig.SaveDirectory, 
                 "cache": "Cache",
                 "games": {
                     "_parent": config.foldernames.games,
                     "savegame": {
-                        "_parent": config.dedicatedYaml.GameConfig.GameName,
+                        "_parent": config.dedicatedConfig.GameConfig.GameName,
                         "templates": config.foldernames.templates,
                         "playfields": config.foldernames.playfields,
                         "shared": config.foldernames.shared,
@@ -67,15 +64,14 @@ class EsmFileSystem:
                 "gamesmirror": {
                     "_parent": config.foldernames.gamesmirror,
                     "savegamemirror": {
-                        "_parent": f"{config.dedicatedYaml.GameConfig.GameName}{config.foldernames.savegamemirrorpostfix}",
+                        "_parent": f"{config.dedicatedConfig.GameConfig.GameName}{config.foldernames.savegamemirrorpostfix}",
                         "globaldb": config.filenames.globaldb
                     },
-                    "savegametemplate": f"{config.dedicatedYaml.GameConfig.GameName}{config.foldernames.savegametemplatepostfix}"
+                    "savegametemplate": f"{config.dedicatedConfig.GameConfig.GameName}{config.foldernames.savegametemplatepostfix}"
                 }
             }
         }
-        # put all in a dot-navigatable dict
-        return dotsi.Dict(dotPathStructure)
+        return dotPathStructure
 
     def getAbsolutePathTo(self, dotPath, prefixInstallDir=True):
         """
@@ -87,7 +83,7 @@ class EsmFileSystem:
         else:
             return Path(relativePath).absolute()
 
-    def getPathTo(self, dotPath, parts=None, index=None, tree=None, segments=None):
+    def getPathTo(self, dotPath: str, parts=None, index=None, tree: dict=None, segments=None):
         """
         recursive function to create a path from the given dotPath and the given filestructure tree
         """
@@ -138,10 +134,10 @@ class EsmFileSystem:
         if info is not None: 
             log.info(info)
         log.debug(f"will {operation} from '{sourcePath}' -> '{destinationPath}'")
-        options = self.config.robocopy.options.get(operation).split(" ")
+        options = getattr(self.config.robocopy.options, f"{operation}options")
         logFile = Path(self.getCaller()).stem + "_robocopy.log"
-        if not isDebugMode(self.config):
-            process=robocopy.execute(sourcePath, destinationPath, options, logFile, encoding=self.config.robocopy.encoding)
+        if not self.config.general.debugMode:
+            process=robocopy.execute(sourcePath, destinationPath, [options], logFile, encoding=self.config.robocopy.encoding)
             return process
         else:
             log.debug(f"debugmode: robocopy {sourcePath} {destinationPath} {options}")
@@ -150,12 +146,12 @@ class EsmFileSystem:
         path = self.getAbsolutePathTo(dotPath=dotPath, prefixInstallDir=prefixInstallDir)
         return Path(path).exists()
 
-    def getCaller(self):
+    def getCaller(self) -> str:
         """
         return the caller from the context or __name__ is not given.
         """
         try:
-            return self.config.context.caller
+            return self.config.context.get('caller')
         except KeyError:
             return __name__
 
@@ -243,9 +239,9 @@ class EsmFileSystem:
         """
         testParentDir = Path(f"{self.config.paths.install}/{self.config.foldernames.esmtests}").resolve()
         driveLetter = testParentDir.drive
-        testDir = Path(f"{testParentDir}\\thisisalongdirectoryname-check8Dot3NameGeneration")
+        testDir = Path(f"{testParentDir}/thisisalongdirectoryname-check8Dot3NameGeneration")
         testDir.mkdir(parents=True, exist_ok=True)
-        checkDir = Path(f"{testParentDir}\\THISIS~1")
+        checkDir = Path(f"{testParentDir}/THISIS~1")
         result = checkDir.exists()
         if result:
             log.warning(f"8dot3name generation on drive '{driveLetter}' is enabled. This is not bad, but if you disable it, this will make file operations for large amount of files and directories up to ~3 times faster! See https://learn.microsoft.com/de-de/archive/blogs/josebda/windows-server-2012-file-server-tip-disable-8-3-naming-and-strip-those-short-names-too")
@@ -261,9 +257,9 @@ class EsmFileSystem:
         """
         testParentDir = Path(f"{self.config.paths.install}/{self.config.foldernames.esmtests}").resolve()
 
-        targetPath = Path(f"{testParentDir}\\this-is-the-link-target-directory")
+        targetPath = Path(f"{testParentDir}/this-is-the-link-target-directory")
         targetPath.mkdir(parents=True, exist_ok=True)
-        linkPath = Path(f"{testParentDir}\\this-is-the-link")
+        linkPath = Path(f"{testParentDir}/this-is-the-link")
         FsTools.deleteLink(linkPath)
         result = FsTools.createLink(linkPath=linkPath, targetPath=targetPath)
         if not result:

@@ -1,10 +1,10 @@
-from glob import glob
 import math
 import os
 import re
 import shutil
 import subprocess
 import logging
+from glob import glob
 from pathlib import Path
 from typing import List
 

@@ -1,28 +1,24 @@
 from enum import Enum
-from functools import cached_property
 import time
 import logging
 import psutil
 import re
+from functools import cached_property
 from pathlib import Path, PurePath
 from datetime import datetime
+from esm.ConfigModels import MainConfig
 from esm.Exceptions import AdminRequiredException
 from esm.EsmConfigService import EsmConfigService
 from esm.EsmEpmRemoteClientService import EsmEpmRemoteClientService
 from esm.EsmRamdiskManager import EsmRamdiskManager
 from esm.FsTools import FsTools
 from esm.ServiceRegistry import Service, ServiceRegistry
-from esm.Tools import isDebugMode
 
 log = logging.getLogger(__name__)
 
-class StartMode(Enum):
-    DIRECT = "direct" #will bypass the launcher and use the dedicated exe directly. Use this mode if you need to run multiple instances of the server on one machine.
-    LAUNCHER = "launcher" #will use the launcher to start the game
-
-class GfxMode(Enum):
-    ON = True #"uses the '-startDediWithGfx' param in the launcher - which enables the server graphics overlay, you may want to use this when you have no other means of stopping the server."]
-    OFF = False # "graphics overlay disabled, you probably want this if you're using EAH. You'll need to stop the server via EAH or other means."]
+class StartMode(str, Enum):
+    DIRECT = "direct" # will bypass the launcher and use the dedicated exe directly. Use this mode if you need to run multiple instances of the server on one machine.
+    LAUNCHER = "launcher" # will use the launcher to start the game
 
 @Service
 class EsmDedicatedServer:
@@ -31,14 +27,11 @@ class EsmDedicatedServer:
 
     contains constants for the different startmodes and gfxmodes
     """
-    def __init__(self, config=None):
-        if config:
-            self.config = config
-        self.process = None
+    process = None
 
     @cached_property
-    def config(self) -> EsmConfigService:
-        return ServiceRegistry.get(EsmConfigService)
+    def config(self) -> MainConfig:
+        return ServiceRegistry.get(EsmConfigService).config
 
     @cached_property
     def ramdiskManager(self) -> EsmRamdiskManager:
@@ -47,14 +40,6 @@ class EsmDedicatedServer:
     @cached_property
     def epmClient(self) -> EsmEpmRemoteClientService:
         return ServiceRegistry.get(EsmEpmRemoteClientService)
-
-    @cached_property
-    def gfxMode(self) -> GfxMode:
-        return GfxMode(self.config.server.gfxMode)
-    
-    @cached_property
-    def startMode(self) -> StartMode:
-        return StartMode(self.config.server.startMode)
     
     def startServer(self, checkForRamdisk=True, checkForDiskSpace=True):
         """
@@ -68,7 +53,7 @@ class EsmDedicatedServer:
         if checkForDiskSpace:
             self.assertEnoughFreeDiskspace()
 
-        if (self.startMode == StartMode.DIRECT):
+        if (self.config.server.startMode == StartMode.DIRECT):
             log.debug(f"startMode is {StartMode.DIRECT}")
             return self.startServerDirectMode()
         else:
@@ -85,7 +70,7 @@ class EsmDedicatedServer:
         arguments = self.getCommandForDirectMode()
         arguments2String = lambda arguments: " ".join(str(element) if isinstance(element, Path) else element for element in arguments)
         log.info(f"Starting server with: '{arguments2String(arguments)}' in directory '{self.config.paths.install}'")
-        if not isDebugMode(self.config):
+        if not self.config.general.debugMode:
             # we do not use subprocess.run here, since we'll need the PID later and only psutil.Popen provides that.            
             process = psutil.Popen(args=arguments)
         else:
@@ -95,14 +80,14 @@ class EsmDedicatedServer:
         return self.process
 
     def getCommandForDirectMode(self):
-        pathToExecutable = Path(f"{self.config.paths.install}/{self.config.foldernames.dedicatedserver}/{self.config.filenames.dedicatedExe}").absolute()
+        pathToExecutable = Path(f"{self.config.paths.install}/{self.config.foldernames.dedicatedserver}/{self.config.filenames.dedicatedExe}").resolve()
         arguments = [pathToExecutable]
-        if self.gfxMode == GfxMode.OFF:
-            log.debug(f"gfxMode is {GfxMode.OFF}")
+        if self.config.server.gfxMode:
+            log.debug(f"gfxMode is true")
+        else:
+            log.debug(f"gfxMode is false")
             arguments.append("-batchmode")
             arguments.append("-nographics")
-        else:
-            log.debug(f"gfxMode is {GfxMode.ON}")
         arguments.append("-dedicated")
         arguments.append(self.config.server.dedicatedYaml)
         arguments.append("-logFile")
@@ -118,7 +103,7 @@ class EsmDedicatedServer:
         arguments = self.getCommandForLauncherMode()
         arguments2String = lambda arguments: " ".join(str(element) if isinstance(element, Path) else element for element in arguments)
         log.info(f"Starting server with: '{arguments2String(arguments)}' in directory '{self.config.paths.install}'")
-        if not isDebugMode(self.config):
+        if not self.config.general.debugMode:
             # we do not use subprocess.run here, since we use this in the direct mode too and we want the process field to be of the same type.
             process = psutil.Popen(args=arguments, cwd=self.config.paths.install)
             # wait for the *launcher* process to end, not the dedicated server.
@@ -145,12 +130,12 @@ class EsmDedicatedServer:
 
     def getCommandForLauncherMode(self):
         launcherExeFileName = self.config.filenames.launcherExe
-        pathToExecutable = Path(f"{self.config.paths.install}/{launcherExeFileName}").absolute()
-        if (self.gfxMode==GfxMode.ON):
-            log.debug(f"gfxMode is {GfxMode.ON}")
+        pathToExecutable = Path(f"{self.config.paths.install}/{launcherExeFileName}").resolve()
+        if self.config.server.gfxMode:
+            log.debug(f"gfxMode is true")
             startDedi = "-startDediWithGfx"
         else:
-            log.debug(f"gfxMode is {GfxMode.OFF}")
+            log.debug(f"gfxMode is false")
             startDedi = "-startDedi"
         arguments = [pathToExecutable, startDedi, "-dedicated", self.config.server.dedicatedYaml]
         return arguments
@@ -171,7 +156,7 @@ class EsmDedicatedServer:
         """
         get the numeric build number from the first line in the file 'BuildNumber.txt' in the installdir
         """
-        buildNumberFilePath = Path(f"{self.config.paths.install}/{self.config.filenames.buildNumber}").absolute()
+        buildNumberFilePath = Path(f"{self.config.paths.install}/{self.config.filenames.buildNumber}").resolve()
         with open(buildNumberFilePath, "r") as buildNumberFilePath:
             firstLine = buildNumberFilePath.readline()
             cleanedString = re.sub(r'[^a-zA-Z0-9]', '', firstLine)

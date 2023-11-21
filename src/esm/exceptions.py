@@ -1,34 +1,37 @@
-class SaveGameFoundException(Exception):
+class EsmException(Exception):
     pass
 
-class NoSaveGameFoundException(Exception):
+class SaveGameFoundException(EsmException):
     pass
 
-class SaveGameMirrorFoundException(Exception):
+class NoSaveGameFoundException(EsmException):
     pass
 
-class NoSaveGameMirrorFoundException(Exception):
+class SaveGameMirrorFoundException(EsmException):
     pass
 
-class AdminRequiredException(Exception):
+class NoSaveGameMirrorFoundException(EsmException):
     pass
 
-class RequirementsNotFulfilledError(Exception):
+class AdminRequiredException(EsmException):
     pass
 
-class UserAbortedException(Exception):
+class RequirementsNotFulfilledError(EsmException):
     pass
 
-class ServiceNotFoundError(Exception):
+class UserAbortedException(EsmException):
     pass
 
-class ServerNeedsToBeStopped(Exception):
+class ServiceNotFoundError(EsmException):
     pass
 
-class SafetyException(Exception):
+class ServerNeedsToBeStopped(EsmException):
     pass
 
-class WrongParameterError(Exception):
+class SafetyException(EsmException):
+    pass
+
+class WrongParameterError(EsmException):
     pass
 
 

@@ -46,6 +46,8 @@ class Playfield:
         return hash(self.pfid)
     
 class WipeTypeInfo:
+    name: str
+    description: str
     def __init__(self, name: str, description: str) -> None:
         self.name = name
         self.description = description

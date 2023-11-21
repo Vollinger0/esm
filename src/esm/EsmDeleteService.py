@@ -4,6 +4,7 @@ from functools import cached_property
 import logging
 from pathlib import Path
 import shutil
+from esm.ConfigModels import MainConfig
 from esm.Exceptions import AdminRequiredException
 from esm.EsmBackupService import EsmBackupService
 from esm.EsmConfigService import EsmConfigService
@@ -18,8 +19,8 @@ log = logging.getLogger(__name__)
 class EsmDeleteService:
 
     @cached_property
-    def config(self) -> EsmConfigService:
-        return ServiceRegistry.get(EsmConfigService)
+    def config(self) -> MainConfig:
+        return ServiceRegistry.get(EsmConfigService).config
     
     @cached_property
     def fileSystem(self) -> EsmFileSystem:
@@ -86,7 +87,7 @@ class EsmDeleteService:
 
         # delete the cache
         cache = self.fileSystem.getAbsolutePathTo("saves.cache")
-        cacheSavegame = f"{cache}/{self.config.dedicatedYaml.GameConfig.GameName}"
+        cacheSavegame = f"{cache}/{self.config.dedicatedConfig.GameConfig.GameName}"
         log.info(f"Marking for deletion: the cache at {cacheSavegame}")
         self.fileSystem.markForDelete(cacheSavegame)
         
@@ -140,7 +141,7 @@ class EsmDeleteService:
         FsTools.deleteDir(logBackupFolder, recursive=True)
         log.info(f"All logs backed up and zipped as {zipFileName}")
 
-    def backupLogs(self, sourcePath, backupFolderPath, folderName):
+    def backupLogs(self, sourcePath, backupFolderPath: Path, folderName):
         """
         move the content of given source path to the backup folder path, putting the contents into the folder called foldername at the target
         """
@@ -153,10 +154,10 @@ class EsmDeleteService:
 
         for source in sourcePaths:
             # move source into backupfolder as requested.
-            target = backupFolderPath.joinpath(folderName);
+            target = backupFolderPath.joinpath(folderName)
             FsTools.createDir(target)
             # if we're trying to move our own logfile, just create a copy instead.
-            if Path(self.config.context.logFile).samefile(source):
+            if Path(self.config.context.get('logFile')).samefile(source):
                 shutil.copy(src=source, dst=target)
             else:
                 shutil.move(src=source, dst=target)
@@ -170,4 +171,4 @@ class EsmDeleteService:
         else:
             date = datetime.now()
         formattedDate = date.strftime("%Y%m%d_%H%M%S")
-        return f"{formattedDate}_{self.config.dedicatedYaml.GameConfig.GameName}_logs.zip"
+        return f"{formattedDate}_{self.config.dedicatedConfig.GameConfig.GameName}_logs.zip"

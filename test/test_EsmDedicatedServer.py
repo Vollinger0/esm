@@ -1,7 +1,8 @@
 import logging
 from pathlib import Path
 import unittest
-from esm.EsmDedicatedServer import EsmDedicatedServer, GfxMode, StartMode
+from esm.ConfigModels import MainConfig
+from esm.EsmDedicatedServer import EsmDedicatedServer
 from esm.EsmConfigService import EsmConfigService
 from TestTools import TestTools
 from esm.FsTools import FsTools
@@ -13,99 +14,73 @@ class test_EsmDedicatedServer(unittest.TestCase):
     @unittest.skipUnless(TestTools.ramdiskAvailable(), "needs the ramdrive to be mounted at r")
     @classmethod
     def setUpClass(self):
-        sourcePath = "./esm-dedicated.yaml"
+        sourcePath = "test/test-dedicated.yaml"
         destinationPath = Path("R:/Servers/Empyrion")
         destinationPath.mkdir(parents=True,exist_ok=True)
         FsTools.copyFile(sourcePath, f"{destinationPath}/esm-dedicated.yaml")
 
     @unittest.skipUnless(TestTools.ramdiskAvailable(), "needs the ramdrive to be mounted at r")
     def test_createLogFileName(self):
-        esmConfig = EsmConfigService(configFilePath='test/esm-test-config.yaml')
-        
+        esmConfig = EsmConfigService.fromCustomConfigFile(Path("test/esm-test-config.yaml"), True)
+
         # create the buildnumber file in the testdata first
         self.createBuildNumberFile(esmConfig)
-
-        esmDS = EsmDedicatedServer(config=esmConfig)
+        esmDS = EsmDedicatedServer()
         logFileName = esmDS.createLogFileName()
         logFileNameFirst23 = logFileName[:23]
         logFileNameLast4 = logFileName[-4:]
         self.assertEqual("../Logs/4243/Dedicated_", logFileNameFirst23)
         self.assertEqual(".log", logFileNameLast4)
 
-    def createBuildNumberFile(self, esmConfig):
+    def createBuildNumberFile(self, esmConfig: MainConfig):
         filePath = Path(f"{esmConfig.paths.install}/{esmConfig.filenames.buildNumber}").absolute()
         filePath.parent.mkdir(parents=True, exist_ok=True)
         with open(filePath, "w") as file:
             file.write("4243 ")
 
-    def test_getGfxMode(self):
-        esmConfig = EsmConfigService(configFilePath='test/esm-test-config.yaml')
-        esmDS = EsmDedicatedServer(config=esmConfig)
-        self.assertEqual(esmConfig.server.gfxMode, True)
-        mode = esmDS.gfxMode
-        self.assertEqual(mode, GfxMode.ON)
-        
-        esmDS.gfxMode = GfxMode.OFF
-        mode = esmDS.gfxMode
-        self.assertEqual(mode, GfxMode.OFF)
-
-    def test_getStartModeByString(self):
-        esmConfig = EsmConfigService(configFilePath='test/esm-test-config.yaml')
-        esmDS = EsmDedicatedServer(config=esmConfig)
-
-        mode = esmDS.startMode
-        self.assertEqual(mode, StartMode.LAUNCHER)
-
-        esmDS.startMode = StartMode.DIRECT
-        mode = esmDS.startMode
-        self.assertEqual(mode, StartMode.DIRECT)
-
     def test_getCommandForLauncherMode(self):
-        esmConfig = EsmConfigService(configFilePath='test/esm-test-config.yaml')
-        esmDS = EsmDedicatedServer(config=esmConfig)
-        esmDS.gfxMode = GfxMode.ON
+        esmConfig = EsmConfigService.fromCustomConfigFile(Path("test/esm-test-config.yaml"), True)
+        esmDS = EsmDedicatedServer()
+        esmConfig.server.gfxMode = True
 
         command = esmDS.getCommandForLauncherMode()
         commandStrings = []
         for thing in command:
             commandStrings.append(str(thing))
-        self.assertEqual(f"{esmConfig.paths.install}\EmpyrionLauncher.exe -startDediWithGfx -dedicated esm-dedicated.yaml", " ".join(commandStrings))
+        self.assertEqual(f"{esmConfig.paths.install}\EmpyrionLauncher.exe -startDediWithGfx -dedicated test\\test-dedicated.yaml", " ".join(commandStrings))
 
     @unittest.skipUnless(TestTools.ramdiskAvailable(), "needs the ramdrive to be mounted at r")
     def test_getCommandForDirectMode(self):
-        esmConfig = EsmConfigService(configFilePath='test/esm-test-config.yaml')
+        esmConfig = EsmConfigService.fromCustomConfigFile(Path("test/esm-test-config.yaml"), True)
         # create the buildnumber file in the testdata first
         self.createBuildNumberFile(esmConfig)
-        esmDS = EsmDedicatedServer(config=esmConfig)
-        esmDS.gfxMode = GfxMode.ON
+        esmDS = EsmDedicatedServer()
+        esmConfig.server.gfxMode = True
 
         command = esmDS.getCommandForDirectMode()
         commandStrings = []
         for thing in command:
             commandStrings.append(str(thing))
-        expected = f"{esmConfig.paths.install}\DedicatedServer\EmpyrionDedicated.exe -dedicated esm-dedicated.yaml -logFile ../Logs/4243/"
+        expected = f"{esmConfig.paths.install}\DedicatedServer\EmpyrionDedicated.exe -dedicated test\\test-dedicated.yaml -logFile ../Logs/4243/Dedicated_yymmdd-hhmmss.log"
         actual = " ".join(commandStrings)
         log.debug(f"expected: {expected}")
         log.debug(f"actual: {actual}")
-        #self.assertEqual(expected, actual)
-        self.assertTrue(actual.startswith(expected))
+        self.assertEqual(expected[:-17], actual[:-17])
 
     @unittest.skipUnless(TestTools.ramdiskAvailable(), "needs the ramdrive to be mounted at r")
     def test_getCommandForDirectModeNoGfx(self):
-        esmConfig = EsmConfigService(configFilePath='test/esm-test-config.yaml')
+        esmConfig = EsmConfigService.fromCustomConfigFile(Path("test/esm-test-config.yaml"), True)
         # create the buildnumber file in the testdata first
         self.createBuildNumberFile(esmConfig)
-        esmDS = EsmDedicatedServer(config=esmConfig)
-        esmDS.gfxMode = GfxMode.OFF
+        esmDS = EsmDedicatedServer()
+        esmConfig.server.gfxMode = False
 
         command = esmDS.getCommandForDirectMode()
         commandStrings = []
         for thing in command:
             commandStrings.append(str(thing))
-        expected = f"{esmConfig.paths.install}\DedicatedServer\EmpyrionDedicated.exe -batchmode -nographics -dedicated esm-dedicated.yaml -logFile ../Logs/4243/"
+        expected = f"{esmConfig.paths.install}\DedicatedServer\EmpyrionDedicated.exe -batchmode -nographics -dedicated test\\test-dedicated.yaml -logFile ../Logs/4243/Dedicated_yymmdd-hhmmss.log"
         actual = " ".join(commandStrings)
         log.debug(f"expected: {expected}")
         log.debug(f"actual: {actual}")
-        #self.assertEqual(expected, actual)
-        self.assertTrue(actual.startswith(expected))
-
+        self.assertEqual(expected[:-17], actual[:-17])
