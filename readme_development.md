@@ -40,8 +40,6 @@ This will create the distributable files with all its dependencies in `dist/esm`
 
 ### WIP
 
-- [+] refactor configuration once again: put base-config as default-config into the module, and provide an example custom config. The game has to do some sanity checks on startup to make sure the required configurations are in place (like installdir, dedicated yaml, etc.) - Or use something more sophisticated, e.g. a proper getter for config properties that retrieve it from custom -> base -> fallback to a default. => use pydantic!
-
 ### later
 
 - [ ] refactor purge-tools, make them wipe instead, or make all tools have the option to additionally purge too.
@@ -69,6 +67,7 @@ This will create the distributable files with all its dependencies in `dist/esm`
 
 ### done
 
+- [x] refactor configuration once again: put base-config as default-config into the module, and provide an example custom config. The game has to do some sanity checks on startup to make sure the required configurations are in place (like installdir, dedicated yaml, etc.) - Or use something more sophisticated, e.g. a proper getter for config properties that retrieve it from custom -> base -> fallback to a default. => use pydantic!
 - [x] check requirements should do a test copy with robocopy
 - [x] when useRamdisk is enabled, enable checks for its file structure, when its not, do not start use the synchronizer (of course)
 - [-] game-install should have the option to install the scenario? or...
