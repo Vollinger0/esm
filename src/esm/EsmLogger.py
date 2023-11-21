@@ -16,7 +16,7 @@ class EsmLogger:
         # set a nice logging line and logging level for the logfile
         fileLoggingHandler = logging.FileHandler(logFile)
         fileLoggingHandler.setLevel(fileLogLevel)
-        fileLoggingHandler.setFormatter(logging.Formatter(fmt="[%(asctime)s] %(levelname)s %(message)s", datefmt=dateformat))
+        fileLoggingHandler.setFormatter(logging.Formatter(fmt="[%(asctime)s] %(process)d %(levelname)s %(message)s", datefmt=dateformat))
         
         # use rich stream handler for stdout, will reuse the global console object, since logging can't handle spinners and animations.
         # this will make for a very colorful terminal output... a bit too much for my taste, but better than plain white.
