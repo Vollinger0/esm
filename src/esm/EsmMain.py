@@ -4,21 +4,22 @@ from pathlib import Path
 import socket
 import time
 import sys
-from esm.ConfigModels import MainConfig
-from esm.EsmConfigService import EsmConfigService
-from esm.EsmEpmRemoteClientService import EsmEpmRemoteClientService
+from typing import List
 from esm.Exceptions import AdminRequiredException, ExitCodes, RequirementsNotFulfilledError, ServerNeedsToBeStopped, UserAbortedException, WrongParameterError
+from esm.ConfigModels import MainConfig
 from esm.DataTypes import Territory, WipeType
+from esm.EsmLogger import EsmLogger
+from esm.Tools import Timer, askUser, mergeDicts, monkeyPatchAllFSFunctionsForDebugMode
+from esm.EsmEpmRemoteClientService import EsmEpmRemoteClientService
+from esm.EsmConfigService import EsmConfigService
 from esm.EsmBackupService import EsmBackupService
 from esm.EsmDeleteService import EsmDeleteService
 from esm.EsmFileSystem import EsmFileSystem
-from esm.EsmLogger import EsmLogger
 from esm.EsmDedicatedServer import EsmDedicatedServer
 from esm.EsmRamdiskManager import EsmRamdiskManager
 from esm.EsmSteamService import EsmSteamService
 from esm.EsmWipeService import EsmWipeService
 from esm.ServiceRegistry import ServiceRegistry
-from esm.Tools import Timer, askUser, mergeDicts, monkeyPatchAllFSFunctionsForDebugMode
 
 log = logging.getLogger(__name__)
 
@@ -58,15 +59,17 @@ class EsmMain:
         return ServiceRegistry.get(EsmWipeService)
     
     @cached_property
+    def configService(self) -> EsmConfigService:
+        return ServiceRegistry.get(EsmConfigService)
+    
+    @cached_property
     def config(self) -> MainConfig:
-        cs = ServiceRegistry.get(EsmConfigService)
-
         if self.customConfigFilePath is not None:
-            cs.setConfigFilePath(self.customConfigFilePath)
+            self.configService.setConfigFilePath(self.customConfigFilePath)
         
-        self.addContext(cs.config.context)
-        self.setupDebugging(cs.config)
-        return cs.config
+        self.addContext(self.configService.config.context)
+        self.setupDebugging(self.configService.config)
+        return self.configService.config
 
     def __init__(self, caller=__name__, fileLogLevel=logging.DEBUG, streamLogLevel=logging.DEBUG, waitForPort=False, customConfigFilePath: Path=None):
         self.caller = caller
@@ -401,7 +404,7 @@ class EsmMain:
             else:
                 raise WrongParameterError(f"DbLocation '{dbLocation}' is not a valid database location path.")
 
-        availableTerritories = self.wipeService.getAvailableTerritories()
+        availableTerritories = self.configService.getAvailableTerritories()
         atn = list(map(lambda x: x.name, availableTerritories))
         if territory and (territory in atn or territory == Territory.GALAXY):
             log.debug(f"valid territory selected '{territory}'")
@@ -415,7 +418,7 @@ class EsmMain:
             raise WrongParameterError(f"Wipe type '{wipeType}' not valid, must be one of: {wtl}")
         
         log.info(f"Calling wipe empty playfields for dbLocation: '{dbLocation}' territory '{territory}', wipeType '{wipeType}', nodryrun '{nodryrun}', nocleardiscoveredby '{nocleardiscoveredby}'")
-        self.wipeService.wipeEmptyPlayfields(dbLocation, territory, WipeType.byName(wipeType), nodryrun, nocleardiscoveredby)
+        self.wipeService.wipeTerritory(dbLocation, territory, WipeType.byName(wipeType), nodryrun, nocleardiscoveredby)
 
     def ramdiskRemount(self):
         """
@@ -447,10 +450,26 @@ class EsmMain:
         log.info("Calling ramdisk setup to mount it again with the current configuration and sync the savegame again.")
         self.ramdiskSetup()
 
-    def clearDiscoveredByInfos(self, dbLocation, nodryrun, inputFile=None, inputNames=None):
+    def clearDiscovered(self, dbLocation, nodryrun, inputFile=None, inputNames=None):
         """
         resolves the given system- and playfieldnames from the file or the names array and clears the discovered by info for these completely
         The game saves an entry for every player, even if it was discovered before, so this tool will delete them all so it goes back to "Undiscovered".
+        """
+        names = self.readSystemAndPlayfieldListFromFile(inputFile, inputNames)
+        if dbLocation is None:
+            dbLocation = self.fileSystem.getAbsolutePathTo("saves.games.savegame.globaldb")
+        else:
+            dbLocationPath = Path(dbLocation).resolve()
+            if dbLocationPath.exists():
+                dbLocation = str(dbLocationPath)
+            else:
+                raise WrongParameterError(f"DbLocation '{dbLocation}' is not a valid database location path.")
+        log.info(f"Clearing discovered by infos for {len(names)} names.")
+        self.wipeService.clearDiscoveredByInfo(dbLocation=dbLocation, names=names, nodryrun=nodryrun)
+
+    def readSystemAndPlayfieldListFromFile(self, inputFile, inputNames: List[str]=None):
+        """
+        retrieve the list of systems and playfields from the given file
         """
         names = []
         if inputNames:
@@ -462,17 +481,7 @@ class EsmMain:
                     names.extend([line.rstrip('\n') for line in file.readlines()])
             else:
                 raise WrongParameterError(f"input file at '{inputFilePath}' not found")
-            
-        if dbLocation is None:
-            dbLocation = self.fileSystem.getAbsolutePathTo("saves.games.savegame.globaldb")
-        else:
-            dbLocationPath = Path(dbLocation).resolve()
-            if dbLocationPath.exists():
-                dbLocation = str(dbLocationPath)
-            else:
-                raise WrongParameterError(f"DbLocation '{dbLocation}' is not a valid database location path.")
-        log.info(f"Clearing discovered by infos for {len(names)} names.")
-        self.wipeService.clearDiscoveredByInfo(dbLocation=dbLocation, names=names, nodryrun=nodryrun)
+        return names
 
     def purgeEmptyPlayfieldsOld(self, dbLocation=None, nodryrun=False, nocleardiscoveredby=False, minimumage=30, leavetemplates=False, force=False):
         """
@@ -499,7 +508,7 @@ class EsmMain:
         except UserAbortedException as ex:
             log.warning(f"User aborted the operation, nothing deleted.")
 
-    def purgeRemovedEntities(self, dbLocation=None, nodryrun=False, force=False):
+    def purgeRemovedEntitiesOld(self, dbLocation=None, nodryrun=False, force=False):
         """
         will purge all entity folders in the shared folder of entities that are marked as deleted in the database
         """
@@ -528,7 +537,7 @@ class EsmMain:
                 except UserAbortedException as ex:
                     log.warning("User aborted operation, nothing was deleted.")
 
-    def purgeWipedPlayfields(self, nodryrun=False, leavetemplates=False, force=False):
+    def purgeWipedPlayfieldsOld(self, nodryrun=False, leavetemplates=False, force=False):
         """
         search for wipeinfo.txt containing "all" for all playfields and purge those (and their templates) completely.
         """
@@ -699,3 +708,24 @@ class EsmMain:
             self.openSocket(port, interval=interval, tries=tries)
         else:
             self.openSocket(port)
+
+    def wipeTool(self, inputFilePath: Path=None, territoryName=None, purge=False, wipetype: WipeType=None, purgeleavetemplates=False, purgeleaveentities=False, nocleardiscoveredby=False, minage=30, dbLocationPath=None, nodryrun=False, force=False):
+        """
+        the mighty wipe tool
+        """
+        if nodryrun and self.dedicatedServer.isRunning():
+            raise ServerNeedsToBeStopped("Can not execute tool-wipe with --nodryrun if the server is running. Please stop it first.")
+        
+        log.debug(f"{__name__}.{sys._getframe().f_code.co_name} called with params: {locals()}")
+
+        systemAndPlayfieldNames = None
+        territory = None
+
+        if inputFilePath is not None:
+            systemAndPlayfieldNames = self.readSystemAndPlayfieldListFromFile(inputFilePath)
+        else:
+            territory = self.wipeService.getCustomTerritoryByName(territoryName)
+            if territoryName == Territory.GALAXY:
+                territory = Territory(Territory.GALAXY, 0,0,0,999999999)
+
+        self.wipeService.wipeTool(systemAndPlayfieldNames=systemAndPlayfieldNames, territory=territory, purge=purge, wipetype=wipetype, purgeleavetemplates=purgeleavetemplates, purgeleaveentities=purgeleaveentities, nocleardiscoveredby=nocleardiscoveredby, minage=minage, dbLocationPath=dbLocationPath, nodryrun=nodryrun, force=force)

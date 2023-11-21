@@ -4,6 +4,7 @@ import time
 import logging
 from esm.EsmMain import EsmMain
 from esm.Tools import getElapsedTime, getTimer
+from esm.main import wipeTool
 
 log = logging.getLogger(__name__)
 
@@ -91,7 +92,7 @@ def testStartAndWait():
 
 def testClearDiscoveredBy():
     #esm -v tool-clear-discovered --dblocation D:\temp\temp\20230708_original_anvils6_global.db -f namelist_s6.txt
-    esm.clearDiscoveredByInfos(dbLocation=r"D:\temp\temp\20230708_original_anvils6_global.db", inputFile="namelist_s6.txt", nodryrun=False)
+    esm.clearDiscovered(dbLocation=r"D:\temp\temp\20230708_original_anvils6_global.db", inputFile="namelist_s6.txt", nodryrun=False)
 
 def testcleanupSharedFolder():
     esm.cleanupSharedFolder()
@@ -105,8 +106,16 @@ esm = EsmMain(caller="esm-test", customConfigFilePath=Path("esm-custom-config.ya
 log.debug(f"Script {__file__} started")
 log.debug(f"Logging to: {esm.logFile}")
 
-#esm.checkRequirements()
 
+"""wipetool called with params: {'self': <esm.EsmWipeService.EsmWipeService object at 0x0000021443715310>, 'systemAndPlayfieldNames': None, 'territory':    
+                             None, 'purge': False, 'wipetype': <WipeType.ALL: <esm.DataTypes.WipeTypeInfo object at 0x00000214417BC320>>, 'purgeleavetemplates': False,
+                             'purgeleaveentities': False, 'nocleardiscoveredby': False, 'minimumage': 30, 'dbLocationPath': 'D:\\Servers\\20230708_survival_Anvils6_global.db.org',   
+                             'nodryrun': False, 'force': False, 'database': <esm.EsmDatabaseWrapper.EsmDatabaseWrapper object at 0x0000021443752BD0>}
+"""
+esm.wipeTool(dbLocationPath=Path("../20230708_survival_Anvils6_global.db.org").resolve(), nodryrun=False, territoryName="GALAXY", minimumage=30)
+#wipeTool(dblocation = "D:\\Servers\\20230708_survival_Anvils6_global.db.org", nodryrun=False, territoryName="GALAXY", minimumage=30)
+
+#esm.checkRequirements()
 #testInstallFromSteam()
 #testRamdiskPrepare()
 #testRamdiskSetup()

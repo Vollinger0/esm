@@ -98,7 +98,7 @@ class test_ConfigModels(unittest.TestCase):
             # check overwritten values
             self.assertEqual(config.server.dedicatedYaml, Path("esm-overwritten.yaml"))
             self.assertEqual(config.general.bindingPort, 7069)
-            self.assertEqual(config.updates.scenariosource, Path("D:\Servers\Scenarios\ProjectB"))
+            self.assertEqual(Path(config.updates.scenariosource), Path("D:\Servers\Scenarios"))
 
             # check default values
             self.assertEqual(config.ramdisk.drive, "R:")

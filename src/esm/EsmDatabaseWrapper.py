@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from functools import cached_property
 import logging
 from pathlib import Path
@@ -57,7 +57,7 @@ class EsmDatabaseWrapper:
             self.gameDbCursor = connection.cursor()
         return self.gameDbCursor
     
-    def retrieveDiscoveredPlayfieldsForSolarSystems(self, solarsystems: List[SolarSystem], batchSize=10000) -> List[Playfield]:
+    def retrievePFsDiscoveredBySolarSystems(self, solarsystems: List[SolarSystem], batchSize=10000) -> List[Playfield]:
         """return all playfields that are discovered and belong to the list of given solar systems"""
         log.debug(f"getting discovered playfields for given {len(solarsystems)} solarsystems")
         discoveredPlayfields = []
@@ -79,7 +79,7 @@ class EsmDatabaseWrapper:
         log.debug(f"discovered playfields for the given solarsystems: {len(discoveredPlayfields)}")
         return discoveredPlayfields
 
-    def retrieveAllSolarSystems(self) -> List[SolarSystem]:
+    def retrieveSSsAll(self) -> List[SolarSystem]:
         """returns all solar systems, no exceptions"""
         solarsystems = []
         log.debug("retrieving solar systems")
@@ -135,25 +135,26 @@ class EsmDatabaseWrapper:
         log.debug(f"playfields containing players: {len(pfsWithPlayers)}")
         return pfsWithPlayers
 
-    def retrieveAllNonEmptyPlayfields(self) -> List[Playfield]:
+    def retrievePFsAllNonEmpty(self) -> List[Playfield]:
         """this will get all non empty playfields from the db, excluding pfs with structures, placeables or players"""
         pfsWithPlayerStructures = self.retrievePFsWithPlayerStructures()
         pfsWithPlaceables = self.retrievePFsWithPlaceables()
         pfsWithPlayers = self.retrievePFsWithPlayers()
 
         log.debug("merging all lists, removing duplicates")
-        nonEmptyPlayfields = list(set(pfsWithPlayerStructures) | set(pfsWithPlaceables) |set(pfsWithPlayers))
+        nonEmptyPlayfields = list(set(pfsWithPlayerStructures) | set(pfsWithPlaceables) | set(pfsWithPlayers))
         log.debug(f"total amount of non empty playfields: {len(nonEmptyPlayfields)}")
         return nonEmptyPlayfields
 
-    def retrieveEmptyDiscoveredPlayfields(self, solarsystems) -> List[Playfield]:
-        """this will get the empty playfields contained in the array of solarsystems"""
-        discoveredPlayfields = self.retrieveDiscoveredPlayfieldsForSolarSystems(solarsystems)
-        nonEmptyPlayfields = self.retrieveAllNonEmptyPlayfields()
+    def retrievePFsEmptyDiscoveredBySolarSystems(self, solarsystems) -> List[Playfield]:
+        """
+        this will get all empty discovered playfields contained in the array of solarsystems
+        """
+        discoveredPlayfields = self.retrievePFsDiscoveredBySolarSystems(solarsystems)
+        nonEmptyPlayfields = self.retrievePFsAllNonEmpty()
 
-        log.debug("filtering out non empty playfields from all discovered playfields")
         emptyPlayfields = list(set(discoveredPlayfields) - set(nonEmptyPlayfields))
-        log.debug(f"wipeable empty playfields: {len(emptyPlayfields)}")
+        log.debug(f"found {len(emptyPlayfields)} empty discovered playfields for the given list of {len(solarsystems)} solarsystems")
         return emptyPlayfields
     
     def deleteFromDiscoveredPlayfields(self, playfields: List[Playfield], batchSize = 5000):
@@ -176,7 +177,7 @@ class EsmDatabaseWrapper:
         connection = self.getGameDbConnection()
         connection.commit()
 
-    def retrieveSolarsystemsByName(self, solarsystemNames: List[str]) -> List[SolarSystem]:
+    def retrieveSSsByName(self, solarsystemNames: List[str]) -> List[SolarSystem]:
         """return a list of solar systems which match the given names"""
         # SELECT ssid, name, startype, sectorx, sectory, sectorz FROM SolarSystems WHERE name IN ("Alpha", "Beta")
         log.debug(f"selecting solarsystems matching {len(solarsystemNames)} names")
@@ -189,7 +190,7 @@ class EsmDatabaseWrapper:
         return solarsystems
         
 
-    def retrievePlayfieldsByName(self, playfieldNames: List[str]) -> List[Playfield]:
+    def retrievePFsByName(self, playfieldNames: List[str]) -> List[Playfield]:
         """return a list of playfields which match the given names"""
         # SELECT pf.pfid, pf.name, ss.ssid, ss.name FROM Playfields as pf LEFT JOIN SolarSystems AS ss ON pf.ssid=ss.ssid WHERE pf.name IN ("Gaia", "Haven", "schalala")
         log.debug(f"selecting playfields matching {len(playfieldNames)} names")
@@ -325,3 +326,17 @@ class EsmDatabaseWrapper:
         for row in cursor.execute(query):
             ids.append(f"{row[0]}")
         return ids
+
+    def retrievePFsDiscoveredOlderThanAge(self, minimumage) -> List[Playfield]:
+        """
+        retrieve all discovered playfields that have not been visited since minage days / that we call "older" than minimuage days.
+        """
+        maxDatetime = datetime.now() - timedelta(minimumage)
+        maximumGametick, stoptime = self.retrieveLatestGameStoptickWithinDatetime(maxDatetime)
+        log.debug(f"latest entry for given max age is stoptime {stoptime} and gametick {maximumGametick}")
+        # get all playfields older than minage
+        totalPlayfields = self.countDiscoveredPlayfields()
+        log.debug(f"total playfields {totalPlayfields}")
+        olderPlayfields = self.retrievePFsUnvisitedSince(maximumGametick)
+        log.debug(f"found {len(olderPlayfields)} playfields unvisited since {stoptime}")
+        return olderPlayfields
