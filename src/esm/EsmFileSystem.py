@@ -150,10 +150,7 @@ class EsmFileSystem:
         """
         return the caller from the context or __name__ is not given.
         """
-        try:
-            return self.config.context.get('caller')
-        except KeyError:
-            return __name__
+        return self.config.context.get('caller', __name__)
 
     def createHardLink(self, linkPath, linkTargetPath):
         """
