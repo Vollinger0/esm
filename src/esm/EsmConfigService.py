@@ -1,8 +1,10 @@
 import logging
+from typing import List
 import yaml
 from functools import cached_property
 from pathlib import Path
 from esm.ConfigModels import DediConfig, MainConfig
+from esm.DataTypes import Territory
 from esm.Exceptions import AdminRequiredException
 from esm.ServiceRegistry import Service, ServiceRegistry
 from esm.Tools import mergeDicts
@@ -87,3 +89,12 @@ class EsmConfigService:
             pass
         self.configFilePath = configFilePath
         self.searchDedicatedYamlLocal = searchDedicatedYamlLocal
+
+    def getAvailableTerritories(self) -> List[Territory]:
+        """
+        return the list of available territories from config
+        """
+        territories = []
+        for territory in self.config.galaxy.territories:
+            territories.append(Territory(territory["faction"].capitalize(), territory["center-x"], territory["center-y"], territory["center-z"], territory["radius"]))
+        return territories        

@@ -1,8 +1,8 @@
-from datetime import datetime, timedelta
 from functools import cached_property
 import logging
 from math import sqrt
 from pathlib import Path
+import sys
 from typing import List
 from esm.ConfigModels import MainConfig
 from esm.Exceptions import WrongParameterError
@@ -26,12 +26,16 @@ class EsmWipeService:
     @cached_property
     def config(self) -> MainConfig:
         return ServiceRegistry.get(EsmConfigService).config
+    
+    @cached_property
+    def configService(self) -> EsmConfigService:
+        return ServiceRegistry.get(EsmConfigService)
 
     @cached_property
     def fileSystem(self) -> EsmFileSystem:
         return ServiceRegistry.get(EsmFileSystem)
 
-    def wipeEmptyPlayfields(self, dbLocation, territoryString, wipeType: WipeType, nodryrun, nocleardiscoveredby=False):
+    def wipeTerritory(self, dbLocation, territoryString, wipeType: WipeType, nodryrun, nocleardiscoveredby=False):
         """
         wipe given territory with given wipetype and mode using the given db
         """
@@ -40,15 +44,15 @@ class EsmWipeService:
             # we need to open the db in rw mode, if we are to clear the discoverd-by info
             database.getGameDbConnection(mode="rw")
         with Timer() as timer:
-            allSolarSystems = database.retrieveAllSolarSystems()
+            allSolarSystems = database.retrieveSSsAll()
             if territoryString == Territory.GALAXY:
-                territory = Territory(Territory.GALAXY,0,0,0,0)
+                territory = Territory(Territory.GALAXY,0,0,0,9999999999)
                 solarSystems = allSolarSystems
             else:
                 territory = self.getCustomTerritoryByName(territoryString)
-                solarSystems = self.getSolarSystemsInCustomTerritory(allSolarSystems, territory)
+                solarSystems = self.areInCustomTerritory(allSolarSystems, territory)
             log.info(f"The amount of stars is: {len(solarSystems)}")
-            emptyPlayfields = database.retrieveEmptyDiscoveredPlayfields(solarSystems)
+            emptyPlayfields = database.retrievePFsEmptyDiscoveredBySolarSystems(solarSystems)
             log.info(f"The amount of empty but discovered playfields that can be wiped is: {len(emptyPlayfields)}")
 
             if not nocleardiscoveredby and len(emptyPlayfields) > 0:
@@ -62,13 +66,13 @@ class EsmWipeService:
             return
 
         if nodryrun:
-            self.wipePlayfields(emptyPlayfields, wipeType)
+            self.createWipeInfoForPlayfields(emptyPlayfields, wipeType)
         else:
             self.printoutPlayfields(territoryString, emptyPlayfields, wipeType)
         
-    def wipePlayfields(self, playfields: List[Playfield], wipeType: WipeType):
+    def createWipeInfoForPlayfields(self, playfields: List[Playfield], wipeType: WipeType):
         """
-        actually wipe the given playfields with the wipeType.
+        actually wipe the given playfields with the wipeType by creating the wipeinfo files in the file system.
         """
         playfieldsFolderPath = self.fileSystem.getAbsolutePathTo("saves.games.savegame.playfields")
         log.info(f"Starting wipe for {len(playfields)} playfields with wipe type '{wipeType.value.name}' in folder '{playfieldsFolderPath}'")
@@ -94,17 +98,8 @@ class EsmWipeService:
         log.info(f"Will output the list of playfields that would have been wiped as '{csvFilename}'")
         self.printListOfPlayfieldsAsCSV(csvFilename=csvFilename, playfields=playfields)
 
-    def getAvailableTerritories(self) -> List[Territory]:
-        """
-        return the list of available territories from config
-        """
-        territories = []
-        for territory in self.config.galaxy.territories:
-            territories.append(Territory(territory["faction"].capitalize(), territory["center-x"], territory["center-y"], territory["center-z"], territory["radius"]))
-        return territories        
-
     def getCustomTerritoryByName(self, territoryName):
-        for ct in self.getAvailableTerritories():
+        for ct in self.configService.getAvailableTerritories():
             if ct.name == territoryName:
                 return ct
 
@@ -130,9 +125,24 @@ class EsmWipeService:
         return customTerritorySolarSystems
     
     def isInCustomTerritory(self, solarsystem: SolarSystem, customTerritory: Territory):
-        # calculate distance of given star to center of the custom territory. if its bigger than its radiuis, we assume its outside.
+        """
+          calculate distance of given star to center of the custom territory. if its bigger than its radius, we assume its outside.
+        """
         distance = sqrt(((solarsystem.x - customTerritory.x)**2) + ((solarsystem.y - customTerritory.y)**2) + ((solarsystem.z - customTerritory.z)**2))
         return (distance <= customTerritory.radius)
+    
+    def areInCustomTerritory(self, solarSystems: List[SolarSystem], customTerritory: Territory) -> List[SolarSystem]:
+        """
+        return the list of solarSystems that are in the custom territory
+        """
+        if customTerritory == Territory.GALAXY:
+            return solarSystems
+        else:
+            customTerritorySolarSystems = []
+            for solarsystem in solarSystems:
+                if self.isInCustomTerritory(solarsystem, customTerritory):
+                    customTerritorySolarSystems.append(solarsystem)
+            return customTerritorySolarSystems
 
     def clearDiscoveredByInfo(self, names, nodryrun, database=None, dbLocation=None, closeConnection=True):
         """
@@ -150,12 +160,12 @@ class EsmWipeService:
             database.getGameDbConnection("rw")
         playfieldsFromSolarSystems = []
         if systemNames and len(systemNames) > 0:
-            solarsystems = database.retrieveSolarsystemsByName(systemNames)
+            solarsystems = database.retrieveSSsByName(systemNames)
             if solarsystems and len(solarsystems) > 0:
-                playfieldsFromSolarSystems = database.retrieveDiscoveredPlayfieldsForSolarSystems(solarsystems)
+                playfieldsFromSolarSystems = database.retrievePFsDiscoveredBySolarSystems(solarsystems)
         playfieldsByName = []
         if playfieldNames and len(playfieldNames) > 0:
-            playfieldsByName = database.retrievePlayfieldsByName(playfieldNames)
+            playfieldsByName = database.retrievePFsByName(playfieldNames)
         playfields = list(set(playfieldsByName) | set(playfieldsFromSolarSystems))
         log.info(f"Found {len(playfields)} playfields matching the systems and names given that are currently discovered.")
         if len(playfields) > 0:
@@ -221,21 +231,14 @@ class EsmWipeService:
             # we need to open the db in rw mode
             database.getGameDbConnection(mode="rw")
 
-        maxDatetime = datetime.now() - timedelta(minimumage)
-        maximumGametick, stoptime = database.retrieveLatestGameStoptickWithinDatetime(maxDatetime)
-        log.debug(f"latest entry for given max age is stoptime {stoptime} and gametick {maximumGametick}")
-        # get all playfields older than minage
-        totalPlayfields = database.countDiscoveredPlayfields()
-        log.debug(f"total playfields {totalPlayfields}")
-        olderPlayfields = database.retrievePFsUnvisitedSince(maximumGametick)
-        log.debug(f"found {len(olderPlayfields)} playfields unvisited since {stoptime}")
+        olderPlayfields = database.retrievePFsUnvisitedSinceAge(minimumage)
 
         if len(olderPlayfields) < 1:
             log.info(f"Nothing to purge")
             return
         
         # get all occupied playfields
-        occupiedPlayfields = database.retrieveAllNonEmptyPlayfields()
+        occupiedPlayfields = database.retrievePFsAllNonEmpty()
         log.debug(f"{len(occupiedPlayfields)} playfields are occupied by players or their stuff")
         # filter out playfields that contain player stuff, using sets, since we can just substract these very fast
         playfields = list(set(olderPlayfields) - set(occupiedPlayfields))
@@ -406,3 +409,40 @@ class EsmWipeService:
             log.info(f"Saving list of ids that are obsolete in file {filename}")
             with open(filename, "w", encoding="utf-8") as file:
                 file.writelines([line + '\n' for line in idsOnFsNotInDb])
+
+    def wipeTool(self, systemAndPlayfieldNames, territory: Territory, purge, wipetype, purgeleavetemplates, purgeleaveentities, nocleardiscoveredby, minage, dbLocationPath, nodryrun, force):
+
+        database: EsmDatabaseWrapper = EsmDatabaseWrapper(dbLocationPath)
+        log.debug(f"{__name__}.{sys._getframe().f_code.co_name} called with params: {locals()}")
+        # retrieve solar systems and playfields in either the systemAndPlayfieldNames or the territory
+        selectedSolarSystems = []
+        selectedPlayFields = []
+        if systemAndPlayfieldNames and len(systemAndPlayfieldNames) > 0:
+            log.debug(f"extracting solar systems and playfields from the list of {len(systemAndPlayfieldNames)} names")
+            solarSystemNames, playfieldNames = Tools.extractSystemAndPlayfieldNames(systemAndPlayfieldNames)
+            selectedSolarSystems = database.retrieveSolarsystemsByNames(solarSystemNames)
+            selectedPlayFields = database.retrievePlayfieldsByNames(playfieldNames)
+            log.debug(f"extracted {len(selectedSolarSystems)} solarsystems and {len(selectedPlayFields)} playfields from {len(systemAndPlayfieldNames)} names in the list")
+        if territory:
+            log.debug(f"extracting solar systems from the custom territory {territory.name}")
+            allSolarSystems = database.retrieveSSsAll()
+            selectedSolarSystems = self.areInCustomTerritory(allSolarSystems, territory)
+            log.debug(f"extracted {len(selectedSolarSystems)} solarsystems from the custom territory {territory.name}")
+
+        pfsEmptyDiscovered = database.retrievePFsEmptyDiscoveredBySolarSystems(selectedSolarSystems)
+        allSelectedPlayfields = pfsEmptyDiscovered + selectedPlayFields
+        log.debug(f"selected {len(allSelectedPlayfields)} to be wiped disregarding their age")
+
+        pfsUnvisitedSince = database.retrievePFsDiscoveredOlderThanAge(minage)
+        log.debug(f"extracted {len(pfsUnvisitedSince)} playfields that are older than {minage} days")
+
+        playfieldsToWipe = list(set(allSelectedPlayfields).intersection(set(pfsUnvisitedSince)))
+        log.debug(f"{len(playfieldsToWipe)} playfields selected for wipe")
+
+
+
+        if purge:
+            # TODO: trigger purge for playfieldsToWipe
+            # TODO: trigger purge for templates
+            # TODO: trigger purge for entities
+            pass
