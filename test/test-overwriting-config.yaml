@@ -2,7 +2,5 @@ general:
   bindingPort: 7069                 # default port to bind application to, just used to make sure only one instance can run with one config at a time.
 server:
   dedicatedYaml: esm-overwritten.yaml   # name of the dedicated yaml, make sure this is the one defined in EAH if you use that
-updates:
-  scenariosource: D:\Servers\Scenarios\ProjectB   # source directory with the scenario files that will be copied to the servers scenario folder
 paths:
   install: D:\Servers\Empyrion

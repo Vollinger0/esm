@@ -55,6 +55,9 @@ class EsmSteamService:
         if not noadditionals:
             # additional copying according to configuration
             self.fileSystem.copyAdditionalUpdateStuff()
+        
+        if nosteam and noadditionals:
+            log.warning("Well nothing to do here. You need to omit at least one of the options '--nosteam' or '--noadditionals'.")
 
     def checkAndGetSteamCmdExecutable(self):
         """

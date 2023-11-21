@@ -35,7 +35,7 @@ class LogContext:
 # this file is the main cli interface and entry point for the script and module.
 #
 @click.group(epilog='Brought to you by hamster, coffee and pancake symphatisants')
-@click.option('-c', '--config', default="esm-custom-config.yaml", metavar='<file>', show_default=True, help="set the custom config file")
+@click.option('-c', '--config', default="esm-custom-config.yaml", metavar='<file>', show_default=True, help="set an alternative custom config file")
 @click.option('-v', '--verbose', is_flag=True, help='set loglevel on console to DEBUG. The logfile already is set to DEBUG.')
 @click.option('-w', '--wait', is_flag=True, help="if set, will wait and retry to start command, if there is already an instance running. You can set the interval and amount of tries in the configuration.")
 def cli(verbose, config, wait):
@@ -188,17 +188,20 @@ def updateGame(nosteam, noadditionals):
 
 
 @cli.command(name="scenario-update", short_help="updates the configured scenario on the server from the local copy")
-def updateScenario():
-    """Updates the scenario on the server using the configured source folder. This will make sure that only files that actually have different content are updated to minimize client downloads.
+@click.option("--source", metavar="path", help="path to the scenario source folder to update the scenario from. Overrides the source path in the configuration")
+@click.option("--nodryrun", is_flag=True, help="If set, will *not* do a dry run of the update.")
+def updateScenario(source, nodryrun):
+    """Updates the scenario on the server using the passed or configured scenario source folder. This will make sure that only files that actually have different content are updated to minimize client downloads.
 
     Since steam does not allow for anonymouse downloads, you'll need to get the scenario and copy it to the scenario source folder yourself.
+    Alternatively, you may define the scenario source path with the --source param
 
     The server may not be running for this.
     """
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)
         esm.checkAndWaitForOtherInstances()
-        esm.updateScenario()
+        esm.updateScenario(source, nodryrun)
 
 
 @cli.command(name="delete-all", short_help="deletes everything related to the currently configured savegame interactively")
@@ -214,7 +217,7 @@ def deleteAll():
         esm.deleteAll()
 
 
-@cli.command(name="tool-wipe-empty-playfields", short_help="wipes empty playfields for a given territory or galaxy-wide")
+@cli.command(name="tool-wipe-empty-playfields-old", short_help="wipes empty playfields for a given territory or galaxy-wide")
 @click.option('--dblocation', metavar='file', help="location of database file to be used in dry mode. Defaults to use the current savegames DB")
 @click.option('--territory', help=f"territory to wipe, use {Territory.GALAXY} for the whole galaxy or any of the configured ones, use --showterritories to get list")
 @click.option('--wipetype', help=f"wipe type, one of: {WipeType.valueList()}")
@@ -222,7 +225,7 @@ def deleteAll():
 @click.option('--nodryrun', is_flag=True, help="set to actually execute the wipe on the disk. A custom --dblocation will be ignored!")
 @click.option('--showtypes', is_flag=True, help=f"show the supported wipetypes")
 @click.option('--showterritories', is_flag=True, help=f"show the configured territories")
-def wipeEmptyPlayfields(dblocation, territory, wipetype, nodryrun, showtypes, showterritories, nocleardiscoveredby):
+def wipeEmptyPlayfieldsOld(dblocation, territory, wipetype, nodryrun, showtypes, showterritories, nocleardiscoveredby):
     """Will wipe playfields without players, player owned structures, terrain placeables for a given territory or the whole galaxy.
     This requires the server to be shut down, since it needs access to the current state of the savegame and the filesystem.
     This feature is similar to EAH's "wipe empty playfields" feature, but also considers terrain placeables (which get wiped in EAH).
@@ -247,19 +250,19 @@ def wipeEmptyPlayfields(dblocation, territory, wipetype, nodryrun, showtypes, sh
             log.error(f"--nodryrun and --dblocation can not be used together for safety reasons.")
         else:
             try:
-                esm.wipeEmptyPlayfields(dbLocation=dblocation, territory=territory, wipeType=wipetype, nodryrun=nodryrun, nocleardiscoveredby=nocleardiscoveredby)
+                esm.wipeEmptyPlayfieldsOld(dbLocation=dblocation, territory=territory, wipeType=wipetype, nodryrun=nodryrun, nocleardiscoveredby=nocleardiscoveredby)
             except WrongParameterError as ex:
                 log.error(f"Wrong Parameters: {ex}")
 
 
-@cli.command(name="tool-purge-empty-playfields", short_help="purges empty playfields that have not been visited for a time")
+@cli.command(name="tool-purge-empty-playfields-old", short_help="purges empty playfields that have not been visited for a time")
 @click.option('--dblocation', metavar='file', help="location of database file to be used in dry mode. Defaults to use the current savegames DB")
 @click.option('--nocleardiscoveredby', is_flag=True, help="If set, will *not* clear the discovered by infos from the purged playfields")
 @click.option('--nodryrun', is_flag=True, help="set to actually execute the changes on the disk")
 @click.option('--minimumage', default=30, show_default=True, help=f"age a playfield has to have for it to get purged in *days*")
 @click.option('--leavetemplates', is_flag=True, help=f"if set, do not delete the related templates")
 @click.option('--force', is_flag=True, help=f"if set, do not ask interactively before file deletion")
-def purgeEmptyPlayfields(dblocation, nodryrun, nocleardiscoveredby, minimumage, leavetemplates, force):
+def purgeEmptyPlayfieldsOld(dblocation, nodryrun, nocleardiscoveredby, minimumage, leavetemplates, force):
     """Will *purge* playfields without players, player owned structures, terrain placeables for the whole galaxy.
     This requires the server to be shut down, since it needs access to the current state of the savegame and the filesystem.
 
@@ -278,7 +281,7 @@ def purgeEmptyPlayfields(dblocation, nodryrun, nocleardiscoveredby, minimumage, 
             log.error(f"--nodryrun and --dblocation can not be used together for safety reasons.")
         else:
             try:
-                esm.purgeEmptyPlayfields(dbLocation=dblocation, nodryrun=nodryrun, nocleardiscoveredby=nocleardiscoveredby, minimumage=minimumage, leavetemplates=leavetemplates, force=force)
+                esm.purgeEmptyPlayfieldsOld(dbLocation=dblocation, nodryrun=nodryrun, nocleardiscoveredby=nocleardiscoveredby, minimumage=minimumage, leavetemplates=leavetemplates, force=force)
             except WrongParameterError as ex:
                 log.error(f"Wrong Parameters: {ex}")
 

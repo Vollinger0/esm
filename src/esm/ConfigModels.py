@@ -50,7 +50,7 @@ class FileOps(TypedDict):
     dst: str
 
 class ConfigUpdates(BaseModel):
-    scenariosource: Path = Field("D:/Servers/Scenarios/ProjectA", description="source directory with the scenario files that will be copied to the servers scenario folder")
+    scenariosource: Path = Field("D:/Servers/Scenarios", description="source directory with the scenario folders that will be used to copy to the servers scenario folder")
     additional: List[FileOps] = Field([], description="additional stuff to copy when calling the esm game-update command")
 
 class ConfigDeletes(BaseModel):
