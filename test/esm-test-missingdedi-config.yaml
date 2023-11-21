@@ -9,7 +9,7 @@ ramdisk:
   synchronizeRamToMirrorInterval: 60 # interval in seconds at which to do a ram2hdd sync for the savegame. if interval=0 the sync will be disabled! Recommended to leave at 3600 (1h)
 
 server:
-  dedicatedYaml: 'test/test-dedicated.yaml'
+  dedicatedYaml: 'dedicated-does-not-exist.yaml'
   #startMode: 'direct'  # use 'direct' if you want to bypass the launcher, e.g. if you want to run multiple instances of the server on the same machine.
   startMode: 'launcher' # use 'launcher' if you want to start the game the usual way. The launcher itself will then start the dedicated server.
   gfxMode: True # if True, enables the blue graphics overlay of the server, probably not needed when you use EAH or something else to manage the server

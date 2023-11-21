@@ -4,6 +4,7 @@ import subprocess
 import time
 from pathlib import Path
 from threading import Event, Thread
+from esm.ConfigModels import MainConfig
 from esm.EsmCommunicationService import EsmCommunicationService
 from esm.Exceptions import AdminRequiredException, NoSaveGameFoundException, NoSaveGameMirrorFoundException, RequirementsNotFulfilledError, NoSaveGameMirrorFoundException, SaveGameFoundException
 from esm.EsmConfigService import EsmConfigService
@@ -30,8 +31,8 @@ class EsmRamdiskManager:
         self.synchronizerThread = None
 
     @cached_property
-    def config(self) -> EsmConfigService:
-        return ServiceRegistry.get(EsmConfigService)
+    def config(self) -> MainConfig:
+        return ServiceRegistry.get(EsmConfigService).config
 
     @cached_property
     def fileSystem(self) -> EsmFileSystem:

@@ -7,6 +7,7 @@ paths:
   steamcmd: 'D:\Servers\Tools\steamcmd\steamcmd.exe'
 
 server:
+  dedicatedYaml: "esm-dedicated.yaml"
   gfxMode: True
   minDiskSpaceForStartup: 500M
 

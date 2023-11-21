@@ -4,7 +4,6 @@ from shutil import rmtree
 import unittest
 from esm.EsmMain import EsmMain
 from esm.EsmConfigService import EsmConfigService
-from esm.EsmDedicatedServer import EsmDedicatedServer
 from esm.EsmFileSystem import EsmFileSystem
 from esm.EsmRamdiskManager import EsmRamdiskManager
 from esm.FsTools import FsTools
@@ -44,7 +43,7 @@ class test_EsmRamdiskManager(unittest.TestCase):
     @unittest.skip("only execute this manually, since it requires admin privileges and will pop up that window for the user.")
     def test_setup(self):
         ServiceRegistry.register(EsmMain)
-        self.config = EsmConfigService(configFilePath="test/esm-test-config.yaml")
+        self.config = EsmConfigService.fromCustomConfigFile(Path("test/esm-test-config.yaml"))
         self.fs = EsmFileSystem(self.config)
         self.rdm = EsmRamdiskManager(config=self.config, fileSystem=self.fs)
 
@@ -95,7 +94,7 @@ class test_EsmRamdiskManager(unittest.TestCase):
     @unittest.skip("only execute this manually, since it requires admin privileges and will pop up that window for the user.")
     def test_mountAndUnmountRamdisk(self):
         ServiceRegistry.register(EsmMain)
-        self.config = EsmConfigService(configFilePath="test/esm-test-config.yaml")
+        self.config = EsmConfigService.fromCustomConfigFile(Path("test/esm-test-config.yaml"))
         self.fs = EsmFileSystem(self.config)
         self.rdm = EsmRamdiskManager(config=self.config, fileSystem=self.fs)
 

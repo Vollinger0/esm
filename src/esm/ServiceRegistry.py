@@ -13,6 +13,9 @@ class ServiceRegistryMeta(type):
         return self._instances[self]
 
 class ServiceRegistry(metaclass=ServiceRegistryMeta):
+    """
+    Service registry for classic dependency injection. There may be better libraries out there for this, but i needed something simple and fast.
+    """
     _registry = {}
 
     T = TypeVar('T')
@@ -23,6 +26,9 @@ class ServiceRegistry(metaclass=ServiceRegistryMeta):
 
     @staticmethod
     def register(instance):
+        """
+        if you want to register the instance you just created. Probably for testing
+        """
         iClassName = instance.__class__.__name__
         if ServiceRegistry._registry.__contains__(iClassName):
             previous = ServiceRegistry._registry[iClassName]

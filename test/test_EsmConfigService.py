@@ -1,126 +1,68 @@
 import logging
 from pathlib import Path
 import unittest
+
+from pydantic import ValidationError
 from esm.EsmConfigService import EsmConfigService
 from esm.Exceptions import AdminRequiredException
-from esm.FsTools import FsTools
 from esm.ServiceRegistry import ServiceRegistry
-from TestTools import TestTools
 
 log = logging.getLogger(__name__)
 
 class test_EsmConfigService(unittest.TestCase):
 
-    def test_accessibleConfig(self):
-        configFile = Path("./test/test.yaml").absolute()
-        config = EsmConfigService(configFilePath=configFile, raiseExceptionOnMissingDedicated=False)
-        log.debug(f"config: {config}")
-        log.debug(f"config.database: {config.database}")
-        log.debug(f"config.database.host: {config.database.host}")
-        log.debug(f"config.app: {config.app}")
-        log.debug(f"config.app.name: {config.app.name}")
-        self.assertEqual(config.database.host, "localhost")
-        self.assertEqual(config.app.name, "My App")
-        self.assertEqual(config.app.sub_config.value1, "abc")
-        self.assertEqual(config.numbers.integers, [1,2,3])
+    def test_ConfigWorks(self):
+        cs = EsmConfigService()
+        config = cs.getConfig()
+        self.assertEqual(config.server.dedicatedYaml, Path("esm-dedicated.yaml"))
+
+    def test_ConfigFailsOnUknownProperties(self):
+        cs = EsmConfigService()
+        config = cs.getConfig()
+
+        with self.assertRaises(AttributeError):
+            self.assertEqual(config.foo.bar, "foo")
+        self.assertEqual(config.server.dedicatedYaml, Path("esm-dedicated.yaml"))
 
     def test_loadsCustomPath(self):
-        config = EsmConfigService(configFilePath="test/esm-test-config.yaml", raiseExceptionOnMissingDedicated=False)
+        cs = EsmConfigService()
+        config = cs.getConfig()
+        self.assertEqual(config.server.dedicatedYaml, Path("esm-dedicated.yaml"))
+        cs.setConfigFilePath(Path("test/esm-test-config.yaml"), True)
+        config = cs.getConfig()
+
+        self.assertEqual(config.server.dedicatedYaml, Path("test/test-dedicated.yaml"))
         self.assertEqual(config.backups.amount, 4)
         self.assertEqual(config.ramdisk.drive, "T:")
 
     def test_loadFromRegistry(self):
-        instance = EsmConfigService(configFilePath="test/esm-test-config.yaml", raiseExceptionOnMissingDedicated=False)
+        instance = EsmConfigService()
+        instance.setConfigFilePath(Path("test/esm-test-config.yaml"), True)
         ServiceRegistry.register(instance)
-        config = ServiceRegistry.get(EsmConfigService)
+        cs = ServiceRegistry.get(EsmConfigService)
+        config = cs.getConfig()
         self.assertEqual(config.backups.amount, 4)
         self.assertEqual(config.ramdisk.drive, "T:")
-
-    @unittest.skipUnless(TestTools.ramdiskAvailable(), "needs the ramdrive to be mounted at r")
-    def test_containsContext(self):
-        sourcePath = "./esm-dedicated.yaml"
-        destinationPath = Path("R:/Servers/Empyrion")
-        destinationPath.mkdir(parents=True,exist_ok=True)
-        FsTools.copyFile(sourcePath, f"{destinationPath}/esm-dedicated.yaml")
-
-        configFilePath="test/esm-test-config.yaml"
-        config = EsmConfigService(configFilePath=configFilePath)
-        self.assertEqual(config.context.configFilePath, configFilePath)
-        self.assertEqual(config.backups.amount, 4)
-        self.assertEqual(config.ramdisk.drive, "T:")
-
-    def test_containsMoreContext(self):
-        configFilePath="test/esm-test-config.yaml"
-        context = {
-            'foo': 'bar',
-            'baz': 42
-        }
-        config = EsmConfigService(configFilePath=configFilePath, context=context, raiseExceptionOnMissingDedicated=False)
-        self.assertEqual(config.context.configFilePath, configFilePath)
-        self.assertEqual(config.context.foo, "bar")
-        self.assertEqual(config.context.baz, 42)
-        self.assertEqual(config.backups.amount, 4)
-        self.assertEqual(config.ramdisk.drive, "T:")
-
-    def test_loadingCustomConfig(self):
-        configFile = Path("./test/test.yaml").absolute()
-        config = EsmConfigService(configFilePath=configFile, raiseExceptionOnMissingDedicated=False)
-        self.assertEqual(config.app.name, "My App")
-        self.assertIsNone(config.onlyInCustom)
-        self.assertEqual(config.onlyInBase, "bar")
-        self.assertListEqual(config.overwrite.this.nested, ["value1", "value2", "value3"])
-        self.assertEqual(config.context.configFilePath, configFile)
-        with self.assertRaises(KeyError):
-            self.assertIsNone(config.context.customConfigFilePath, configFile)
-
-        # now with custom config overwriting the base config
-        newConfigFile = Path("./test/test.yaml").absolute()
-        newCustomFile = Path("./test/custom.yaml").absolute()
-        newConfig = EsmConfigService(configFilePath=newConfigFile, customConfigFilePath=newCustomFile, raiseExceptionOnMissingDedicated=False)
-        self.assertEqual(newConfig.app.name, "My Custom App Config")
-        self.assertEqual(newConfig.onlyInCustom, "foo")
-        self.assertEqual(newConfig.onlyInBase, "bar")
-        self.assertListEqual(newConfig.overwrite.this.nested, ["newvalue2"])
-
-        self.assertEqual(newConfig.context.configFilePath, configFile)
-        self.assertEqual(newConfig.context.customConfigFilePath, newCustomFile)
-
-        self.assertEqual(newConfig.app.sub_config.value1, "abc")
-        self.assertEqual(newConfig.numbers.integers, [1,2,3])
-
-    def test_loadingRealConfig(self):
-        config = EsmConfigService(configFilePath="esm-base-config.yaml", customConfigFilePath="esm-custom-config.yaml")
-        self.assertEqual(config.dedicatedYaml.GameConfig.GameName, "EsmDediGame")
-        self.assertEqual(config.server.minDiskSpaceForStartup, "500M")
 
     def test_loadingConfigReadsDedicatedYaml(self):
-        config = EsmConfigService(configFilePath="esm-base-config.yaml", customConfigFilePath="esm-custom-config.yaml")        
+        cs = EsmConfigService()
+        config = cs.getConfig()
+
+        self.assertEqual(config.dedicatedConfig.GameConfig.GameName, "EsmDediGame")
+        self.assertEqual(config.dedicatedConfig.ServerConfig.AdminConfigFile, "adminconfig.yaml")
+        self.assertEqual(config.dedicatedConfig.ServerConfig.SaveDirectory, "Saves")
+
+        # check that the context contains info about the custom file that was read
+        self.assertEqual(config.context.get("configFilePath"), Path("esm-custom-config.yaml"))
         
-        with self.assertRaises(KeyError):
+        # check that these two deprecated attributes are not read any more
+        with self.assertRaises(AttributeError):
             self.assertIsNone(config.server.savegame)
-        with self.assertRaises(KeyError):            
+        with self.assertRaises(AttributeError):
             self.assertIsNone(config.foldernames.saves)
-        
-        self.assertEqual(config.dedicatedYaml.GameConfig.GameName, "EsmDediGame")
-        self.assertEqual(config.dedicatedYaml.ServerConfig.AdminConfigFile, "adminconfig.yaml")
-        self.assertEqual(config.dedicatedYaml.ServerConfig.SaveDirectory, "Saves")
 
     def test_loadingConfigReadsDedicatedYamlBreaksWhenNotAvailable(self):
-        configFilePath="test/esm-test-broken-config.yaml"
-        
+        cs = EsmConfigService()
+        cs.setConfigFilePath(Path("test/esm-test-missingdedi-config.yaml"))
         with self.assertRaises(AdminRequiredException):
-            config = EsmConfigService(configFilePath=configFilePath, raiseExceptionOnMissingDedicated=True)
-
-    def test_overrideConfigWorks(self):
-        config = EsmConfigService(configFilePath="esm-base-config.yaml", customConfigFilePath="esm-custom-config.yaml")
-        self.assertEqual(config.dedicatedYaml.GameConfig.GameName, "EsmDediGame")
-        self.assertEqual(config.server.minDiskSpaceForStartup, "500M")
-        override = {
-            'server': {
-                'minDiskSpaceForStartup': '1G'
-            }
-        }
-        config = EsmConfigService(configFilePath="esm-base-config.yaml", customConfigFilePath="esm-custom-config.yaml", override=override)
-        self.assertEqual(config.dedicatedYaml.GameConfig.GameName, "EsmDediGame")
-        self.assertEqual(config.dedicatedYaml.GameConfig.CustomScenario, "ProjectA")
-        self.assertEqual(config.server.minDiskSpaceForStartup, "1G")
+            config = cs.getConfig()

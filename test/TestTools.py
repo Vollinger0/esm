@@ -16,8 +16,9 @@ class TestTools:
         does skip the test if the ramdisk is not available at the driveletter R:
         since we usually have that mounted while developing this, just use it.
         """
-        log.info(f"testing if ramdisk is available for a unittest")
-        return Path(TestTools.TESTRAMDRIVELETTER).exists()
+        result = Path(TestTools.TESTRAMDRIVELETTER).exists()
+        log.info(f"testing if ramdisk is available for a unittest: {result}")
+        return result
     
     def createFileStructure(structure: dict, basedir: Path, callback=None, ctime=None):
         """

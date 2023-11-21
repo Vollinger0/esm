@@ -1,5 +1,6 @@
 
 import logging
+from pathlib import Path
 import unittest
 
 from esm.EsmCommunicationService import EsmCommunicationService
@@ -10,24 +11,17 @@ log = logging.getLogger(__name__)
 
 class test_EsmCommunicationService(unittest.TestCase):
 
-    def test_getSyncChatLines(self):
-        esmConfig = EsmConfigService(configFilePath='esm-base-config.yaml')
-        ServiceRegistry.register(esmConfig)
+    def test_getServiceFromRegistry(self):
         cs = ServiceRegistry.get(EsmCommunicationService)
-        # since cs may have been instantiated before, it might still point to the old config, overwrite it
-        cs.config = esmConfig
+        self.assertIsNotNone(cs)
 
+    def test_getSyncChatLines(self):
+        cs = EsmCommunicationService()
         lines = cs.getSyncChatLines()
         self.assertEqual(len(lines), 64)
 
-
     def test_getRandomSyncChatLine(self):
-        esmConfig = EsmConfigService(configFilePath='esm-base-config.yaml')
-        ServiceRegistry.register(esmConfig)
-        cs = ServiceRegistry.get(EsmCommunicationService)
-        # since cs may have been instantiated before, it might still point to the old config, overwrite it
-        cs.config = esmConfig
-
+        cs = EsmCommunicationService()
         start, end = cs.getRandomSyncChatLine()
         log.debug(f"start: {start}")
         log.debug(f"end: {end}")
@@ -35,57 +29,33 @@ class test_EsmCommunicationService(unittest.TestCase):
         self.assertIsNotNone(end)
 
     def test_shallAnnounceSyncIsTrueOnTestConfig(self):
-        esmConfig = EsmConfigService(configFilePath='test/esm-test-config.yaml', raiseExceptionOnMissingDedicated=False)
-        ServiceRegistry.register(esmConfig)
-        cs = ServiceRegistry.get(EsmCommunicationService)
-        # since cs may have been instantiated before, it might still point to the old config, overwrite it
-        cs.config = esmConfig
+        config = EsmConfigService.fromCustomConfigFile(Path("test/esm-test-config.yaml"))
+        cs = EsmCommunicationService()
 
         result = cs.shallAnnounceSync()
         self.assertTrue(result)
 
     def test_shallAnnounceSyncIsTrue(self):
-        override = {
-            'communication': {
-                'announceSyncEvents': True,
-                'announceSyncProbability': 1.0
-            }
-        }
-        esmConfig = EsmConfigService(configFilePath='test/esm-test-config.yaml', override=override, raiseExceptionOnMissingDedicated=False)
-        ServiceRegistry.register(esmConfig)
-        cs = ServiceRegistry.get(EsmCommunicationService)
-        # since cs may have been instantiated before, it might still point to the old config, overwrite it
-        cs.config = esmConfig
+        config = EsmConfigService.fromCustomConfigFile(Path("test/esm-test-config.yaml"))
+        config.communication.announceSyncEvents = True
+        config.communication.announceSyncProbability = 1.0
+        cs = EsmCommunicationService()
         result = cs.shallAnnounceSync()
         self.assertTrue(result)
 
     def test_shallAnnounceSyncIsFalse(self):
-        override = {
-            'communication': {
-                'announceSyncEvents': False,
-                'announceSyncProbability': 1.0
-            }
-        }
-        esmConfig = EsmConfigService(configFilePath='test/esm-test-config.yaml', override=override, raiseExceptionOnMissingDedicated=False)
-        ServiceRegistry.register(esmConfig)
-        cs = ServiceRegistry.get(EsmCommunicationService)
-        # since cs may have been instantiated before, it might still point to the old config, overwrite it
-        cs.config = esmConfig
+        config = EsmConfigService.fromCustomConfigFile(Path("test/esm-test-config.yaml"))
+        config.communication.announceSyncEvents = False
+        config.communication.announceSyncProbability = 1.0
+        cs = EsmCommunicationService()
         result = cs.shallAnnounceSync()
         self.assertFalse(result)
 
     def test_shallAnnounceSyncIsRandom(self):
-        override = {
-            'communication': {
-                'announceSyncEvents': True,
-                'announceSyncProbability': 0.3
-            }
-        }
-        esmConfig = EsmConfigService(configFilePath='test/esm-test-config.yaml', override=override, raiseExceptionOnMissingDedicated=False)
-        ServiceRegistry.register(esmConfig)
-        cs = ServiceRegistry.get(EsmCommunicationService)
-        # since cs may have been instantiated before, it might still point to the old config, overwrite it
-        cs.config = esmConfig
+        config = EsmConfigService.fromCustomConfigFile(Path("test/esm-test-config.yaml"))
+        config.communication.announceSyncEvents = True
+        config.communication.announceSyncProbability = 0.3
+        cs = EsmCommunicationService()
 
         count = 0
         for i in range(10000):
@@ -96,8 +66,8 @@ class test_EsmCommunicationService(unittest.TestCase):
         log.debug(f"count was: {count}")
 
     def test_syncStartAndEndMatch(self):
-        ServiceRegistry.register(EsmConfigService(configFilePath='test/esm-test-config.yaml', raiseExceptionOnMissingDedicated=False))
-        cs = ServiceRegistry.get(EsmCommunicationService)
+        config = EsmConfigService.fromCustomConfigFile(Path("test/esm-test-config.yaml"))
+        cs = EsmCommunicationService()
         cs.syncChatLines = [("start1", "end1"), ("start2", "end2"), ("start3", "end3")]
         (start, end) = cs.getRandomSyncChatLine()
         log.debug(f"start: {start}, end: {end} - {start[-1:]}")

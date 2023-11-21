@@ -4,6 +4,7 @@ import logging
 from math import sqrt
 from pathlib import Path
 from typing import List
+from esm.ConfigModels import MainConfig
 from esm.Exceptions import WrongParameterError
 from esm import Tools
 from esm.DataTypes import Entity, Playfield, SolarSystem, Territory, WipeType
@@ -23,8 +24,8 @@ class EsmWipeService:
     optimized for huge savegames, just when you need to wipe a whole galaxy without affecting players.
     """
     @cached_property
-    def config(self) -> EsmConfigService:
-        return ServiceRegistry.get(EsmConfigService)
+    def config(self) -> MainConfig:
+        return ServiceRegistry.get(EsmConfigService).config
 
     @cached_property
     def fileSystem(self) -> EsmFileSystem:
@@ -177,6 +178,8 @@ class EsmWipeService:
             if closeConnection:
                 database.closeDbConnection()
         else:
+            if closeConnection:
+                database.closeDbConnection()
             if doPrint:
                 csvFilename = Path(f"esm-cleardiscoveredby.csv").absolute()
                 log.info(f"Will output the list of {len(playfields)} playfields whose discoverd-by info would have been cleared '{csvFilename}'")
@@ -244,8 +247,7 @@ class EsmWipeService:
         if nodryrun:
             log.info(f"Purging {len(playfields)} playfields and {len(entities)} contained entities from the file system.")
             if not nocleardiscoveredby and len(playfields) > 0:
-                self.clearDiscoveredByInfoForPlayfields(playfields=playfields, database=database, nodryrun=nodryrun, closeConnection=False, doPrint=False)
-            database.closeDbConnection()
+                self.clearDiscoveredByInfoForPlayfields(playfields=playfields, database=database, nodryrun=nodryrun, closeConnection=True, doPrint=False)
             log.debug(f"Purging {len(playfields)} playfields")
             pfCounter, tpCounter = self.doPurgePlayfields(playfields, leavetemplates)
             log.debug(f"Purging {len(entities)} entities")
@@ -313,6 +315,7 @@ class EsmWipeService:
             database = EsmDatabaseWrapper(dbLocation)
         # get all entites marked as removed in the db
         removedEntities = database.retrievePuregableRemovedEntities()
+        database.closeDbConnection()
         log.debug(f"got {len(removedEntities)} entites marked as removed")
         if nodryrun:
             # purge all their files from the current savegame
@@ -379,6 +382,7 @@ class EsmWipeService:
         log.debug(f"found {len(fsEntityIds)} entries in the shared folder")
         
         dbEntityIds = database.retrieveNonRemovedEntities()
+        database.closeDbConnection()
         log.debug(f"found {len(dbEntityIds)} entries in the database")
 
         # calculate all ids that are on the FS but not in the DB (or marked as removed there)
@@ -402,4 +406,3 @@ class EsmWipeService:
             log.info(f"Saving list of ids that are obsolete in file {filename}")
             with open(filename, "w", encoding="utf-8") as file:
                 file.writelines([line + '\n' for line in idsOnFsNotInDb])
-

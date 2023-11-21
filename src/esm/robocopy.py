@@ -3,7 +3,7 @@ import logging
 
 log = logging.getLogger(__name__)
 
-def execute(src, dst, options='', logFile="robocopy.log", encoding="ansi"):
+def execute(src, dst, options: list=[], logFile="robocopy.log", encoding="ansi"):
     # extend the options, so robocopy logs to an own file
     alloptions = []
     alloptions.extend(options)

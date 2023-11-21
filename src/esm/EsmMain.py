@@ -4,6 +4,8 @@ from pathlib import Path
 import socket
 import time
 import sys
+from esm.ConfigModels import MainConfig
+from esm.EsmConfigService import EsmConfigService
 from esm.EsmEpmRemoteClientService import EsmEpmRemoteClientService
 from esm.Exceptions import AdminRequiredException, ExitCodes, RequirementsNotFulfilledError, ServerNeedsToBeStopped, UserAbortedException, WrongParameterError
 from esm.DataTypes import Territory, WipeType
@@ -11,13 +13,12 @@ from esm.EsmBackupService import EsmBackupService
 from esm.EsmDeleteService import EsmDeleteService
 from esm.EsmFileSystem import EsmFileSystem
 from esm.EsmLogger import EsmLogger
-from esm.EsmConfigService import EsmConfigService
-from esm.EsmDedicatedServer import EsmDedicatedServer, GfxMode
+from esm.EsmDedicatedServer import EsmDedicatedServer
 from esm.EsmRamdiskManager import EsmRamdiskManager
 from esm.EsmSteamService import EsmSteamService
 from esm.EsmWipeService import EsmWipeService
 from esm.ServiceRegistry import ServiceRegistry
-from esm.Tools import Timer, askUser, isDebugMode, monkeyPatchAllFSFunctionsForDebugMode
+from esm.Tools import Timer, askUser, mergeDicts, monkeyPatchAllFSFunctionsForDebugMode
 
 log = logging.getLogger(__name__)
 
@@ -57,34 +58,38 @@ class EsmMain:
         return ServiceRegistry.get(EsmWipeService)
     
     @cached_property
-    def config(self) -> EsmConfigService:
-        return ServiceRegistry.get(EsmConfigService)
+    def config(self) -> MainConfig:
+        cs = ServiceRegistry.get(EsmConfigService)
 
-    def __init__(self, configFileName="esm-base-config.yaml", customConfigFileName="esm-custom-config.yaml", caller=__name__, fileLogLevel=logging.DEBUG, streamLogLevel=logging.DEBUG, waitForPort=False):
-        self.configFilename = configFileName
-        self.customConfigFileName = customConfigFileName
+        if self.customConfigFilePath is not None:
+            cs.setConfigFilePath(self.customConfigFilePath)
+        
+        self.addContext(cs.config.context)
+        self.setupDebugging(cs.config)
+        return cs.config
+
+    def __init__(self, caller=__name__, fileLogLevel=logging.DEBUG, streamLogLevel=logging.DEBUG, waitForPort=False, customConfigFilePath: Path=None):
         self.caller = caller
         self.waitForPort = waitForPort
+        self.customConfigFilePath = customConfigFilePath
 
         # set up logging
         self.logFile = Path(caller).stem + ".log"
         EsmLogger.setUpLogging(self.logFile, fileLogLevel=fileLogLevel, streamLogLevel=streamLogLevel)
 
-        # set up config
-        self.configFilePath = Path(configFileName).absolute().resolve()
-        self.customConfigFilePath = Path(customConfigFileName).absolute().resolve()
-        context = {           
-            'logFile': self.logFile,
-            'caller': self.caller
-        }
-        esmConfig = EsmConfigService(configFilePath=self.configFilePath, customConfigFilePath=self.customConfigFilePath, context=context)
-        ServiceRegistry.register(esmConfig)
-
-        # in debug mode, monkey patch all functions that may alter the file system or execute other programs.
-        if isDebugMode(esmConfig):
+    def setupDebugging(self, config: MainConfig):
+        """in debug mode, monkey patch all functions that may alter the file system or execute other programs."""
+        if config.general.debugMode:
             monkeyPatchAllFSFunctionsForDebugMode()
-            log.debug(f"context: {esmConfig.get(context)}")
+            log.debug(f"context: {config.context}")
 
+    def addContext(self, context):
+        mergeDicts(a=context, b={           
+                'logFile': self.logFile,
+                'caller': self.caller,
+                'waitForPort': self.waitForPort,
+                'customConfigFilePath': self.customConfigFilePath
+                })
         
     def createNewSavegame(self):
         """
@@ -98,7 +103,7 @@ class EsmMain:
 
         log.info("Will start the server with the default configuration now")
         newEsm = EsmDedicatedServer(config=self.config)
-        newEsm.gfxMode = GfxMode.ON
+        newEsm.gfxMode = True
         try:
             # start the server without checking for the ramdisk or diskspace, since this may have been called *before* the ramdisk setup.
             newEsm.startServer(checkForRamdisk=False, checkForDiskSpace=False)
@@ -243,7 +248,7 @@ class EsmMain:
             raise ServerNeedsToBeStopped("Can not update scenario while the server is running. Please stop it first.")
 
         sourcePath = Path(self.config.updates.scenariosource).resolve()
-        scenarioName = self.config.dedicatedYaml.GameConfig.CustomScenario
+        scenarioName = self.config.dedicatedConfig.GameConfig.CustomScenario
         destinationPath = Path(f"{self.config.paths.install}/Content/Scenarios/{scenarioName}").resolve()
 
         if not sourcePath.exists():
@@ -555,7 +560,7 @@ class EsmMain:
         if dbLocation is None:
             dbLocation = self.fileSystem.getAbsolutePathTo("saves.games.savegame.globaldb")
         else:
-            dbLocationPath = Path(dbLocation).resolve().absolute()
+            dbLocationPath = Path(dbLocation).resolve()
             if dbLocationPath.exists():
                 dbLocation = str(dbLocationPath)
             else:
@@ -602,8 +607,8 @@ class EsmMain:
         """
         # check gamename, this will make sure the yaml was read, parsed and contains a valid game name.
         try:
-            gameName = self.config.dedicatedYaml.GameConfig.GameName
-            scenario = self.config.dedicatedYaml.GameConfig.CustomScenario
+            gameName = self.config.dedicatedConfig.GameConfig.GameName
+            scenario = self.config.dedicatedConfig.GameConfig.CustomScenario
             dedicatedYaml = Path(f"{self.config.paths.install}/{self.config.server.dedicatedYaml}").absolute()
             log.info(f"Game name is '{gameName}' scenario is '{scenario}' - (read from dedicated yaml at '{dedicatedYaml}')")
         except KeyError as ex:

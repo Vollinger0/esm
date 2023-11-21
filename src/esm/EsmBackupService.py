@@ -3,6 +3,7 @@ import subprocess
 from datetime import datetime
 from functools import cached_property
 from pathlib import Path
+from esm.ConfigModels import MainConfig
 from esm.Exceptions import AdminRequiredException, RequirementsNotFulfilledError, ServerNeedsToBeStopped
 from esm.EsmConfigService import EsmConfigService
 from esm.EsmDedicatedServer import EsmDedicatedServer
@@ -23,8 +24,8 @@ class EsmBackupService:
     """
 
     @cached_property
-    def config(self) -> EsmConfigService:
-        return ServiceRegistry.get(EsmConfigService)
+    def config(self) -> MainConfig:
+        return ServiceRegistry.get(EsmConfigService).config
     
     @cached_property
     def fileSystem(self) -> EsmFileSystem:
@@ -163,7 +164,7 @@ class EsmBackupService:
         """
         actually back up the savegame using the source given
         """
-        targetBackupFolderSaves = f"{targetBackupFolder}/{self.config.dedicatedYaml.ServerConfig.SaveDirectory}/{self.config.dedicatedYaml.GameConfig.GameName}"
+        targetBackupFolderSaves = f"{targetBackupFolder}/{self.config.dedicatedConfig.ServerConfig.SaveDirectory}/{self.config.dedicatedConfig.GameConfig.GameName}"
         self.fileSystem.executeRobocopy(sourcePath=savegameSource, destinationPath=targetBackupFolderSaves)
     
     def backupGameConfig(self, targetBackupFolder):
@@ -171,9 +172,9 @@ class EsmBackupService:
         backs up some important game configs, like dedicated.yaml, adminconfig.yaml, etc.
         """
         # saves/adminconfig.yaml
-        adminConfigFileName = self.config.dedicatedYaml.ServerConfig.AdminConfigFile
+        adminConfigFileName = self.config.dedicatedConfig.ServerConfig.AdminConfigFile
         adminConfig = Path(f"{self.fileSystem.getAbsolutePathTo('saves')}/{adminConfigFileName}")
-        targetAdminConfig = Path(f"{targetBackupFolder}/{self.config.dedicatedYaml.ServerConfig.SaveDirectory}/{adminConfigFileName}")
+        targetAdminConfig = Path(f"{targetBackupFolder}/{self.config.dedicatedConfig.ServerConfig.SaveDirectory}/{adminConfigFileName}")
         if adminConfig.exists():
             FsTools.copyFile(adminConfig, targetAdminConfig)
         else:
@@ -264,7 +265,7 @@ class EsmBackupService:
         else:
             date = datetime.now()
         formattedDate = date.strftime("%Y%m%d_%H%M%S")
-        return f"{formattedDate}_{self.config.dedicatedYaml.GameConfig.GameName}.zip"
+        return f"{formattedDate}_{self.config.dedicatedConfig.GameConfig.GameName}.zip"
 
     def createZip(self, source, backupDirectory, zipFileName):
         """

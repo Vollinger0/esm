@@ -4,6 +4,7 @@ import logging
 from pathlib import Path
 import sqlite3
 from typing import List
+from esm.ConfigModels import MainConfig
 from esm.DataTypes import Entity, EntityType, Playfield, SolarSystem
 from esm.EsmConfigService import EsmConfigService
 from esm.ServiceRegistry import ServiceRegistry
@@ -13,8 +14,8 @@ log = logging.getLogger(__name__)
 class EsmDatabaseWrapper:
 
     @cached_property
-    def config(self) -> EsmConfigService:
-        return ServiceRegistry.get(EsmConfigService)
+    def config(self) -> MainConfig:
+        return ServiceRegistry.get(EsmConfigService).config
     
     def __init__(self, gameDbPath: None) -> None:
         self.gameDbPath = None
@@ -38,9 +39,9 @@ class EsmDatabaseWrapper:
     
     def getGameDbConnection(self, mode="ro") -> sqlite3.Connection:
         if not self.dbConnection:
-            log.debug(f"Opening game database at {self.gameDbPath}")
+            log.debug(f"Opening game database at '{self.gameDbPath}'")
             dbConnectString = self.getGameDbString(mode)
-            log.debug(f"using database connect string {dbConnectString}")
+            log.debug(f"using database connect string '{dbConnectString}'")
             self.dbConnection = sqlite3.connect(dbConnectString, uri=True)
         return self.dbConnection
 

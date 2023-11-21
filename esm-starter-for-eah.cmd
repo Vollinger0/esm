@@ -23,9 +23,9 @@ IF NOT EXIST !esmPath! (
 )
 
 cd %esmPath%
-call:techo "Calling esm script: py -m esm -w -v server-start"
+call:techo "Calling esm script: esm -w -v server-start"
 
-start cmd /c py -m esm -w -v server-start
+start cmd /c esm -w -v server-start
 set scriptReturnCode=%ERRORLEVEL%
 IF "!scriptReturnCode!"=="0" (
 	call:techo "ESM call ended successfully."

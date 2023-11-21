@@ -2,7 +2,6 @@
 from functools import cached_property
 import logging
 import unittest
-from esm.EsmConfigService import EsmConfigService
 from esm.ServiceRegistry import Service, ServiceRegistry
 
 log = logging.getLogger(__name__)
@@ -26,11 +25,17 @@ class test_ServiceRegistry(unittest.TestCase):
         return ServiceRegistry.get(Foo)
 
     def test_ServiceAnnotationWorks(self):
-        #foo = ServiceRegistry.get(Foo)
+        # no need to instantiate anything, there should already bee a Foo instance in the registry
         self.assertEqual(self.foo.getBar(), 3)
 
     def test_ServiceCanBeOverriden(self):
         foo = Foo()
         foo.setBar(5)
         ServiceRegistry.register(foo)
-        self.assertEqual(self.foo.getBar(), 5)
+        retrievedFoo1 = ServiceRegistry.get(Foo)
+        self.assertEqual(retrievedFoo1.getBar(), 5)
+
+        foo2 = Foo(9)
+        ServiceRegistry.register(foo2)
+        retrievedFoo2 = ServiceRegistry.get(Foo)
+        self.assertEqual(retrievedFoo2.getBar(), 9)

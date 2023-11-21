@@ -2,10 +2,10 @@ from functools import cached_property
 import logging
 from pathlib import Path
 import subprocess
+from esm.ConfigModels import MainConfig
+from esm.EsmConfigService import EsmConfigService
 from esm.EsmFileSystem import EsmFileSystem
 from esm.Exceptions import RequirementsNotFulfilledError
-from esm.EsmConfigService import EsmConfigService
-from esm.FsTools import FsTools
 from esm.ServiceRegistry import Service, ServiceRegistry
 from esm.Tools import getElapsedTime, getTimer
 
@@ -15,8 +15,8 @@ log = logging.getLogger(__name__)
 class EsmSteamService:
 
     @cached_property
-    def config(self) -> EsmConfigService:
-        return ServiceRegistry.get(EsmConfigService)
+    def config(self) -> MainConfig:
+        return ServiceRegistry.get(EsmConfigService).config
     
     @cached_property
     def fileSystem(self) -> EsmFileSystem:
