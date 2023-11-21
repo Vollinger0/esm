@@ -13,7 +13,7 @@ datafiles = [
         ('emprc/EmpyrionPrime.RemoteClient.Console.exe', 'emprc/EmpyrionPrime.RemoteClient.Console.exe'),
         ('callesm-async.bat.example', '.'),
         ('callesm-sync.bat.example', '.'),
-        ('esm-starter-for-eah.cmd.example', '."),
+        ('esm-starter-for-eah.cmd.example', '.'),
         ('readme.md', '.'),
         ('readme_install.md', '.'),        
         ('readme_backups.md', '.'),        
