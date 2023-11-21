@@ -239,7 +239,7 @@ class EsmMain:
         """
         return self.steamService.updateGame(nosteam=nosteam, noadditionals=noadditionals)
     
-    def updateScenario(self):
+    def updateScenario(self, sourcePathParameter: str = None, nodryrun: bool=False):
         """
         synchronizes the source scenario folder with the games scenario folder.
         only new files or files whose size or content differ are copied, deleted files in the destination are removed.
@@ -247,18 +247,28 @@ class EsmMain:
         if self.dedicatedServer.isRunning():
             raise ServerNeedsToBeStopped("Can not update scenario while the server is running. Please stop it first.")
 
-        sourcePath = Path(self.config.updates.scenariosource).resolve()
         scenarioName = self.config.dedicatedConfig.GameConfig.CustomScenario
-        destinationPath = Path(f"{self.config.paths.install}/Content/Scenarios/{scenarioName}").resolve()
 
+        if sourcePathParameter is not None:
+            sourcePath = Path(sourcePathParameter).joinpath(scenarioName)
+        else:
+            sourcePath = Path(self.config.updates.scenariosource).joinpath(scenarioName)
+
+        sourcePath = sourcePath.resolve()
         if not sourcePath.exists():
             raise AdminRequiredException(f"Path to scenario source not properly configured, '{sourcePath}' does not exist.")
+
+        destinationPath = Path(f"{self.config.paths.install}/Content/Scenarios/{scenarioName}").resolve()
         if not destinationPath.exists():
             log.warning(f"Path to game scenarios folder '{destinationPath}' does not exist. Will create the directory assuming the configuration is correct.")
             destinationPath.mkdir(parents=False, exist_ok=False)
 
-        log.info(f"Synchronizing scenario from '{sourcePath}' to '{destinationPath}'")
-        return self.fileSystem.synchronize(sourcePath, destinationPath)
+        if nodryrun:
+            log.info(f"Synchronizing scenario from '{sourcePath}' to '{destinationPath}'")
+            return self.fileSystem.synchronize(sourcePath, destinationPath)
+        else:
+            log.info(f"Would synchronize scenario from '{sourcePath}' to '{destinationPath}'. If you want to actually run it, pass --nodryrun.")
+
     
     def deleteAll(self):
         """
@@ -371,7 +381,7 @@ class EsmMain:
                 log.info(f"No savegame exists at '{savegamePath}'. This is either a configuration error or none exists. You might need to create a new one later.")
                 return False
             
-    def wipeEmptyPlayfields(self, dbLocation=None, wipeType=None, territory=None, nodryrun=False, nocleardiscoveredby=False):
+    def wipeEmptyPlayfieldsOld(self, dbLocation=None, wipeType=None, territory=None, nodryrun=False, nocleardiscoveredby=False):
         """
         Wipes all defined playfields with the defined wipetype, filtering out any playfield that has a player, player owned structure or terrain placeable on it.
 
@@ -464,7 +474,7 @@ class EsmMain:
         log.info(f"Clearing discovered by infos for {len(names)} names.")
         self.wipeService.clearDiscoveredByInfo(dbLocation=dbLocation, names=names, nodryrun=nodryrun)
 
-    def purgeEmptyPlayfields(self, dbLocation=None, nodryrun=False, nocleardiscoveredby=False, minimumage=30, leavetemplates=False, force=False):
+    def purgeEmptyPlayfieldsOld(self, dbLocation=None, nodryrun=False, nocleardiscoveredby=False, minimumage=30, leavetemplates=False, force=False):
         """
         checks for playfields that haven't been visited for the minimumage days and purges them from the filesystem
         """
