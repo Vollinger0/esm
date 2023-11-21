@@ -279,10 +279,10 @@ class EsmRamdiskManager:
             time.sleep(1)
             timePassed = timePassed + 1
             if timePassed % syncInterval == 0:
-                log.info(f"Synchronizing from ram to mirror")
                 announceSync = self.communication.shallAnnounceSync()
                 if announceSync:
                     self.communication.announceSyncStart()
+                log.info(f"Synchronizing from ram to mirror")
                 with Timer() as timer:
                     self.syncRamToMirror()
                 log.info(f"Sync done, will wait for {syncInterval} seconds. Time needed {timer.elapsedTime}")
