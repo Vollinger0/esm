@@ -40,10 +40,17 @@ This will create the distributable files with all its dependencies in `dist/esm`
 
 ### WIP
 
+- [ ] refactor purge-tools, make them wipe instead, or make all tools have the option to additionally purge too? Make it more conscise.
+
+  - tool-wipe-empty-playfields (--territory|--file) (--purge|--wipetype) --purgeleavetemplates --cleardiscovered --minage
+  - tool-clear-discoveredby (-f|--file file)
+  - tool-cleanup-shared 
+  - tool-cleanup-entities
+
+- [+] tool to purge a list of playfields passed in the command line and/or file?
+
 ### later
 
-- [ ] refactor purge-tools, make them wipe instead, or make all tools have the option to additionally purge too.
-- [ ] tool to purge a list of playfields passed in the command line and/or file?
 - [ ] provide full installation package with install bat, that installs esm, the tools (osfmount, peazip, etc.)?
 - [ ] implement warning/talkback via tickets for when an admin is required (e.g. low disk space, etc.)
 - [+] fix all FS-modifying tests to use the test fixture of the usually existing ramdisk (R:)
