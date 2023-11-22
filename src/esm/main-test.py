@@ -92,7 +92,7 @@ def testStartAndWait():
 
 def testClearDiscoveredBy():
     #esm -v tool-clear-discovered --dblocation D:\temp\temp\20230708_original_anvils6_global.db -f namelist_s6.txt
-    esm.clearDiscovered(dbLocation=r"D:\temp\temp\20230708_original_anvils6_global.db", inputFile="namelist_s6.txt", nodryrun=False)
+    esm.clearDiscovered(dblocation=r"D:\temp\temp\20230708_original_anvils6_global.db", inputFile="namelist_s6.txt", nodryrun=False)
 
 def testcleanupSharedFolder():
     esm.cleanupSharedFolder()

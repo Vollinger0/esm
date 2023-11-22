@@ -270,7 +270,7 @@ def deleteAll():
 @click.option('--dblocation', metavar='file', help="location of database file to be used in dry mode. Defaults to use the current savegames DB")
 @click.option('--nodryrun', is_flag=True, help="set to actually execute the purge on the disk")
 @click.option('--force', is_flag=True, help=f"if set, do not ask interactively before file deletion")
-def purgeRemovedEntities(dblocation, nodryrun, force):
+def toolCleanupRemovedEntities(dblocation, nodryrun, force):
     """Will purge all entities that are marked as removed in the database. This requires the server to be shut down, since it modifies the files on the filesystem.
     
     Defaults to use a dryrun, so the results are only written to a csv file for you to check.
@@ -284,40 +284,39 @@ def purgeRemovedEntities(dblocation, nodryrun, force):
         if nodryrun and dblocation:
             log.error(f"--nodryrun and --dblocation can not be used together for safety reasons.")
         else:
-            esm.purgeRemovedEntities(dbLocation=dblocation, dryrun=not nodryrun, force=force)
+            esm.cleanupRemovedEntities(dbLocation=dblocation, dryrun=not nodryrun, force=force)
 
 
 @cli.command(name="tool-cleanup-shared", short_help="removes any obsolete entries in the shared folder")
-@click.option('--dblocation', metavar='file', help="location of database file to be used in dry mode. Defaults to use the current savegames DB")
+@click.option('--savegame', metavar='path', help="location of savegame to use, e.g. to use this on a different savegame or savegame copy") 
 @click.option('--nodryrun', is_flag=True, help="set to actually execute the purge on the disk")
 @click.option('--force', is_flag=True, help=f"if set, do not ask interactively before file deletion")
-def cleanupShared(dblocation, nodryrun, force):
-    """Will check all entries in the Shared-Folder against the database and remove all the ones that shouldn't exist any more since there 
-    is no more related data in the database.
+def toolCleanupShared(savegame, nodryrun, force):
+    """Will check all entries in the Shared-Folder against the database and remove all the ones that shouldn't exist any more since there is no more related data in the database.
 
-    This requires the server to be shut down, since it modifies the files on the filesystem. Make sure to have a recent backup aswell.
+    If --savegame is the current savegame, this requires the server to be shut down, since it modifies the files on the filesystem. Make sure to have a recent backup aswell.
+
+    Use --savegame if you want to try this tool on a backup or a different savegame.
     
     Defaults to use a dryrun, so the results are only written to a csv file for you to check.
-    If you use the dry mode just to see how it works, you may aswell define a different savegame database.
-    When NOT in dry mode, you can NOT specify a different database to make sure you do not accidentally purge the wrong playfields folder.
+    If you use the dry mode just to see how it works, you may aswell define a different savegame.
     """
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)  
-        esm.checkAndWaitForOtherInstances()
-
-        if nodryrun and dblocation:
-            log.error(f"--nodryrun and --dblocation can not be used together for safety reasons.")
-        else:
-            esm.cleanupSharedFolder(dbLocation=dblocation, dryrun=not nodryrun, force=force)
+        #esm.checkAndWaitForOtherInstances()
+        esm.cleanupSharedFolder(savegame=savegame, dryrun=not nodryrun, force=force)
 
 
 @cli.command(name="tool-clear-discovered", short_help="clears the discovered-by info for systems/playields")
-@click.option('--dblocation', metavar='file', help="location of database file to be used. Defaults to use the current savegames DB")
+@click.option('--territory', metavar='territory', type=str, help=f"territory where to clear the discovered-by info. Use {Territory.GALAXY} for the whole galaxy or any of the configured ones, use --showterritories to get the list")
+@click.option('--showterritories', is_flag=True, help="show the configured territories")
+@click.option('--listfile', metavar='file', help="if this is given, use the text file as input for the system/playfield names additionally to the names passed as argument. The list file has to contain an entry per line, see the help of names for the syntax")
 @click.option('--nodryrun', is_flag=True, help="set to actually execute the action on the disk")
-@click.option('-f', '--file', metavar='file', help="if this is given, use the text file as input for the system/playfield names additionally")
+@click.option('--dblocation', metavar='file', help="location of database file to be used. Defaults to use the current savegames DB")
 @click.argument('names', nargs=-1)
-def clearDiscovered(dblocation, nodryrun, file, names):
+def toolClearDiscovered(dblocation, nodryrun, territory, showterritories, listfile, names):
     """This will clear the discovered-by info from given stars/playfields. Just when you want something to be "Undiscovered" again.
+    
     If you pass a system as parameter, all the playfields in it will be de-discovered.
 
     Names must be the full names of the playfield, or, if it is a solar system, have the prefix "S:".
@@ -325,24 +324,39 @@ def clearDiscovered(dblocation, nodryrun, file, names):
 
     If you defined a file as input, make sure it is a textfile with *one entry per line*.
 
+    If you pass a territory, all the stars in that territory will be de-discovered. You can not combine --territory with --files or the names as argument.
+        
     Defaults to use a dryrun, so the results are only written to a csv file for you to check.
     If you use the dry mode just to see how it works, you should probably also define the location of a different database.
     """
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)  
         esm.checkAndWaitForOtherInstances()
+
+        if territory and listfile:
+            raise WrongParameterError(f"--territory and --listfile can not be combined.")
+
+        if territory and names:
+            raise WrongParameterError(f"--territory and names can not be combined.")
+
+        if not listfile and not names and not territory:
+            raise WrongParameterError(f"neither a file nor names nor territory were provided, but at least one is required.")
+
+        if territory:
+            checkTerritoryParameter(territory, esm)
         
-        if not file and not names:
-            log.error(f"neither a file nor names were provided, but at least one is required.")
-        else:
-            esm.clearDiscovered(dbLocation=dblocation, dryrun=not nodryrun, inputFile=file, inputNames=names)
+        if showterritories:
+            showConfiguredTerritories(esm)
+            return
+        
+        esm.clearDiscovered(dblocation=dblocation, dryrun=not nodryrun, territoryName=territory, inputFile=listfile, inputNames=names)
 
 
 @cli.command(name="terminate-galaxy", short_help="creates a singularity to destroy everything")
 @click.option('--i-am-darkestwarrior', is_flag=True, help="forces termination and laughs about it")
 @click.option('--i-am-vollinger', is_flag=True, help="quick and graceful shutdown")
 @click.option('--i-am-kreliz', is_flag=True, help="have some pancackes and a coffee instead")
-def omg(i_am_darkestwarrior, i_am_vollinger, i_am_kreliz):
+def terminateGalaxy(i_am_darkestwarrior, i_am_vollinger, i_am_kreliz):
     """Beware, this function will ^w^w^w
     
     Do not press CTRL+C!
@@ -427,12 +441,11 @@ def wipeTool(listfile, territory, showterritories, wipetype, showtypes, nocleard
         esm.checkAndWaitForOtherInstances()
 
         if showtypes:
-            click.echo("Supported wipe types are:\n\n" + "\n".join(f"{wt.value.name}\t\t-\t{wt.value.description}" for wt in list(WipeType))+"\n")
+            showWipeTypes()
             return
         
         if showterritories:
-            click.echo("Configured custom territories:\n\n" + "\n".join(f"{ct.name}" for ct in esm.configService.getAvailableTerritories()))
-            click.echo(f"\nUse {Territory.GALAXY} to wipe the whole galaxy.\n")
+            showConfiguredTerritories(esm)
             return
 
         if listfile and territory:
@@ -449,37 +462,42 @@ def wipeTool(listfile, territory, showterritories, wipetype, showtypes, nocleard
 
         inputFilePath = None
         if not listfile:
-            availableTerritories = esm.configService.getAvailableTerritories()
-            atn = list(map(lambda x: x.name, availableTerritories))
-            if territory and (territory in atn or territory == Territory.GALAXY):
-                log.debug(f"valid territory selected '{territory}'")
-            else:
-                raise WrongParameterError(f"Territory '{territory}' not valid, must be one of: {Territory.GALAXY}, {', '.join(atn)}")
+            checkTerritoryParameter(territory, esm)
         else:
             inputFilePath = Path(listfile)
             if not inputFilePath.exists():
                 raise WrongParameterError(f"file {inputFilePath} does not exist.")
 
-        wtl = WipeType.valueList()
-        if wipetype and wipetype in wtl:
-            log.debug(f"valid wipetype selected '{wipetype}'")
-        else:
-            raise WrongParameterError(f"Wipe type '{wipetype}' not valid, must be one of: {wtl}")
-            
-        dbLocationPath = esm.fileSystem.getAbsolutePathTo("saves.games.savegame.globaldb")
-        if dblocation:
-            dbLocationPath = Path(dblocation)
-            if dbLocationPath.exists():
-                dbLocationPath = str(dbLocationPath.resolve())
-            else:
-                raise WrongParameterError(f"dbLocation '{dbLocationPath}' is not a valid database location path.")
+        checkWipeTypeParameter(wipetype)
             
         if minage:
             minage = int(minage)
             if minage < 0:
                 raise WrongParameterError(f"minage must be >= 0")
 
-        esm.wipeTool(inputFilePath=inputFilePath, territoryName=territory, wipetype=WipeType.byName(wipetype), cleardiscoveredby=not nocleardiscoveredby, minage=minage, dbLocationPath=dbLocationPath, dryrun=not nodryrun)
+        esm.wipeTool(inputFilePath=inputFilePath, territoryName=territory, wipetype=WipeType.byName(wipetype), cleardiscoveredby=not nocleardiscoveredby, minage=minage, dbLocation=dblocation, dryrun=not nodryrun)
+
+def showConfiguredTerritories(esm):
+    click.echo("Configured custom territories:\n\n" + "\n".join(f"{ct.name}" for ct in esm.configService.getAvailableTerritories()))
+    click.echo(f"\nUse {Territory.GALAXY} to wipe the whole galaxy.\n")
+
+def showWipeTypes():
+    click.echo("Supported wipe types are:\n\n" + "\n".join(f"{wt.value.name}\t\t-\t{wt.value.description}" for wt in list(WipeType))+"\n")
+
+def checkWipeTypeParameter(wipetype):
+    wtl = WipeType.valueList()
+    if wipetype and wipetype in wtl:
+        log.debug(f"valid wipetype selected '{wipetype}'")
+    else:
+        raise WrongParameterError(f"Wipe type '{wipetype}' not valid, must be one of: {wtl}")
+
+def checkTerritoryParameter(territory, esm):
+    availableTerritories = esm.configService.getAvailableTerritories()
+    atn = list(map(lambda x: x.name, availableTerritories))
+    if territory and (territory in atn or territory == Territory.GALAXY):
+        log.debug(f"valid territory selected '{territory}'")
+    else:
+        raise WrongParameterError(f"Territory '{territory}' not valid, must be one of: {Territory.GALAXY}, {', '.join(atn)}")
 
 def init(fileLogLevel=logging.DEBUG, streamLogLevel=logging.INFO, waitForPort=False, customConfig=None):
     # catch keyboard interrupts 
