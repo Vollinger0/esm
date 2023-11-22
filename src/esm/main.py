@@ -60,7 +60,7 @@ def cli(verbose, config, wait):
 @cli.command(name='version', short_help="shows this programs version")
 def showVersion():
     """ really just shows the version of esm"""
-    version = importlib.metadata.version(__package__)
+    version = getPackageVersion()
     log.info(f"Version is {version}")
 
 
@@ -507,6 +507,9 @@ def checkTerritoryParameter(territory, esm: EsmMain):
         log.debug(f"valid territory selected '{territory}'")
     else:
         raise WrongParameterError(f"Territory '{territory}' not valid, must be one of: {Territory.GALAXY}, {', '.join(atn)}")
+
+def getPackageVersion():
+    return importlib.metadata.version(__package__)
 
 def init(fileLogLevel=logging.DEBUG, streamLogLevel=logging.INFO, waitForPort=False, customConfig=None):
     # catch keyboard interrupts 
