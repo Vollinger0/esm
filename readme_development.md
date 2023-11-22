@@ -40,6 +40,8 @@ This will create the distributable files with all its dependencies in `dist/esm`
 
 ### WIP
 
+- [+] GUI!
+
 ### later
 
 - [ ] provide full installation package with install bat, that installs esm, the tools (osfmount, peazip, etc.)?
@@ -50,7 +52,7 @@ This will create the distributable files with all its dependencies in `dist/esm`
   - [ ] actually make any option have a -batchmode when there are interactive prompts, defaulting to the most defensive option.
 - [ ] implement allowMultpleServerInstances switch? Once enabled, do not check for instances of the game before starting, do not start if startmode is set to direct, etc.
 - [+] create separate windows-gui thingy that resides in the taskbar or similar and provides a shortcut to the cli tool.
-- [ ] fix tool-purge-wiped-playfields, since this needs to also delete related data in the database.
+- [ ] fix purge-tools: these need to also delete related data in the database! Probably not difficult to finish implementing, but a PITA to test.
 
 ### optional
 
