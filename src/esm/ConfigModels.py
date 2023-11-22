@@ -4,7 +4,7 @@ from typing import List, Optional, TypedDict
 from pydantic import BaseModel, Field
 from easyconfig import AppConfigMixin, AppBaseModel
 
-FILESIZEPATTERN = "^\d+(\.\d+)?\s*[KkMmGgTtPpEeZzYy]$"
+FILESIZEPATTERN = r"^\d+(\.\d+)?\s*[KkMmGgTtPpEeZzYy]$"
 
 """
 - if a field is required, set the default value to "...", its parent class then has to be "..." in the main config too.
@@ -33,7 +33,7 @@ class ConfigServer(BaseModel):
     sendExitInterval: int = Field(5, description="how many seconds to wait before retrying to send another 'saveandexit' to the server to stop it")
 
 class ConfigRamdisk(BaseModel):
-    drive: str = Field("R:", pattern="[A-Z]\:", description="the drive letter to use for the ramdisk, e.g. 'R:'")
+    drive: str = Field("R:", pattern=r"[A-Z]\:", description="the drive letter to use for the ramdisk, e.g. 'R:'")
     size: str = Field("2G", pattern=FILESIZEPATTERN, description="ramdisk size to use, e.g. '5G' or '32G', etc. If you change this, the ramdisk needs to be re-mounted, and the setup needs to run again.")
     synchronizeRamToMirrorInterval: int = Field(3600, description="interval in seconds at which to do a ram2hdd sync for the savegame. if interval=0 the sync will be disabled! Recommended to leave at 3600 (1h)")
 
