@@ -71,7 +71,7 @@ class EsmBackupService:
         deletedLinks = self.removeLinksToTargetBackupFolder(targetBackupFolder)
         if deletedLinks and len(deletedLinks) > 0:
             linkList = ",".join(map(str,deletedLinks))
-            log.info(f"Removed now deprecated hardlinks: {linkList}")
+            log.info(f"Removed now deprecated hardlinks: '{linkList}'")
 
         linkPath = self.createBackupLink(targetBackupFolder)
         log.info(f"Created link to latest backup as '{linkPath}' -> '{targetBackupFolder}'")
@@ -178,7 +178,7 @@ class EsmBackupService:
         if adminConfig.exists():
             FsTools.copyFile(adminConfig, targetAdminConfig)
         else:
-            log.warning(f"{adminConfigFileName} at {adminConfig} does not exist. You probably should have one or something is misconfigured.")
+            log.warning(f"{adminConfigFileName} at '{adminConfig}' does not exist. You probably should have one or something is misconfigured.")
 
         # dedicated.yaml
         dedicatedYaml = Path(f"{self.config.paths.install}/{self.config.server.dedicatedYaml}")
@@ -186,7 +186,7 @@ class EsmBackupService:
         if dedicatedYaml.exists():
             FsTools.copyFile(dedicatedYaml, targetDedicatedYaml)
         else:
-            log.warning(f"dedicated yaml at {dedicatedYaml} does not exist. This shouldn't happen")
+            log.warning(f"dedicated yaml at '{dedicatedYaml}' does not exist. This shouldn't happen")
     
     def backupToolData(self, targetBackupFolder):
         """

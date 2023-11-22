@@ -105,7 +105,7 @@ class EsmMain:
             raise UserAbortedException("Did not create new savegame")
 
         log.info("Will start the server with the default configuration now")
-        newEsm = EsmDedicatedServer(config=self.config)
+        newEsm = EsmDedicatedServer()
         newEsm.gfxMode = True
         try:
             # start the server without checking for the ramdisk or diskspace, since this may have been called *before* the ramdisk setup.
@@ -129,7 +129,7 @@ class EsmMain:
         """
         if self.dedicatedServer.isRunning():
             log.warning("A server is already running!")
-            return
+            raise ServerNeedsToBeStopped("A server is already running!")
 
         self.startSynchronizer()
         
@@ -191,7 +191,7 @@ class EsmMain:
 
     def sendSaveAndExit(self):
         """
-        Just saven the saveandexit signal. Since this is probably called from another instance of the script that probably does not have
+        Just send the saveandexit signal. Since this is probably called from another instance of the script that probably does not have
         the correct instances of the server and process, we don't check for anything nor execute other actions.
         """
         # stop server
@@ -267,7 +267,7 @@ class EsmMain:
             destinationPath.mkdir(parents=False, exist_ok=False)
 
         if dryrun:
-            log.info(f"Would synchronize scenario from '{sourcePath}' to '{destinationPath}'. If you want to actually run it, pass --nodryrun.")
+            log.info(f"Would synchronize scenario from '{sourcePath}' to '{destinationPath}'. If you want to actually run it, use --nodryrun.")
         else:
             log.info(f"Synchronizing scenario from '{sourcePath}' to '{destinationPath}'")
             return self.fileSystem.synchronize(sourcePath, destinationPath)
@@ -494,11 +494,11 @@ class EsmMain:
             names.extend(inputNames)
         if inputFile:
             inputFilePath = Path(inputFile).resolve()
-            if inputFilePath.exists():
+            if inputFilePath.exists() and inputFilePath.is_file():
                 with open(inputFilePath, "r") as file:
                     names.extend([line.rstrip('\n') for line in file.readlines()])
             else:
-                raise WrongParameterError(f"input file at '{inputFilePath}' not found")
+                raise WrongParameterError(f"Input file at '{inputFilePath}' not found")
         return names
 
     def purgeEmptyPlayfieldsOld(self, dbLocation=None, dryrun=True, cleardiscoveredby=True, minimumage=30, leavetemplates=False, force=False):
@@ -511,14 +511,14 @@ class EsmMain:
         if dbLocation is None:
             dbLocation = self.fileSystem.getAbsolutePathTo("saves.games.savegame.globaldb")
         else:
-            dbLocationPath = Path(dbLocation).resolve().absolute()
-            if dbLocationPath.exists():
+            dbLocationPath = Path(dbLocation).resolve()
+            if dbLocationPath.exists() and dbLocationPath.is_file():
                 dbLocation = str(dbLocationPath)
             else:
                 raise WrongParameterError(f"DbLocation '{dbLocation}' is not a valid database location path.")
 
         if minimumage < 1:
-            raise WrongParameterError(f"Minimum age in days is 1, you chose '{minimumage}'")
+            raise WrongParameterError(f"Minimum age must be greater than or equal to 1, you chose '{minimumage}'")
 
         try:
             log.info(f"Calling purge empty playfields for dbLocation: '{dbLocation}', minimumage '{minimumage}', dryrun '{dryrun}', cleardiscoveredby '{cleardiscoveredby}', leavetemplates '{leavetemplates}', force '{force}'")
@@ -608,7 +608,7 @@ class EsmMain:
             return self.fileSystem.getAbsolutePathTo("saves.games.savegame")
         else:
             savegamePath = Path(savegame).resolve()
-            if savegamePath.exists():
+            if savegamePath.exists() and savegamePath.is_dir():
                 return savegamePath
             else:
                 raise WrongParameterError(f"Savegame path '{savegamePath}' is not a valid savegame location path.")
@@ -650,7 +650,7 @@ class EsmMain:
         try:
             gameName = self.config.dedicatedConfig.GameConfig.GameName
             scenario = self.config.dedicatedConfig.GameConfig.CustomScenario
-            dedicatedYaml = Path(f"{self.config.paths.install}/{self.config.server.dedicatedYaml}").absolute()
+            dedicatedYaml = self.config.paths.install.joinpath(self.config.server.dedicatedYaml).absolute()
             log.info(f"Game name is '{gameName}' scenario is '{scenario}' - (read from dedicated yaml at '{dedicatedYaml}')")
         except KeyError as ex:
             log.error(f"{ex}")

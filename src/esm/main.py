@@ -1,6 +1,7 @@
 import importlib
 import logging
 from pathlib import Path
+import random
 import signal
 import click
 import sys
@@ -9,7 +10,7 @@ from esm.Exceptions import EsmException, ExitCodes, WrongParameterError
 from esm.DataTypes import Territory, WipeType
 from esm.ServiceRegistry import ServiceRegistry
 from esm.EsmMain import EsmMain
-from esm.Tools import getElapsedTime, getTimer
+from esm.Tools import Timer, getElapsedTime, getTimer
 
 log = logging.getLogger(__name__)
 
@@ -35,9 +36,9 @@ class LogContext:
 # this file is the main cli interface and entry point for the script and module.
 #
 @click.group(epilog='Brought to you by hamster, coffee and pancake symphatisants')
-@click.option('-c', '--config', default="esm-custom-config.yaml", metavar='<file>', show_default=True, help="set an alternative custom config file")
-@click.option('-v', '--verbose', is_flag=True, help='set loglevel on console to DEBUG. The logfile already is set to DEBUG.')
-@click.option('-w', '--wait', is_flag=True, help="if set, will wait and retry to start command, if there is already an instance running. You can set the interval and amount of tries in the configuration.")
+@click.option('-c', '--config', default="esm-custom-config.yaml", metavar='<file>', show_default=True, help="set an alternative custom config file.")
+@click.option('-v', '--verbose', is_flag=True, help='set loglevel on console to DEBUG. The log file is already set to debug.')
+@click.option('-w', '--wait', is_flag=True, help="if set, will wait and retry to start command, if there is already an instance running and you want to run a comand that is limited to one instance only. You can set the interval and amount of retries in the configuration. This option is especially useful for automating tasks")
 def cli(verbose, config, wait):
     """ 
     ESM, the Empyrion Server Manager - will help you set up an optional ramdisk, run the server, do rolling backups, cleanups and other things efficiently.
@@ -45,8 +46,10 @@ def cli(verbose, config, wait):
 
     Make sure to check the configuration before running any command!
 
-    Tip: You can get more info and options to each command by calling it with the param --help\n
-    e.g. "esm tool-wipe-empty-playfields --help"
+    \b
+    Tip: You can get more info and options to each command by calling it with the param --help
+         e.g. "esm tool-wipe --help"
+         If you use the --verbose flag, you'll probably even learn how the script works!
     """
     if verbose:
         init(streamLogLevel=logging.DEBUG, customConfig=config, waitForPort=wait)
@@ -54,9 +57,9 @@ def cli(verbose, config, wait):
         init(streamLogLevel=logging.INFO, customConfig=config, waitForPort=wait)
 
 
-@cli.command(name='version', short_help="shows the scripts version")
+@cli.command(name='version', short_help="shows this programs version")
 def showVersion():
-    """ just shows the version of this script"""
+    """ really just shows the version of esm"""
     version = importlib.metadata.version(__package__)
     log.info(f"Version is {version}")
 
@@ -70,7 +73,7 @@ def ramdiskPrepare():
         esm.ramdiskPrepare()
 
 
-@cli.command(name="ramdisk-setup", short_help="sets up the ramdisk")
+@cli.command(name="ramdisk-setup", short_help="sets up the ramdisk by mounting the ramdisk and copying the savegame to it")
 def ramdiskSetup():
     """Sets up the ramdisk - this will actually mount it and copy the savegame mirror to it. Use this after a server reboot before starting the server.
     This might need admin privileges, so prepare to confirm the elevated privileges prompt from windows.
@@ -104,10 +107,11 @@ def ramdiskUninstall(force):
         esm.ramdiskUninstall(force=force)
 
 
-@cli.command(name="server-start", short_help="starts the server, returns when the server shuts down")
+@cli.command(name="server-start", short_help="starts the server (and the synchronizer, if needed). Returns when the server shuts down")
 def startServer():
-    """Starts up the server, if ramdisk usage is enabled, this will automatically start the ram2mirror synchronizer thread too. The script will return when the server shut down.
-    This will *NOT* shut down the server. If you want to do that do that either via other means or use the server-stop command in a new console.
+    """Starts up the server. If ramdisk usage is enabled, this will automatically start the ram2mirror synchronizer thread too. The script will return when the server shut down.
+
+    Stopping this script with CTRL+C will *NOT* shut down the server. If you want to do that do that either via other means or use the server-stop command in a new console.
     """
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)
@@ -130,7 +134,7 @@ def stopServer():
             log.error(f"Could not stop server. Is it running at all? {ex}")
 
 
-@cli.command(name="server-resume", short_help="resumes execution of the script if the gameserver is still running")
+@cli.command(name="server-resume", short_help="resumes execution of the script if the gameserver is still running. Will start the synchronizer if required.")
 def resumeServer():
     """Looks for a running server and restarts inner processes accordingly (e.g. the ram synchronizer). Will end when the server shuts down, just like server-start."""
     with LogContext():
@@ -167,7 +171,9 @@ def installGame():
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)
         esm.checkAndWaitForOtherInstances()
-        esm.installGame()
+        with Timer() as timer:
+            esm.installGame()
+        log.info(f"Installation took {timer.elapsedTime} seconds")
 
 
 @cli.command(name="game-update", short_help="updates and verifies the game via steam and executes additional commands")
@@ -178,7 +184,9 @@ def updateGame(nosteam, noadditionals):
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)
         esm.checkAndWaitForOtherInstances()
-        esm.updateGame(not nosteam, not noadditionals)
+        with Timer() as timer:
+            esm.updateGame(not nosteam, not noadditionals)
+        log.info(f"Update took {timer.elapsedTime} seconds")
 
 
 @cli.command(name="scenario-update", short_help="updates the configured scenario on the server from the local copy")
@@ -203,6 +211,10 @@ def deleteAll():
     This uses delete operations that are optimized for maximum speed and efficiency, which you'll need to delete millions of files.
 
     Be aware that this will take a lot of time and delete a lot of data if you have a big savegame!
+
+    AGAIN: THIS WILL DELETE ALL SAVEGAME RELATED DATA.
+
+    You may want to use this for starting a new season exclusively, because after this, you will have to.
     """
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)
@@ -260,12 +272,12 @@ def deleteAll():
 #         #esm.purgeWipedPlayfieldsOld(dryrun=not nodryrun, leavetemplates=leavetemplates, force=force)
 
 
-@cli.command(name="tool-cleanup-removed-entities", short_help="delete entity files that are marked as removed in the database")
+@cli.command(name="tool-cleanup-removed-entities", short_help="delete obsolete entity files that are marked as removed in the database")
 @click.option('--savegame', metavar='path', help="location of savegame to use, e.g. to use this on a different savegame or savegame copy") 
 @click.option('--nodryrun', is_flag=True, help="set to actually execute the purge on the disk")
-@click.option('--force', is_flag=True, help=f"if set, do not ask interactively before file deletion")
+@click.option('--force', is_flag=True, help=f"if set, do not ask interactively before file deletion, use with caution")
 def toolCleanupRemovedEntities(savegame, nodryrun, force):
-    """Will delete all related files to all entities that are marked as removed in the database. 
+    """Will delete all related files to all entities that are marked as removed in the database interactively.
 
     If --savegame is the current savegame, this requires the server to be shut down, since it modifies the files on the filesystem. Make sure to have a recent backup aswell.
     
@@ -276,10 +288,10 @@ def toolCleanupRemovedEntities(savegame, nodryrun, force):
         esm.cleanupRemovedEntities(savegame=savegame, dryrun=not nodryrun, force=force)
 
 
-@cli.command(name="tool-cleanup-shared", short_help="removes any obsolete entries in the shared folder")
+@cli.command(name="tool-cleanup-shared", short_help="removes any obsolete files in the Shared folder")
 @click.option('--savegame', metavar='path', help="location of savegame to use, e.g. to use this on a different savegame or savegame copy") 
 @click.option('--nodryrun', is_flag=True, help="set to actually execute the purge on the disk")
-@click.option('--force', is_flag=True, help=f"if set, do not ask interactively before file deletion")
+@click.option('--force', is_flag=True, help=f"if set, do not ask interactively before file deletion, use with caution")
 def toolCleanupShared(savegame, nodryrun, force):
     """Will check all entries in the Shared-Folder against the database and remove all the ones that shouldn't exist any more since there is no more related data in the database.
 
@@ -294,10 +306,10 @@ def toolCleanupShared(savegame, nodryrun, force):
 
 @cli.command(name="tool-clear-discovered", short_help="clears the discovered-by info for systems/playields")
 @click.option('--territory', metavar='territory', type=str, help=f"territory where to clear the discovered-by info. Use {Territory.GALAXY} for the whole galaxy or any of the configured ones, use --showterritories to get the list")
-@click.option('--showterritories', is_flag=True, help="show the configured territories")
+@click.option('--showterritories', is_flag=True, help="show the configured territories and exit")
 @click.option('--listfile', metavar='file', help="if this is given, use the text file as input for the system/playfield names additionally to the names passed as argument. The list file has to contain an entry per line, see the help of names for the syntax")
 @click.option('--nodryrun', is_flag=True, help="set to actually execute the action on the disk")
-@click.option('--dblocation', metavar='file', help="location of database file to be used. Defaults to use the current savegames DB")
+@click.option('--dblocation', metavar='file', help="location of database file to be used. Defaults to use the current savegames database")
 @click.argument('names', nargs=-1)
 def toolClearDiscovered(dblocation, nodryrun, territory, showterritories, listfile, names):
     """This will clear the discovered-by info from given stars/playfields. Just when you want something to be "Undiscovered" again.
@@ -347,7 +359,7 @@ def terminateGalaxy(i_am_darkestwarrior, i_am_vollinger, i_am_kreliz):
     Do not press CTRL+C!
     """
     def NoOp(*args):
-        raise KeyboardInterrupt
+        raise KeyboardInterrupt()
     with LogContext():
         # reset the global signal handler for this method
         signal.signal(signal.SIGINT, NoOp)
@@ -360,7 +372,16 @@ def terminateGalaxy(i_am_darkestwarrior, i_am_vollinger, i_am_kreliz):
                 if result != "yes": 
                     log.error(f"{result} is not a valid option, try again")
         except:
-            log.info(f"It's all your fault now")
+            culprit = None
+            for key, value in locals().items():
+                if key.startswith("i_am_"):
+                    if value:
+                        culprit = key[len("i_am_"):]
+            if culprit:
+                click.echo("It's all your fault now " + click.style(culprit, fg="red"))
+            else:
+                culprit = random.choice([key for key in locals() if key.startswith("i_am_")])
+                click.echo("It's all " + click.style(culprit[len("i_am_"):], fg="red") + "'s fault")
 
         try:
             esm.openSocket(raiseException=True)
