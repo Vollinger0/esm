@@ -61,10 +61,11 @@ class EsmDeleteService:
                     else:
                         log.info(f"There is no more ramdisk mounted as {ramdiskDriveLetter}, will continue.")
                 log.info(f"Ramdisk at {ramdiskDriveLetter} unmounted")
-        else:
-            savegamePath = self.fileSystem.getAbsolutePathTo("saves.games.savegame")
-            log.info(f"Marking for deletion: savegame at {savegamePath}")
-            self.fileSystem.markForDelete(savegamePath, native=True)
+
+        # delete savegame, in the case of using a ramdisk, this will delete the link.
+        savegamePath = self.fileSystem.getAbsolutePathTo("saves.games.savegame")
+        log.info(f"Marking for deletion: savegame at {savegamePath}")
+        self.fileSystem.markForDelete(savegamePath, native=True)
 
         # delete backups
         backups = self.fileSystem.getAbsolutePathTo("backup")
@@ -87,12 +88,12 @@ class EsmDeleteService:
 
         # delete the cache
         cache = self.fileSystem.getAbsolutePathTo("saves.cache")
-        cacheSavegame = f"{cache}/{self.config.dedicatedConfig.GameConfig.GameName}"
+        cacheSavegame = cache.joinpath(self.config.dedicatedConfig.GameConfig.GameName)
         log.info(f"Marking for deletion: the cache at {cacheSavegame}")
         self.fileSystem.markForDelete(cacheSavegame)
         
         #delete eah tool data
-        eahToolDataPattern = Path(f"{self.config.paths.eah}/Config/").absolute().joinpath("*.dat")
+        eahToolDataPattern = self.config.paths.eah.joinpath("Config").absolute().joinpath("*.dat")
         deglobbedPaths = FsTools.resolveGlobs([eahToolDataPattern])
         for entry in deglobbedPaths:
             log.info(f"Marking for deletion: eah tool data at {entry}")
@@ -160,7 +161,10 @@ class EsmDeleteService:
             if Path(self.config.context.get('logFile')).samefile(source):
                 shutil.copy(src=source, dst=target)
             else:
-                shutil.move(src=source, dst=target)
+                try:
+                    shutil.move(src=source, dst=target)
+                except:
+                    log.error(f"Could not move {source} to {target}")
         
     def getLogsBackupFileName(self, date=None):
         """

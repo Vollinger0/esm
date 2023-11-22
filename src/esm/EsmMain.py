@@ -9,6 +9,7 @@ from esm.Exceptions import AdminRequiredException, ExitCodes, RequirementsNotFul
 from esm.ConfigModels import MainConfig
 from esm.DataTypes import Territory, WipeType
 from esm.EsmLogger import EsmLogger
+from esm.FsTools import FsTools
 from esm.Tools import Timer, askUser, mergeDicts, monkeyPatchAllFSFunctionsForDebugMode
 from esm.EsmEpmRemoteClientService import EsmEpmRemoteClientService
 from esm.EsmConfigService import EsmConfigService
@@ -291,7 +292,7 @@ class EsmMain:
 
         return self.deleteService.deleteAll()
 
-    def ramdiskPrepare(self):
+    def ramdiskInstall(self):
         """
         Checks existence of savegame and mirror, offers the user the possibility to fix that, then proceeds to prepare for ramdisk
         
@@ -344,7 +345,7 @@ class EsmMain:
 
     def ramdiskUninstall(self, force=False):
         """
-        Checks existence of savegame and mirror, offers the user the possibility to fix that, then proceeds to revert the ramdisk-prepare and -setup stuff
+        Checks existence of savegame and mirror, offers the user the possibility to fix that, then proceeds to revert the ramdisk-install and -setup stuff
         
         if mirror and savegame: delete savegame, move mirror
         if mirror and nosavegame: move mirror
@@ -717,6 +718,9 @@ class EsmMain:
             ramdriveMounted = self.ramdiskManager.checkRamdrive(simpleCheck=False)
             if not ramdriveMounted:
                 log.error(f"Could either not execute or not access the ramdisk with osf mount. You require admin privileges for ramdisk mode.")
+
+        # clean up. the only time we call the fstool directly.
+        FsTools.deleteDir(Path(f"{self.config.paths.install}/{self.config.foldernames.esmtests}").resolve(), recursive=True)
 
     def checkAndWaitForOtherInstances(self):
         """ 

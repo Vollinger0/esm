@@ -80,7 +80,7 @@ Just start the server with `esm server-start`. You can CTRL+C out of it, this wi
 You can stop the server with either `esm server-stop`, EAH or clicking the 'save and exit' button in the graphical overlay (if enabled).
 
 ## filesystem structure (default)
-This is how the file system tree looks like, when it is set up after ramdisk-prepare, ramdisk-setup and a few create-backup runs (default configuration, only important bits are shown)
+This is how the file system tree looks like, when it is set up after ramdisk-install, ramdisk-setup and a few create-backup runs (default configuration, only important bits are shown)
 ```
 D:\Server\Empyrion (as an example for your Empyrion game install directory)
 ├───Saves

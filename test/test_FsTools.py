@@ -328,7 +328,8 @@ class test_FsTools(unittest.TestCase):
             f"{parentDir}/requirements.txt",
             f"{parentDir}/h*.csv",
             "../*esm*/esm*.example",
-            "../**/*.toml"
+            "../**/*.toml",
+            "./emprc/*"
             ]
         expected = [
             f"{parentDir}\\esm-custom-config.yaml.example",
@@ -337,7 +338,8 @@ class test_FsTools(unittest.TestCase):
             f"{parentDir}\\esm-starter-for-eah.cmd.example",
             f"{parentDir}\\hamster_sync_lines.csv",
             f"{parentDir}\\pyproject.toml",
-            f"{parentDir}\\requirements.txt"
+            f"{parentDir}\\requirements.txt",
+            f"{parentDir}\\emprc\\EmpyrionPrime.RemoteClient.Console.exe"
             ]
 
         absoluteEntries = FsTools.toAbsolutePaths(userentries, parentDir)

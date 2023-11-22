@@ -1,5 +1,5 @@
 general:
-  useRamdisk: True # True|False. if True, use a ramdisk for the savegame. Requires the user to call ramdisk-prepare and ramdisk-setup to work. Will completely solve your server performance issues.
+  useRamdisk: True # True|False. if True, use a ramdisk for the savegame. Requires the user to call ramdisk-install and ramdisk-setup to work. Will completely solve your server performance issues.
 
 ramdisk:
   drive: "R:" # string. the drive letter to use for the ramdisk, e.g. "R:"

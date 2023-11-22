@@ -169,7 +169,7 @@ class EsmFileSystem:
         else:
             path = Path(targetPath).absolute()
           
-        if not path.exists():
+        if not path.exists(follow_symlinks=False):
             return
         # add path to the list of paths to delete
         self.pendingDeletePaths.append((path, targetPath, native))

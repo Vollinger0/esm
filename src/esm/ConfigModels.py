@@ -11,7 +11,7 @@ FILESIZEPATTERN = "^\d+(\.\d+)?\s*[KkMmGgTtPpEeZzYy]$"
 """
 
 class ConfigGeneral(BaseModel):
-    useRamdisk: bool = Field(True, description="if True, use a ramdisk for the savegame. Requires the user to call ramdisk-prepare and ramdisk-setup to work. Will completely solve your server performance issues.")
+    useRamdisk: bool = Field(True, description="if True, use a ramdisk for the savegame. Requires the user to call ramdisk-install and ramdisk-setup to work. Will completely solve your server performance issues.")
     externalizeTemplates: bool = Field(True, description="if True, will 'externalize' the savegame templates, meaning that they will be symlinked back to the hdd when using the ramdisk. This saves aboit 40% of space on the ramdisk!")
     bindingPort: int = Field(6969, lt=65535, gt=1024, description="default port to bind application to, just used to make sure only one instance can run with one config at a time.")
     multipleInstanceWaitInterval: int = Field(10, description="interval in seconds for checking if there is another script running at script start")

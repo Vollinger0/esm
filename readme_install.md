@@ -48,7 +48,7 @@ If you already have a installed and working dedicated server, you can skip this 
 If you are NOT using a ramdisk (and disabled it in the config), skip this section.
 
 - call `esm ramdisk-install`, this will move the savegame to the gamesmirror folder
-- call `esm ramdisk-prepare`, this will mount the ramdisk, copy the savegame to it and symlink it back to the empyrion saves folder. This will also externalize the templates if configured. You'll need to repeat this step when you rebooted your server.
+- call `esm ramdisk-setup`, this will mount the ramdisk, copy the savegame to it and symlink it back to the empyrion saves folder. This will also externalize the templates if configured. You'll need to repeat this step when you rebooted your server.
 
 ### Start server
 

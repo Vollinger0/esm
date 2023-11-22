@@ -39,7 +39,7 @@ def testStartStopServer():
             log.info(f"server couldn't be killed {ex}")
 
 def testRamdiskPrepare():
-    esm.ramdiskPrepare()
+    esm.ramdiskInstall()
 
 def testRamdiskSetup():
     esm.ramdiskSetup()  
