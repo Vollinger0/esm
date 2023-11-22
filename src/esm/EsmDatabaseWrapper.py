@@ -1,8 +1,10 @@
 from datetime import datetime, timedelta
 from functools import cached_property
+import functools
 import logging
 from pathlib import Path
 import sqlite3
+import time
 from typing import List
 from esm.ConfigModels import MainConfig
 from esm.DataTypes import Entity, EntityType, Playfield, SolarSystem
@@ -18,6 +20,7 @@ class EsmDatabaseWrapper:
     dbConnection: sqlite3.Connection = None
     gameDbCursor: sqlite3.Cursor = None
     readOnly: str = True
+    connectTime: datetime = None
 
     @cached_property
     def config(self) -> MainConfig:
@@ -59,6 +62,7 @@ class EsmDatabaseWrapper:
             dbConnectString = self.getGameDbString()
             log.debug(f"using database connect string '{dbConnectString}'")
             self.dbConnection = sqlite3.connect(dbConnectString, uri=True)
+            self.connectTime = time.time()
         return self.dbConnection
 
     def closeDbConnection(self):
@@ -66,6 +70,8 @@ class EsmDatabaseWrapper:
             log.debug("closing db connection")
             self.dbConnection.close()
             self.dbConnection = None
+        if self.connectTime and self.connectTime>0:
+            log.info(f"db connection was open for {timedelta(seconds=time.time()-self.connectTime)}")
 
     def getGameDbCursor(self):
         if not self.gameDbCursor:
@@ -95,6 +101,7 @@ class EsmDatabaseWrapper:
         log.debug(f"discovered playfields for the given solarsystems: {len(discoveredPlayfields)}")
         return discoveredPlayfields
 
+    @functools.lru_cache
     def retrieveSSsAll(self) -> List[SolarSystem]:
         """returns all solar systems, no exceptions"""
         solarsystems = []
@@ -106,6 +113,7 @@ class EsmDatabaseWrapper:
         log.debug(f"solar systems found: {len(solarsystems)}")
         return solarsystems
 
+    @functools.lru_cache
     def retrievePFsWithPlayerStructures(self) -> List[Playfield]:
         log.debug("retrieving playfields containing player structures")
         pfsWithStructures = []
@@ -121,6 +129,7 @@ class EsmDatabaseWrapper:
         log.debug(f"playfields containing player structures: {len(pfsWithStructures)}")
         return pfsWithStructures
 
+    @functools.lru_cache
     def retrievePFsWithPlaceables(self) -> List[Playfield]:
         log.debug("finding playfields containing terrain placeables")
         pfsWithPlaceables = []
@@ -131,6 +140,7 @@ class EsmDatabaseWrapper:
         log.debug(f"playfields containing terrain placeables: {len(pfsWithPlaceables)}")
         return pfsWithPlaceables
 
+    @functools.lru_cache
     def retrievePFsWithPlayers(self) -> List[Playfield]:
         """retrieve all playfields that (should) contain players.
         actually, select all playfields where players have last changed to, since this seems the only way to find out.
@@ -151,13 +161,13 @@ class EsmDatabaseWrapper:
         log.debug(f"playfields containing players: {len(pfsWithPlayers)}")
         return pfsWithPlayers
 
+    @functools.lru_cache
     def retrievePFsAllNonEmpty(self) -> List[Playfield]:
         """this will get all non empty playfields from the db, excluding pfs with structures, placeables or players"""
         pfsWithPlayerStructures = self.retrievePFsWithPlayerStructures()
         pfsWithPlaceables = self.retrievePFsWithPlaceables()
         pfsWithPlayers = self.retrievePFsWithPlayers()
 
-        log.debug("merging all lists, removing duplicates")
         # merge all 3 lists by using the set.union methods
         nonEmptyPlayfields = list(set(pfsWithPlayerStructures).union(set(pfsWithPlaceables)).union(set(pfsWithPlayers)))
         log.debug(f"total amount of non empty playfields: {len(nonEmptyPlayfields)}")
@@ -225,6 +235,7 @@ class EsmDatabaseWrapper:
         log.debug(f"found {len(playfields)} playfields")
         return playfields
     
+    @functools.lru_cache
     def retrieveLatestGametime(self):
         """
         returns the current gametick and stoptime from the serverstartstop table. 
@@ -313,6 +324,7 @@ class EsmDatabaseWrapper:
         # return the last of the loop (which will be the first sst entry, being the oldest times)
         return startticks, stoptime
     
+    @functools.lru_cache
     def retrievePurgeableRemovedEntities(self) -> List[Entity]:
         """return all entities that are marked as removed from the db
 
@@ -328,6 +340,7 @@ class EsmDatabaseWrapper:
             entities.append(Entity(id=row[0], pfid=row[1], name=row[2], type=EntityType.byNumber(row[3]), isremoved=True))
         return entities
     
+    @functools.lru_cache
     def countDiscoveredPlayfields(self):
         """
         just return the amount of discovered playfields
@@ -337,6 +350,7 @@ class EsmDatabaseWrapper:
         cursor.execute(query)
         return cursor.fetchone()[0]
     
+    @functools.lru_cache
     def retrieveNonRemovedEntities(self) -> List[str]:
         """
         retrieve all entityids of non removed entities

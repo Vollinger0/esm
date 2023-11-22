@@ -450,22 +450,40 @@ class EsmMain:
         log.info("Calling ramdisk setup to mount it again with the current configuration and sync the savegame again.")
         self.ramdiskSetup()
 
-    def clearDiscovered(self, dbLocation, dryrun=True, inputFile=None, inputNames=None):
+    def clearDiscovered(self, dblocation, dryrun=True, territoryName=None, inputFile=None, inputNames=None):
         """
         resolves the given system- and playfieldnames from the file or the names array and clears the discovered by info for these completely
         The game saves an entry for every player, even if it was discovered before, so this tool will delete them all so it goes back to "Undiscovered".
         """
-        names = self.readSystemAndPlayfieldListFromFile(inputFile, inputNames)
+        dbLocationPath = self.getDBLocationPath(dblocation)
+
+        territory = None
+        systemAndPlayfieldNames = None
+
+        if territoryName:
+            territory = self.wipeService.getCustomTerritoryByName(territoryName)
+            if territoryName == Territory.GALAXY:
+                territory = Territory(Territory.GALAXY, 0,0,0,99999999)
+            log.info(f"Requested clearing discovered-by infos for territory '{territory.name}'.")
+
+        if inputFile:
+            systemAndPlayfieldNames = self.readSystemAndPlayfieldListFromFile(inputFile, inputNames)
+            log.info(f"Requested clearing discovered-by infos for {len(systemAndPlayfieldNames)} names from the file {inputFile}.")
+        
+        self.wipeService.clearDiscoveredByInfo(dbLocationPath=dbLocationPath, territory=territory, systemAndPlayfieldNames=systemAndPlayfieldNames, dryrun=dryrun)
+
+    def getDBLocationPath(self, dbLocation):
+        """
+        resolves the given dbLocation and returns the absolute path or uses the global db if dbLocation is None
+        """
         if dbLocation is None:
-            dbLocation = self.fileSystem.getAbsolutePathTo("saves.games.savegame.globaldb")
+            return self.fileSystem.getAbsolutePathTo("saves.games.savegame.globaldb")
         else:
             dbLocationPath = Path(dbLocation).resolve()
             if dbLocationPath.exists():
-                dbLocation = str(dbLocationPath)
+                return dbLocationPath
             else:
                 raise WrongParameterError(f"DbLocation '{dbLocation}' is not a valid database location path.")
-        log.info(f"Clearing discovered by infos for {len(names)} names.")
-        self.wipeService.clearDiscoveredByInfo(dbLocation=dbLocation, systemAndPlayfieldNames=names, dryrun=dryrun)
 
     def readSystemAndPlayfieldListFromFile(self, inputFile, inputNames: List[str]=None):
         """
@@ -508,27 +526,21 @@ class EsmMain:
         except UserAbortedException as ex:
             log.warning(f"User aborted the operation, nothing deleted.")
 
-    def purgeRemovedEntities(self, dbLocation=None, dryrun=True, force=False):
+    def cleanupRemovedEntities(self, dbLocation=None, dryrun=True, force=False):
         """
         will purge all entity folders in the shared folder of entities that are marked as deleted in the database
         """
         if not dryrun and self.dedicatedServer.isRunning():
             raise ServerNeedsToBeStopped("Can not purge removed entities with --nodryrun if the server is running. Please stop it first.")
+        
+        dbLocationPath = self.getDBLocationPath(dbLocation)
 
-        if dbLocation is None:
-            dbLocation = self.fileSystem.getAbsolutePathTo("saves.games.savegame.globaldb")
-        else:
-            dbLocationPath = Path(dbLocation).resolve().absolute()
-            if dbLocationPath.exists():
-                dbLocation = str(dbLocationPath)
-            else:
-                raise WrongParameterError(f"DbLocation '{dbLocation}' is not a valid database location path.")
+        log.info(f"Purging removed entities for dbLocation: '{dbLocationPath}', dryrun '{dryrun}'")
+        count = self.wipeService.purgeRemovedEntities(dbLocationPath=dbLocationPath, dryrun=dryrun)
+        if not count or count == 0:
+            return
 
-        log.info(f"Purging removed entities for dbLocation: '{dbLocation}', dryrun '{dryrun}'")
-        count = self.wipeService.purgeRemovedEntities(dbLocation=dbLocation, dryrun=dryrun)
-        if dryrun:
-            log.info(f"Would have deleted '{count}' folders with removed entities in the Shared folder, but this is a dryrun")
-        else:
+        if not dryrun:
             if force:
                 result, elapsedTime = self.fileSystem.commitDelete(override="yes")
                 log.info(f"Deleted '{count}' folders with removed entities in the Shared folder, elapsed time: {elapsedTime}")
@@ -571,27 +583,35 @@ class EsmMain:
                 except UserAbortedException as ex:
                     log.warning("User aborted operation, nothing was deleted.")
     
-    def cleanupSharedFolder(self, dbLocation=None, dryrun=True, force=False):
+    def cleanupSharedFolder(self, savegame=None, dryrun=True, force=False):
         """
         will clean up the shared folder, after checking the entries against the entities table in the db.
+
+        if savegame is given, will use that instead of the current savegame, also the server may keep running.
         """
-        if not dryrun and self.dedicatedServer.isRunning():
-            raise ServerNeedsToBeStopped("Can not clean up shared folders with --nodryrun if the server is running. Please stop it first.")
+        log.debug(f"{__name__}.cleanupSharedFolder: savegame: '{savegame}', dryrun: '{dryrun}', force: '{force}'")
 
-        if dbLocation is None:
-            dbLocation = self.fileSystem.getAbsolutePathTo("saves.games.savegame.globaldb")
-        else:
-            dbLocationPath = Path(dbLocation).resolve()
-            if dbLocationPath.exists():
-                dbLocation = str(dbLocationPath)
-            else:
-                raise WrongParameterError(f"DbLocation '{dbLocation}' is not a valid database location path.")
+        savegamePath = self.getSavegamePath(savegame)
 
-        log.info(f"Cleaning up shared folder for dbLocation: '{dbLocation}', dryrun '{dryrun}', force '{force}'")
+        isCurrentSaveGame = savegamePath.samefile(self.fileSystem.getAbsolutePathTo("saves.games.savegame"))
+        if not dryrun and isCurrentSaveGame and self.dedicatedServer.isRunning():
+            raise ServerNeedsToBeStopped("Can not clean up shared folders of the current savegame with --nodryrun if the server is running. Please stop it first.")
+
+        log.info(f"Cleaning up shared folder for savegamePath: '{savegamePath}', dryrun '{dryrun}', force '{force}'")
         try:
-            self.wipeService.cleanUpSharedFolder(dbLocation=dbLocation, dryrun=dryrun, force=force)
+            self.wipeService.cleanUpSharedFolder(savegamePath=savegamePath, dryrun=dryrun, force=force)
         except UserAbortedException:
             log.info(f"User aborted clean up execution.")
+
+    def getSavegamePath(self, savegame=None):
+        if savegame is None:
+            return self.fileSystem.getAbsolutePathTo("saves.games.savegame")
+        else:
+            savegamePath = Path(savegame).resolve()
+            if savegamePath.exists():
+                return savegamePath
+            else:
+                raise WrongParameterError(f"Savegame path '{savegamePath}' is not a valid savegame location path.")
 
     def openSocket(self, port=6969, interval=0, tries=0, raiseException=False):
         """
@@ -711,14 +731,16 @@ class EsmMain:
         else:
             self.openSocket(port)
 
-    def wipeTool(self, inputFilePath: Path=None, territoryName=None, wipetype: WipeType=None, cleardiscoveredby=True, minage: int=None, dbLocationPath: Path=None, dryrun=True):
+    def wipeTool(self, inputFilePath: Path=None, territoryName=None, wipetype: WipeType=None, cleardiscoveredby=True, minage: int=None, dbLocation=None, dryrun=True):
         """
         the mighty wipe tool
         """
+        #log.debug(f"{__name__}.{sys._getframe().f_code.co_name} called with params: {locals()}")
+
         if not dryrun and self.dedicatedServer.isRunning():
             raise ServerNeedsToBeStopped("Can not execute tool-wipe with --nodryrun if the server is running. Please stop it first.")
-        
-        log.debug(f"{__name__}.{sys._getframe().f_code.co_name} called with params: {locals()}")
+
+        dbLocationPath = self.getDBLocationPath(dbLocation)
 
         systemAndPlayfieldNames = None
         territory = None

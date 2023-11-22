@@ -42,7 +42,7 @@ This will create the distributable files with all its dependencies in `dist/esm`
 
 - [x] refactor tools, make them wipe instead, or make all tools have the option to additionally purge too? Make it more conscise.
   - [x] tool-wipe (--territory|--file) --wipetype --nocleardiscovered --minimumage
-  - [+] tool-clear-discoveredby (--territory|--file) 
+  - [x] tool-clear-discoveredby (--territory|--file) 
   - [-] tool-cleanup-purge-wiped
   - [x] tool-cleanup-shared
   - [x] tool-cleanup-removed-entities

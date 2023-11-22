@@ -34,41 +34,6 @@ class EsmWipeService:
     @cached_property
     def fileSystem(self) -> EsmFileSystem:
         return ServiceRegistry.get(EsmFileSystem)
-
-    # def wipeTerritory(self, dbLocation, territoryString, wipeType: WipeType, dryrun, cleardiscoveredby=True):
-    #     """
-    #     wipe given territory with given wipetype and mode using the given db
-    #     """
-    #     database = EsmDatabaseWrapper(dbLocation)
-    #     if not dryrun and cleardiscoveredby:
-    #         database.setWriteMode()
-
-    #     with Timer() as timer:
-    #         allSolarSystems = database.retrieveSSsAll()
-    #         if territoryString == Territory.GALAXY:
-    #             solarSystems = allSolarSystems
-    #         else:
-    #             territory = self.getCustomTerritoryByName(territoryString)
-    #             solarSystems = self.areInCustomTerritory(allSolarSystems, territory)
-    #         log.info(f"The amount of stars is: {len(solarSystems)}")
-    #         emptyPlayfields = database.retrievePFsEmptyDiscoveredBySolarSystems(solarSystems)
-    #         log.info(f"The amount of empty but discovered playfields that can be wiped is: {len(emptyPlayfields)}")
-
-    #         if cleardiscoveredby and len(emptyPlayfields) > 0:
-    #             self.clearDiscoveredByInfoForPlayfields(playfields=emptyPlayfields, database=database, dryrun=dryrun, closeConnection=True, doPrint=False)
-    #     log.info(f"Connection to database closed. Time elapsed reading from the database: {timer.elapsedTime}")
-
-    #     if len(emptyPlayfields) < 1:
-    #         log.warn(f"There is nothing to wipe!")
-    #         return
-
-    #     if dryrun:
-    #         csvFilename = Path(f"esm-wipe_{territoryString}_{wipeType.value.name}.csv").absolute()
-    #         log.info(f"Will output the list of playfields that would have been wiped as '{csvFilename}'")
-    #         self.printListOfPlayfieldsAsCSV(csvFilename=csvFilename, playfields=emptyPlayfields)
-    #     else:
-    #         self.createWipeInfoForPlayfields(emptyPlayfields, wipeType)
-
         
     def createWipeInfoForPlayfields(self, playfields: List[Playfield], wipeType: WipeType):
         """
@@ -81,14 +46,14 @@ class EsmWipeService:
             counter=0
             for playfield in playfields:
                 log.debug(f"wiping playfield: {playfield.name}")
-                playfieldPath = Path(f"{playfieldsFolderPath}/{playfield.name}")
+                playfieldPath = playfieldsFolderPath.joinpath(playfield.name)
                 result = self.createWipeInfo(playfieldPath, wipeType)
                 if result: 
                     wiped += 1
                 counter+=1
                 if counter % 1000 == 0:
                     log.info(f"processed {counter} playfields")
-        log.info(f"Done with wiping {len(playfields)} PFs in {timer.elapsedTime}, writing {wiped} files! Playfields are wiped when loaded, so to actually see if something has been wiped, you have to visit a playfield.")
+        log.info(f"Done with writing wipeinfos for {len(playfields)} PFs in {timer.elapsedTime}, writing {wiped} files! Playfields are wiped when loaded, so to actually see if something has been wiped, you have to visit a playfield.")
 
     def getCustomTerritoryByName(self, territoryName):
         for ct in self.configService.getAvailableTerritories():
@@ -98,7 +63,7 @@ class EsmWipeService:
     def createWipeInfo(self, path: Path, wipeType: WipeType):
         """create the wipeinfo at the given path, will return True if successful, false otherwise """
         if path.exists():
-            filePath = Path(f"{path}/wipeinfo.txt")
+            filePath = path.joinpath("wipeinfo.txt")
             if filePath.exists():
                 log.debug(f"File '{filePath}' already exists - will overwrite it")
             filePath.write_text(data=wipeType.value.name)
@@ -127,44 +92,42 @@ class EsmWipeService:
                     customTerritorySolarSystems.append(solarsystem)
             return customTerritorySolarSystems
 
-    def clearDiscoveredByInfo(self, systemAndPlayfieldNames, dryrun=True, database=None, dbLocation=None, closeConnection=True):
+    def clearDiscoveredByInfo(self, territory: Territory, systemAndPlayfieldNames, dryrun=True, database=None, dbLocationPath: Path=None, closeConnection=True):
         """
         clears the discoveredbyInfo for playfields/systemnames given. This will resolve these first
         """
         if database is None:
-            if dbLocation is None:
+            if dbLocationPath is None:
                 raise WrongParameterError("neither database nor dblocation was provided to access the database")
-            database = EsmDatabaseWrapper(dbLocation)
-        # get the list of playfields for the solarsystems
-        systemNames, playfieldNames = Tools.extractSystemAndPlayfieldNames(systemAndPlayfieldNames)
-        log.debug(f"playfield names: {len(playfieldNames)} system names: {len(systemNames)}")
+            database = EsmDatabaseWrapper(dbLocationPath)
+
         if not dryrun:
             database.setWriteMode()
-        playfieldsFromSolarSystems = []
-        if systemNames and len(systemNames) > 0:
-            solarsystems = database.retrieveSSsByName(systemNames)
-            if solarsystems and len(solarsystems) > 0:
-                playfieldsFromSolarSystems = database.retrievePFsDiscoveredBySolarSystems(solarsystems)
-        playfieldsByName = []
-        if playfieldNames and len(playfieldNames) > 0:
-            playfieldsByName = database.retrievePFsByName(playfieldNames)
-        playfields = list(set(playfieldsByName) | set(playfieldsFromSolarSystems))
-        if len(playfields) > 0:
+
+        playfields = []
+        if systemAndPlayfieldNames and len(systemAndPlayfieldNames) > 0:
+            playfields = self.resolvePlayfieldsFromList(database, systemAndPlayfieldNames)
+
+        if territory:
+            playfields = self.resolvePlayfieldsFromTerritory(database, territory)
+
+        if len(playfields) < 1:
             log.info("Found no matching playfields. Nothing to do.")
             if closeConnection:
                 database.closeDbConnection()
             return
-        log.info(f"Found {len(playfields)} playfields matching the systems and names given that are currently discovered.")
-        return self.clearDiscoveredByInfoForPlayfields(playfields, dryrun, database=database, dbLocation=dbLocation, closeConnection=closeConnection)
+
+        log.info(f"Found {len(playfields)} playfields to clear discovered-by infos")
+        return self.clearDiscoveredByInfoForPlayfields(playfields, dryrun, database=database, dbLocationPath=dbLocationPath, closeConnection=closeConnection)
         
-    def clearDiscoveredByInfoForPlayfields(self, playfields: List[Playfield], dryrun, database=None, dbLocation=None, closeConnection=True, doPrint=True):
+    def clearDiscoveredByInfoForPlayfields(self, playfields: List[Playfield], dryrun, database=None, dbLocationPath: Path=None, closeConnection=True, doPrint=True):
         """
         clears the discoveredbyInfo for the given playfields
         """
         if database is None:
-            if dbLocation is None:
+            if dbLocationPath is None:
                 raise WrongParameterError("neither database nor dblocation was provided to access the database")
-            database = EsmDatabaseWrapper(dbLocation)
+            database = EsmDatabaseWrapper(dbLocationPath)
         if dryrun:
             if closeConnection:
                 database.closeDbConnection()
@@ -177,6 +140,7 @@ class EsmWipeService:
             database.deleteFromDiscoveredPlayfields(playfields=playfields)
             if closeConnection:
                 database.closeDbConnection()
+        return
     
     def printListOfPlayfieldsAsCSV(self, csvFilename, playfields: List[Playfield]):
         """
@@ -202,9 +166,10 @@ class EsmWipeService:
         """
         will purge (delete) all playfields and associated static entities from the filesystem that haven't been visisted for miniumage days.
         this includes deleting the templates, unless leavetemplates is set to true
-        
+
         force will force delete anything without asking the user.
         """
+        log.warning(f"uncomplete feature! use with caution!")
 
         if database is None:
             if dbLocation is None:
@@ -246,9 +211,9 @@ class EsmWipeService:
             if cleardiscoveredby and len(playfields) > 0:
                 self.clearDiscoveredByInfoForPlayfields(playfields=playfields, database=database, dryrun=dryrun, closeConnection=True, doPrint=False)
             log.debug(f"Purging {len(playfields)} playfields")
-            pfCounter, tpCounter = self.doPurgePlayfields(playfields, leavetemplates)
+            pfCounter, tpCounter = self.deletePlayfieldFiles(playfields, leavetemplates)
             log.debug(f"Purging {len(entities)} entities")
-            enCounter = self.doPurgeEntities(entities)
+            enCounter = self.deleteEntityFiles(entities)
 
             additionalInfo = f"{pfCounter} playfield folders, {tpCounter} template folders and {enCounter} entity folders marked for deletion."
             if force:
@@ -257,8 +222,9 @@ class EsmWipeService:
                 result, elapsedTime = self.fileSystem.commitDelete(additionalInfo=additionalInfo)
             log.info(f"Deleting took {elapsedTime}")
 
-    def doPurgePlayfields(self, playfields: List[Playfield], leavetemplates=False):
-        """deletes the folders associated with the given playfields
+    def deletePlayfieldFiles(self, playfields: List[Playfield], leavetemplates=False):
+        """marks the folders associated with the given playfields from 'Playfields' and 'Templates' for deletion
+
         returns the amount of folders marked for deletion for playfields and templates
         """
         playfieldFolderPath = self.fileSystem.getAbsolutePathTo("saves.games.savegame.playfields")
@@ -266,58 +232,63 @@ class EsmWipeService:
         markedPfCounter = 0
         markedTpCounter = 0
         for playfield in playfields:
-            playfieldPath = Path(f"{playfieldFolderPath}/{playfield.name}")
+            playfieldPath = playfieldFolderPath.joinpath(playfield.name)
             if playfieldPath.exists():
                 log.debug(f"playfield folder '{playfieldPath}' exists and will be marked for deletion")
                 self.fileSystem.markForDelete(targetPath=playfieldPath)
                 markedPfCounter += 1
             if not leavetemplates:
-                templatePath = Path(f"{templateFolderPath}/{playfield.name}")
+                templatePath = templateFolderPath.joinpath(playfield.name)
                 if templatePath.exists():
                     log.debug(f"template folder '{templatePath}' exists and will be marked for deletion")
                     self.fileSystem.markForDelete(targetPath=templatePath)
                     markedTpCounter += 1
         return markedPfCounter, markedTpCounter
     
-    def doPurgeEntities(self, entities: List[Entity]):
-        """deletes the folders associated with the given entities
+    def deleteEntityFiles(self, entities: List[Entity]):
+        """marks the folders associated with the given entities from Shared for deletion
+
         returns the amount of still existing folders marked for deletion
         """
         sharedFolderPath = self.fileSystem.getAbsolutePathTo("saves.games.savegame.shared")
         markedCounter = 0
         for entity in entities:
-            idPath = Path(f"{sharedFolderPath}/{entity.id}")
+            idPath = sharedFolderPath.joinpath(entity.id)
             if idPath.exists():
                 log.debug(f"folder '{idPath}' exists although it is marked as deleted")
                 self.fileSystem.markForDelete(targetPath=idPath)
                 markedCounter += 1
         return markedCounter
     
-    def purgeRemovedEntities(self, database=None, dbLocation=None, dryrun=True):
+    def purgeRemovedEntities(self, database: EsmDatabaseWrapper=None, dbLocationPath: Path=None, dryrun=True):
         """purge any entity that is marked as removed in the db
+        
         returns the amount of entity folders marked for deletion
         """
         if database is None:
-            if dbLocation is None:
-                raise WrongParameterError("neither database nor dblocation was provided to access the database")
-            database = EsmDatabaseWrapper(dbLocation)
+            database = EsmDatabaseWrapper(dbLocationPath)
         # get all entites marked as removed in the db
         removedEntities = database.retrievePurgeableRemovedEntities()
         database.closeDbConnection()
+        if len(removedEntities) < 1:
+            log.info("no entities marked as removed")
+            return 0
         log.debug(f"got {len(removedEntities)} entites marked as removed")
         if dryrun:
             csvFilename = Path(f"esm-clean-removed-entites.csv").resolve()
             log.info(f"Will output the list of {len(removedEntities)} entities that should have been removed as '{csvFilename}'")
             self.printListOfEntitiesAsCSV(csvFilename=csvFilename, entities=removedEntities)
-            return None
+            return len(removedEntities)
         else:
             # purge all their files from the current savegame
-            return self.doPurgeEntities(removedEntities)
+            return self.deleteEntityFiles(removedEntities)
 
     def purgeWipedPlayfields(self, leavetemplates=False):
         """
         purge all playfields that have a wipeinfo file containing 'all'. also purge its templates if leavetemplates is False
         """
+        log.warning(f"uncomplete feature! use with caution!")
+
         playfieldsFolderPath = self.fileSystem.getAbsolutePathTo("saves.games.savegame.playfields")
         templatesFolderPath = self.fileSystem.getAbsolutePathTo("saves.games.savegame.templates")
 
@@ -326,7 +297,7 @@ class EsmWipeService:
         playfieldCount = 0
         processCounter = 0
         for folder in playfieldsFolderPath.iterdir():
-            wipeInfoPath = Path(f"{folder}/wipeinfo.txt")
+            wipeInfoPath = folder.joinpath("wipeinfo.txt")
             if wipeInfoPath.exists():
                 content = wipeInfoPath.read_text()
                 if content is not None and content.startswith(WipeType.ALL.value.name):
@@ -342,7 +313,7 @@ class EsmWipeService:
         processCounter = 0
         if not leavetemplates:
             for playfieldName in wipedPlayfieldNames:
-                templatePath = Path(f"{templatesFolderPath}/{playfieldName}")
+                templatePath = templatesFolderPath.joinpath(playfieldName)
                 if templatePath.exists():
                     templateCount += 1
                     self.fileSystem.markForDelete(templatePath)
@@ -353,16 +324,15 @@ class EsmWipeService:
         log.debug(f"marked {templateCount} from {processCounter} template folders for deletion")
         return wipedPlayfieldNames, playfieldCount, templateCount
 
-    def cleanUpSharedFolder(self, database=None, dbLocation=None, dryrun=True, force=False):
+    def cleanUpSharedFolder(self, savegamePath: Path, dryrun=True, force=False):
         """
         will check the entries in the shared folder, then retrieve all non-removed entities from the db and delete the dangling folders.
         """
-        if database is None:
-            if dbLocation is None:
-                raise WrongParameterError("neither database nor dblocation was provided to access the database")
-            database = EsmDatabaseWrapper(dbLocation)
-        
-        sharedFolderPath = self.fileSystem.getAbsolutePathTo("saves.games.savegame.shared")
+        dbLocationPath = savegamePath.joinpath(self.config.filenames.globaldb)
+        if not dbLocationPath.exists():
+            raise WrongParameterError(f"provided savegame does not have its database at {dbLocationPath}")
+        database = EsmDatabaseWrapper(dbLocationPath)
+        sharedFolderPath = savegamePath.joinpath(self.config.foldernames.shared)
         fsEntityIds = []
         for entry in sharedFolderPath.iterdir():
             id = Path(f"{entry}").name
@@ -376,6 +346,10 @@ class EsmWipeService:
         # calculate all ids that are on the FS but not in the DB (or marked as removed there)
         idsOnFsNotInDb = sorted(list(set(fsEntityIds) - set(dbEntityIds)))
 
+        if len(idsOnFsNotInDb) < 1:
+            log.info("no dangling entries in the shared folder. There is nothing to clean up")
+            return
+
         additionalInfo = f"found {len(idsOnFsNotInDb)} dangling entries in the shared folder that can be removed"
         if dryrun:
             log.info(additionalInfo)
@@ -385,7 +359,7 @@ class EsmWipeService:
                 file.writelines([line + '\n' for line in idsOnFsNotInDb])
         else:
             for id in idsOnFsNotInDb:
-                self.fileSystem.markForDelete(Path(f"{sharedFolderPath}/{id}"))
+                self.fileSystem.markForDelete(sharedFolderPath.joinpath(id))
 
             if force:
                 result, elapsedTime = self.fileSystem.commitDelete(override="yes", additionalInfo=additionalInfo)
@@ -403,31 +377,19 @@ class EsmWipeService:
 
         If minage was set, the playfields will be filtered by age and only those that are older than minage will be wiped.
         """
-        log.debug(f"{__name__}.{sys._getframe().f_code.co_name} called with params: {locals()}")
+        #log.debug(f"{__name__}.{sys._getframe().f_code.co_name} called with params: {locals()}")
 
         database: EsmDatabaseWrapper = EsmDatabaseWrapper(dbLocationPath)
         if not dryrun and cleardiscoveredby:
             database.setWriteMode()
 
-        # retrieve solar systems and playfields in either the systemAndPlayfieldNames or the territory
-        selectedSolarSystems = []
-        selectedPlayFields = []
+        playfieldsToWipe = []
         if systemAndPlayfieldNames and len(systemAndPlayfieldNames) > 0:
-            log.info(f"Selecting playfields for wipe from list of {len(systemAndPlayfieldNames)} names")
-            log.debug(f"extracting solar systems and playfields from the list of {len(systemAndPlayfieldNames)} names")
-            solarSystemNames, playfieldNames = Tools.extractSystemAndPlayfieldNames(systemAndPlayfieldNames)
-            selectedSolarSystems = database.retrieveSSsByName(solarSystemNames)
-            selectedPlayFields = database.retrievePFsByName(playfieldNames)
-            log.debug(f"extracted {len(selectedSolarSystems)} solarsystems and {len(selectedPlayFields)} playfields from {len(systemAndPlayfieldNames)} names in the list")
-        if territory:
-            log.info(f"Selecting playfields for wipe from custom territory {territory.name}")
-            log.debug(f"extracting solar systems from the custom territory {territory.name}")
-            allSolarSystems = database.retrieveSSsAll()
-            selectedSolarSystems = self.areInCustomTerritory(allSolarSystems, territory)
-            log.debug(f"extracted {len(selectedSolarSystems)} solarsystems from the custom territory {territory.name}")
+            playfieldsToWipe = self.resolvePlayfieldsFromList(database=database, systemAndPlayfieldNames=systemAndPlayfieldNames)
 
-        pfsEmptyDiscovered = database.retrievePFsEmptyDiscoveredBySolarSystems(selectedSolarSystems)
-        playfieldsToWipe = list(set(pfsEmptyDiscovered).union(set(selectedPlayFields)))
+        if territory:
+            playfieldsToWipe = self.resolvePlayfieldsFromTerritory(database, territory)
+
         log.debug(f"selected {len(playfieldsToWipe)} to be wiped ")
 
         if minage:
@@ -439,9 +401,10 @@ class EsmWipeService:
             log.info(f"No playfields selected for wipe - nothing to do.")
             return
         else:
-            log.info(f"{len(playfieldsToWipe)} playfields selected for wipe/purge")
+            log.info(f"{len(playfieldsToWipe)} playfields selected for wipe")
 
         if dryrun:
+            database.closeDbConnection()
             if territory:
                 if minage:
                     csvFilename = Path(f"esm-wipe-tool_{territory.name}_{minage}.csv").absolute()
@@ -461,5 +424,39 @@ class EsmWipeService:
                 log.info(f"Clearing discoveredby for {len(playfieldsToWipe)} playfields")
                 database.deleteFromDiscoveredPlayfields(playfieldsToWipe)
             log.info(f"Clearing discoveredby took {timer.elapsedTime} seconds")
+        database.closeDbConnection()
 
         self.createWipeInfoForPlayfields(playfields=playfieldsToWipe, wipetype=wipetype)
+
+    def resolvePlayfieldsFromTerritory(self, database: EsmDatabaseWrapper, territory: Territory):
+        """
+        retrieve all empty and discovered playfields from the custom territory
+        """
+        log.debug(f"extracting solar systems from the custom territory {territory.name}")
+        allSolarSystems = database.retrieveSSsAll()
+        selectedSolarSystems = self.areInCustomTerritory(allSolarSystems, territory)
+        log.debug(f"extracted {len(selectedSolarSystems)} solarsystems from the custom territory {territory.name}")
+        return database.retrievePFsEmptyDiscoveredBySolarSystems(selectedSolarSystems)
+
+    def resolvePlayfieldsFromList(self, database: EsmDatabaseWrapper, systemAndPlayfieldNames: List) -> List[Playfield]:
+        """
+        retrieve all playfields from the systemAndPlayfieldNames file, including the ones resolved from the system names
+        
+        returns the list of discovered and empty playfields read from database
+        """
+        log.debug(f"extracting solar systems and playfields from the list of {len(systemAndPlayfieldNames)} names")
+        solarSystemNames, playfieldNames = Tools.extractSystemAndPlayfieldNames(systemAndPlayfieldNames)
+        selectedSolarSystems = database.retrieveSSsByName(solarSystemNames)
+        selectedPlayFields = database.retrievePFsByName(playfieldNames)
+        log.debug(f"extracted {len(selectedSolarSystems)} solarsystems and {len(selectedPlayFields)} playfields from {len(systemAndPlayfieldNames)} names in the list")
+        
+        playfieldsBySolarSystem = database.retrievePFsEmptyDiscoveredBySolarSystems(selectedSolarSystems)
+        
+        # check if any of the selected playfields are not empty
+        allNonEmptyPFs = database.retrievePFsAllNonEmpty()
+        selectedNonEmptyPFs = list(set(selectedPlayFields).intersection(set(allNonEmptyPFs)))
+
+        if len(selectedNonEmptyPFs) > 0:
+            log.warning(f"{len(selectedNonEmptyPFs)} selected playfields from the list are not empty, but will be included in the operation")
+
+        return list(set(selectedPlayFields).union(set(playfieldsBySolarSystem)))
