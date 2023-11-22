@@ -215,94 +215,62 @@ def deleteAll():
         esm.checkAndWaitForOtherInstances()
         esm.deleteAll()
 
+# TODO: this needs to also clean up the related data in the DB, mark entities and structures as deleted, etc.
 
-@cli.command(name="tool-wipe-empty-playfields", short_help="wipes empty playfields for a given territory or galaxy-wide")
-@click.option('--dblocation', metavar='file', help="location of database file to be used in dry mode. Defaults to use the current savegames DB")
-@click.option('--territory', help=f"territory to wipe, use {Territory.GALAXY} for the whole galaxy or any of the configured ones, use --showterritories to get list")
-@click.option('--wipetype', help=f"wipe type, one of: {WipeType.valueList()}")
-@click.option('--nocleardiscoveredby', is_flag=True, help="If set, will *not* clear the discovered by infos from the wiped playfields")
-@click.option('--nodryrun', is_flag=True, help="set to actually execute the wipe on the disk. A custom --dblocation will be ignored!")
-@click.option('--showtypes', is_flag=True, help=f"show the supported wipetypes")
-@click.option('--showterritories', is_flag=True, help=f"show the configured territories")
-def wipeEmptyPlayfieldsOld(dblocation, territory, wipetype, nodryrun, showtypes, showterritories, nocleardiscoveredby):
-    """Will wipe playfields without players, player owned structures, terrain placeables for a given territory or the whole galaxy.
-    This requires the server to be shut down, since it needs access to the current state of the savegame and the filesystem.
-    This feature is similar to EAH's "wipe empty playfields" feature, but also considers terrain placeables (which get wiped in EAH).
-    This also only takes 60 seconds for a 40GB savegame. EAH needs ~37 hours.
+# @cli.command(name="tool-purge-empty-playfields", short_help="purges empty playfields that have not been visited for a time")
+# @click.option('--dblocation', metavar='file', help="location of database file to be used in dry mode. Defaults to use the current savegames DB")
+# @click.option('--nocleardiscoveredby', is_flag=True, help="If set, will *not* clear the discovered by infos from the purged playfields")
+# @click.option('--nodryrun', is_flag=True, help="set to actually execute the changes on the disk")
+# @click.option('--minimumage', default=30, show_default=True, help=f"age a playfield has to have for it to get purged in *days*")
+# @click.option('--leavetemplates', is_flag=True, help=f"if set, do not delete the related templates")
+# @click.option('--force', is_flag=True, help=f"if set, do not ask interactively before file deletion")
+# def purgeEmptyPlayfieldsOld(dblocation, nodryrun, nocleardiscoveredby, minimumage, leavetemplates, force):
+#     """Will *purge* playfields without players, player owned structures, terrain placeables for the whole galaxy.
+#     This requires the server to be shut down, since it needs access to the current state of the savegame and the filesystem.
+
+#     This will actually delete playfields that have not been visited for minimumage days along with the referenced structures 
+#     and templates from the filesystem (!). Make sure to have a recent backup before doing this.
     
-    Defaults to use a dryrun, so the results are only written to a csv file for you to check.
-    If you use the dry mode just to see how it works, you may aswell define a different savegame database.
-    When NOT in dry mode, you can NOT specify a different database to make sure you do not accidentally wipe the wrong playfields folder.
-    """
-    with LogContext():
-        esm = ServiceRegistry.get(EsmMain)  
-        esm.checkAndWaitForOtherInstances()
-        if showtypes:
-            click.echo("Supported wipe types are:\n" + "\n".join(f"{wt.value.name}\t\t-\t{wt.value.description}" for wt in list(WipeType)))
-            return
-        if showterritories:
-            click.echo("Configured custom territories:\n" + "\n".join(f"{ct.name}" for ct in esm.wipeService.getAvailableTerritories()))
-            click.echo(f"\nUse {Territory.GALAXY} to wipe the whole galaxy.\n")
-            return
+#     Defaults to use a dryrun, so the results are only written to a csv file for you to check.
+#     If you use the dry mode just to see how it works, you may aswell define a different savegame database.
+#     When NOT in dry mode, you can NOT specify a different database to make sure you do not accidentally purge the wrong playfields folder.
+#     """
+#     with LogContext():
+#         esm = ServiceRegistry.get(EsmMain)  
+#         esm.checkAndWaitForOtherInstances()
 
-        if nodryrun and dblocation:
-            log.error(f"--nodryrun and --dblocation can not be used together for safety reasons.")
-        else:
-            esm.wipeEmptyPlayfieldsOld(dbLocation=dblocation, territory=territory, wipeType=wipetype, dryrun=not nodryrun, cleardiscoveredby=not nocleardiscoveredby)
+#         if nodryrun and dblocation:
+#             log.error(f"--nodryrun and --dblocation can not be used together for safety reasons.")
+#         else:
+#             esm.purgeEmptyPlayfieldsOld(dbLocation=dblocation, dryrun=not nodryrun, cleardiscoveredby=not nocleardiscoveredby, minimumage=minimumage, leavetemplates=leavetemplates, force=force)
 
 
-@cli.command(name="tool-purge-empty-playfields", short_help="purges empty playfields that have not been visited for a time")
-@click.option('--dblocation', metavar='file', help="location of database file to be used in dry mode. Defaults to use the current savegames DB")
-@click.option('--nocleardiscoveredby', is_flag=True, help="If set, will *not* clear the discovered by infos from the purged playfields")
-@click.option('--nodryrun', is_flag=True, help="set to actually execute the changes on the disk")
-@click.option('--minimumage', default=30, show_default=True, help=f"age a playfield has to have for it to get purged in *days*")
-@click.option('--leavetemplates', is_flag=True, help=f"if set, do not delete the related templates")
-@click.option('--force', is_flag=True, help=f"if set, do not ask interactively before file deletion")
-def purgeEmptyPlayfieldsOld(dblocation, nodryrun, nocleardiscoveredby, minimumage, leavetemplates, force):
-    """Will *purge* playfields without players, player owned structures, terrain placeables for the whole galaxy.
-    This requires the server to be shut down, since it needs access to the current state of the savegame and the filesystem.
+# TODO: this needs to also clean up the related data in the DB, mark entities and structures as deleted, etc.
+#
+# @cli.command(name="tool-purge-wiped-playfields", short_help="purges all playfields that are marked to be completely wiped")
+# @click.option('--nodryrun', is_flag=True, help="set to actually execute the purge on the disk")
+# @click.option('--leavetemplates', is_flag=True, help=f"if set, do not delete the related templates")
+# @click.option('--force', is_flag=True, help=f"if set, do not ask interactively before file deletion")
+# def purgeWipedPlayfieldsOld(nodryrun, leavetemplates, force):
+#     """Will *purge* all playfields that are marked for complete wipe (with wipetype 'all') including their templates.
+#     Since this uses the filesystem to check for the info, the execution might take a while on huge savegames.
 
-    This will actually delete playfields that have not been visited for minimumage days along with the referenced structures 
-    and templates from the filesystem (!). Make sure to have a recent backup before doing this.
+#     This requires the server to be shut down, since it modifies the files on the filesystem.
+#     Make sure to have a recent backup before doing this!
     
-    Defaults to use a dryrun, so the results are only written to a csv file for you to check.
-    If you use the dry mode just to see how it works, you may aswell define a different savegame database.
-    When NOT in dry mode, you can NOT specify a different database to make sure you do not accidentally purge the wrong playfields folder.
-    """
-    with LogContext():
-        esm = ServiceRegistry.get(EsmMain)  
-        esm.checkAndWaitForOtherInstances()
-
-        if nodryrun and dblocation:
-            log.error(f"--nodryrun and --dblocation can not be used together for safety reasons.")
-        else:
-            esm.purgeEmptyPlayfieldsOld(dbLocation=dblocation, dryrun=not nodryrun, cleardiscoveredby=not nocleardiscoveredby, minimumage=minimumage, leavetemplates=leavetemplates, force=force)
+#     Defaults to use a dryrun, so the results are only written to a txt file for you to check.
+#     """
+#     with LogContext():
+#         esm = ServiceRegistry.get(EsmMain)  
+#         #esm.checkAndWaitForOtherInstances()
+#         #esm.purgeWipedPlayfieldsOld(dryrun=not nodryrun, leavetemplates=leavetemplates, force=force)
 
 
-@cli.command(name="tool-purge-wiped-playfields", short_help="purges all playfields that are marked to be completely wiped")
-@click.option('--nodryrun', is_flag=True, help="set to actually execute the purge on the disk")
-@click.option('--leavetemplates', is_flag=True, help=f"if set, do not delete the related templates")
-@click.option('--force', is_flag=True, help=f"if set, do not ask interactively before file deletion")
-def purgeWipedPlayfieldsOld(nodryrun, leavetemplates, force):
-    """Will *purge* all playfields that are marked for complete wipe (with wipetype 'all') including their templates.
-    Since this uses the filesystem to check for the info, the execution might take a while on huge savegames.
-
-    This requires the server to be shut down, since it modifies the files on the filesystem.
-    Make sure to have a recent backup before doing this!
-    
-    Defaults to use a dryrun, so the results are only written to a txt file for you to check.
-    """
-    with LogContext():
-        esm = ServiceRegistry.get(EsmMain)  
-        esm.checkAndWaitForOtherInstances()
-        esm.purgeWipedPlayfieldsOld(dryrun=not nodryrun, leavetemplates=leavetemplates, force=force)
-
-
-@cli.command(name="tool-purge-removed-entities", short_help="purges entities that are marked as removed in the database")
+@cli.command(name="tool-cleanup-removed-entities", short_help="delete entity files that are marked as removed in the database")
 @click.option('--dblocation', metavar='file', help="location of database file to be used in dry mode. Defaults to use the current savegames DB")
 @click.option('--nodryrun', is_flag=True, help="set to actually execute the purge on the disk")
 @click.option('--force', is_flag=True, help=f"if set, do not ask interactively before file deletion")
-def purgeRemovedEntitiesOld(dblocation, nodryrun, force):
+def purgeRemovedEntities(dblocation, nodryrun, force):
     """Will purge all entities that are marked as removed in the database. This requires the server to be shut down, since it modifies the files on the filesystem.
     
     Defaults to use a dryrun, so the results are only written to a csv file for you to check.
@@ -316,7 +284,7 @@ def purgeRemovedEntitiesOld(dblocation, nodryrun, force):
         if nodryrun and dblocation:
             log.error(f"--nodryrun and --dblocation can not be used together for safety reasons.")
         else:
-            esm.purgeRemovedEntitiesOld(dbLocation=dblocation, dryrun=not nodryrun, force=force)
+            esm.purgeRemovedEntities(dbLocation=dblocation, dryrun=not nodryrun, force=force)
 
 
 @cli.command(name="tool-cleanup-shared", short_help="removes any obsolete entries in the shared folder")
@@ -324,7 +292,8 @@ def purgeRemovedEntitiesOld(dblocation, nodryrun, force):
 @click.option('--nodryrun', is_flag=True, help="set to actually execute the purge on the disk")
 @click.option('--force', is_flag=True, help=f"if set, do not ask interactively before file deletion")
 def cleanupShared(dblocation, nodryrun, force):
-    """Will check all entries in the Shared-Folder against the database and remove all the ones that shouldn't exist any more or are not needed any more.
+    """Will check all entries in the Shared-Folder against the database and remove all the ones that shouldn't exist any more since there 
+    is no more related data in the database.
 
     This requires the server to be shut down, since it modifies the files on the filesystem. Make sure to have a recent backup aswell.
     
@@ -342,7 +311,7 @@ def cleanupShared(dblocation, nodryrun, force):
             esm.cleanupSharedFolder(dbLocation=dblocation, dryrun=not nodryrun, force=force)
 
 
-@cli.command(name="tool-clear-discovered", short_help="clears the discovered info for systems/playields")
+@cli.command(name="tool-clear-discovered", short_help="clears the discovered-by info for systems/playields")
 @click.option('--dblocation', metavar='file', help="location of database file to be used. Defaults to use the current savegames DB")
 @click.option('--nodryrun', is_flag=True, help="set to actually execute the action on the disk")
 @click.option('-f', '--file', metavar='file', help="if this is given, use the text file as input for the system/playfield names additionally")
@@ -424,29 +393,27 @@ def checkRequirements(nonadmin):
         esm.checkRequirements(not nonadmin)
 
 
-@cli.command(name="tool-wipe", short_help="provides a lot of options to wipe empty playfields, the galaxy and purge stuff")
-@click.option('--file', metavar='file', help="if this is given, use the text file as input for the system/playfield names. Syntax: <S:Systemname> for systems, <Playfield> for playfields. The textfile has to be a simple list with one string per line containing either a system or a playfield name with no quotes or special characters.")
+@cli.command(name="tool-wipe", short_help="provides a lot of options to wipe empty playfields, check the help for details")
+@click.option('--listfile', metavar='file', help="if this is given, use the text file as input for the system/playfield names. Syntax: <S:Systemname> for systems, <Playfield> for playfields. The textfile has to be a simple list with one string per line containing either a system or a playfield name with no quotes or special characters.")
 @click.option('--territory', metavar='territory', type=str, help=f"territory to wipe, use {Territory.GALAXY} for the whole galaxy or any of the configured ones, use --showterritories to get the list")
 @click.option('--showterritories', is_flag=True, help="show the configured territories")
-@click.option('--purge', is_flag=True, help="instead of wiping, delete the playfields files, along with all related files like templates and entities from the disk. Use with caution and make sure to have a backup before using this option.")
-@click.option('--wipetype', type=str, default=None, help="what type of wipe to apply to the playfields, use --showtypes to get the list of available types")
+
+@click.option('--wipetype', type=str, help="what type of wipe to apply to the playfields, use --showtypes to get the list of available types")
 @click.option('--showtypes', is_flag=True, help="show the supported wipetypes the game supports")
 
-@click.option('--purgeleavetemplates', is_flag=True, help="if set, do *not* delete the related templates when purging")
-@click.option('--purgeleaveentities', is_flag=True, help="if set, do *not* delete the related entites when purging")
 @click.option('--nocleardiscoveredby', is_flag=True, help="if set, will *not* clear the discovered-by infos from the wiped/purged playfields")
-@click.option('--minage', default=30, show_default=True, help="the playfields will only be wiped/purged if they have not been visited for the specified amount of days.")
+@click.option('--minage', help="the playfields will only be wiped/purged if they have not been visited for the specified amount of days.")
 
 @click.option('--dblocation', metavar='file', help="location of database file to be used in dry mode. Defaults to use the current savegames DB")
 @click.option('--nodryrun', is_flag=True, help="set to actually execute the changes on the disk")
-@click.option('--force', is_flag=True, help="if set, do not ask interactively before file deletion")
-def wipeTool(file, territory, showterritories, purge, wipetype, showtypes, purgeleavetemplates, purgeleaveentities, nocleardiscoveredby, minage, dblocation, nodryrun, force):
+def wipeTool(listfile, territory, showterritories, wipetype, showtypes, nocleardiscoveredby, minage, dblocation, nodryrun):
     """This tool will *wipe* playfields as specified but will not touch any playfield with players, player owned structures or terrain placeables.
-    If you want to wipe playfields with player owned structures or terrain placeables, use EAH's wipe tools.
+    This feature is similar to EAH's "wipe empty playfields" feature, but also considers terrain placeables (which get wiped in EAH).
+    This also only takes 60 seconds for a 40GB savegame. EAH needs ~37 hours.
+
     This requires the server to be shut down, since it needs access to the current state of the savegame and the filesystem.
 
-    You can not combine --file with --territory
-    You can not combine --wipetype with any of --purge, --purgeleavetemplates or --purgeleaveentities
+    You can not combine --listfile with --territory
     You can not combine --dblocation and --nodryrun. This is to make sure you do not accidentally purge the wrong playfields folder.
  
     Defaults to use a dryrun, so the results are only written to a csv file for you to check.
@@ -459,8 +426,6 @@ def wipeTool(file, territory, showterritories, purge, wipetype, showtypes, purge
         esm = ServiceRegistry.get(EsmMain)  
         esm.checkAndWaitForOtherInstances()
 
-        #log.debug(f"parameters are: {locals()}")
-
         if showtypes:
             click.echo("Supported wipe types are:\n\n" + "\n".join(f"{wt.value.name}\t\t-\t{wt.value.description}" for wt in list(WipeType))+"\n")
             return
@@ -470,23 +435,20 @@ def wipeTool(file, territory, showterritories, purge, wipetype, showtypes, purge
             click.echo(f"\nUse {Territory.GALAXY} to wipe the whole galaxy.\n")
             return
 
-        if file and territory:
-            raise WrongParameterError(f"--file and --territory can not be used together")
+        if listfile and territory:
+            raise WrongParameterError(f"--listfile and --territory can not be used together")
         
-        if (purge or purgeleavetemplates or purgeleaveentities) and wipetype:
-            raise WrongParameterError(f"--wipetype can not be combined with any of --purge, --purgeleavetemplates or --purgeleaveentities")
-
+        if not wipetype:
+            raise WrongParameterError(f"--wipetype must be set")
+        
         if nodryrun and dblocation:
             raise WrongParameterError(f"--nodryrun and --dblocation can not be used together for safety reasons")
         
-        if not file and not territory:
-            raise WrongParameterError(f"Either --file or --territory must be used")
+        if not listfile and not territory:
+            raise WrongParameterError(f"Either --listfile or --territory must be used")
 
-        if not purge and not wipetype:
-            raise WrongParameterError(f"Either --purge or --wipetype must be used")
-        
         inputFilePath = None
-        if not file:
+        if not listfile:
             availableTerritories = esm.configService.getAvailableTerritories()
             atn = list(map(lambda x: x.name, availableTerritories))
             if territory and (territory in atn or territory == Territory.GALAXY):
@@ -494,16 +456,15 @@ def wipeTool(file, territory, showterritories, purge, wipetype, showtypes, purge
             else:
                 raise WrongParameterError(f"Territory '{territory}' not valid, must be one of: {Territory.GALAXY}, {', '.join(atn)}")
         else:
-            inputFilePath = Path(file)
+            inputFilePath = Path(listfile)
             if not inputFilePath.exists():
                 raise WrongParameterError(f"file {inputFilePath} does not exist.")
 
-        if not purge:
-            wtl = WipeType.valueList()
-            if wipetype and wipetype in wtl:
-                log.debug(f"valid wipetype selected '{wipetype}'")
-            else:
-                raise WrongParameterError(f"Wipe type '{wipetype}' not valid, must be one of: {wtl}")
+        wtl = WipeType.valueList()
+        if wipetype and wipetype in wtl:
+            log.debug(f"valid wipetype selected '{wipetype}'")
+        else:
+            raise WrongParameterError(f"Wipe type '{wipetype}' not valid, must be one of: {wtl}")
             
         dbLocationPath = esm.fileSystem.getAbsolutePathTo("saves.games.savegame.globaldb")
         if dblocation:
@@ -512,8 +473,13 @@ def wipeTool(file, territory, showterritories, purge, wipetype, showtypes, purge
                 dbLocationPath = str(dbLocationPath.resolve())
             else:
                 raise WrongParameterError(f"dbLocation '{dbLocationPath}' is not a valid database location path.")
+            
+        if minage:
+            minage = int(minage)
+            if minage < 0:
+                raise WrongParameterError(f"minage must be >= 0")
 
-        esm.wipeTool(inputFilePath=inputFilePath, territoryName=territory, purge=purge, wipetype=WipeType.byName(wipetype), purgeleavetemplates=purgeleavetemplates, purgeleaveentities=purgeleaveentities, cleardiscoveredby=not nocleardiscoveredby, minage=minage, dbLocationPath=dbLocationPath, dryrun=not nodryrun, force=force)
+        esm.wipeTool(inputFilePath=inputFilePath, territoryName=territory, wipetype=WipeType.byName(wipetype), cleardiscoveredby=not nocleardiscoveredby, minage=minage, dbLocationPath=dbLocationPath, dryrun=not nodryrun)
 
 def init(fileLogLevel=logging.DEBUG, streamLogLevel=logging.INFO, waitForPort=False, customConfig=None):
     # catch keyboard interrupts 
@@ -533,7 +499,8 @@ def forcedExit(*args):
 
 # main cli entry point.
 def start():
-    # wrap *all* exceptions so they end up in the log at least. Anything that bubbled up to here is probably a bug.
+    # wrap *all* exceptions so they end up in the log at least. Anything that bubbled up to here is probably a bug. 
+    # all other exceptions we caused ourselves should be a subtype of EsmException
     try:
         cli()
     except Exception as ex:

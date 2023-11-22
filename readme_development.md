@@ -40,12 +40,12 @@ This will create the distributable files with all its dependencies in `dist/esm`
 
 ### WIP
 
-- [+] refactor tools, make them wipe instead, or make all tools have the option to additionally purge too? Make it more conscise.
-  - [+] tool-wipe (--territory|--file) (--purge|--wipetype) --purgeleavetemplates --nocleardiscovered --minimumage
-  - [ ] tool-clear-discoveredby (--territory|--file) 
-  - [ ] tool-cleanup-purge-wiped
-  - [ ] tool-cleanup-shared
-  - [ ] tool-cleanup-removed-entities
+- [x] refactor tools, make them wipe instead, or make all tools have the option to additionally purge too? Make it more conscise.
+  - [x] tool-wipe (--territory|--file) --wipetype --nocleardiscovered --minimumage
+  - [+] tool-clear-discoveredby (--territory|--file) 
+  - [-] tool-cleanup-purge-wiped
+  - [x] tool-cleanup-shared
+  - [x] tool-cleanup-removed-entities
 - [-] tool to wipe/purge a list of playfields passed in the command line and/or file?
 
 ### later
@@ -58,6 +58,7 @@ This will create the distributable files with all its dependencies in `dist/esm`
   - [ ] actually make any option have a -batchmode when there are interactive prompts, defaulting to the most defensive option.
 - [ ] implement allowMultpleServerInstances switch? Once enabled, do not check for instances of the game before starting, do not start if startmode is set to direct, etc.
 - [+] create separate windows-gui thingy that resides in the taskbar or similar and provides a shortcut to the cli tool.
+- [ ] fix tool-purge-wiped-playfields, since this needs to also delete related data in the database.
 
 ### optional
 
