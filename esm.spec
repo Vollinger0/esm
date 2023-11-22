@@ -4,6 +4,7 @@ import shutil
 from PyInstaller.utils.hooks import copy_metadata
 
 
+
 # define the files to copy to the dist additionally
 datafiles = [
         ('esm-default-config.yaml.example', '.'),
@@ -70,6 +71,7 @@ coll = COLLECT(
 workspaceDir = Path(".").resolve()
 print(f"working directory is: {workspaceDir}")
 targetDir = workspaceDir.joinpath("dist/esm")
+if not targetDir.exists(): targetDir.mkdir(exist_ok=True)
 for src, dst in datafiles:
     print(f"processing datafiles entry {src, dst}") 
     srcPath = workspaceDir.joinpath(src)
@@ -77,3 +79,11 @@ for src, dst in datafiles:
     print(f"copying {srcPath} -> {dstPath}")
     if not Path(dstPath.parent).exists(): Path(dstPath.parent).mkdir(parents=True, exist_ok=True)
     shutil.copy(srcPath, dstPath)
+
+from esm import main
+sourcePath = targetDir
+backupDir = targetDir.parent
+version = main.getPackageVersion()
+zipFilename = backupDir.joinpath(f"esm-{version}")
+archived = shutil.make_archive(zipFilename, 'zip', sourcePath)
+print(f"zipped distribution as: {archived}")
