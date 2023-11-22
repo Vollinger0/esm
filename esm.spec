@@ -1,9 +1,11 @@
 # -*- mode: python ; coding: utf-8 -*-
 from pathlib import Path
 import shutil
+import subprocess
 from PyInstaller.utils.hooks import copy_metadata
 
-
+# install the esm module so dist will pick up the current state
+subprocess.run("pip install -e .", shell=True)
 
 # define the files to copy to the dist additionally
 datafiles = [
@@ -80,6 +82,7 @@ for src, dst in datafiles:
     if not Path(dstPath.parent).exists(): Path(dstPath.parent).mkdir(parents=True, exist_ok=True)
     shutil.copy(srcPath, dstPath)
 
+# create a zip file of the distribution in the dist folder, ready do share
 from esm import main
 sourcePath = targetDir
 backupDir = targetDir.parent
