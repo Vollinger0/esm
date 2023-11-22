@@ -526,17 +526,18 @@ class EsmMain:
         except UserAbortedException as ex:
             log.warning(f"User aborted the operation, nothing deleted.")
 
-    def cleanupRemovedEntities(self, dbLocation=None, dryrun=True, force=False):
+    def cleanupRemovedEntities(self, savegame=None, dryrun=True, force=False):
         """
         will purge all entity folders in the shared folder of entities that are marked as deleted in the database
         """
-        if not dryrun and self.dedicatedServer.isRunning():
-            raise ServerNeedsToBeStopped("Can not purge removed entities with --nodryrun if the server is running. Please stop it first.")
-        
-        dbLocationPath = self.getDBLocationPath(dbLocation)
+        savegamePath = self.getSavegamePath(savegame)
 
-        log.info(f"Purging removed entities for dbLocation: '{dbLocationPath}', dryrun '{dryrun}'")
-        count = self.wipeService.purgeRemovedEntities(dbLocationPath=dbLocationPath, dryrun=dryrun)
+        isCurrentSaveGame = savegamePath.samefile(self.fileSystem.getAbsolutePathTo("saves.games.savegame"))
+        if not dryrun and isCurrentSaveGame and self.dedicatedServer.isRunning():
+            raise ServerNeedsToBeStopped("Can not clean up shared removed entities of the current savegame with --nodryrun if the server is running. Please stop it first.")
+
+        log.info(f"Purging removed entities for savegame: '{savegamePath}', dryrun '{dryrun}'")
+        count = self.wipeService.purgeRemovedEntities(savegamePath=savegamePath, dryrun=dryrun)
         if not count or count == 0:
             return
 
@@ -545,11 +546,10 @@ class EsmMain:
                 result, elapsedTime = self.fileSystem.commitDelete(override="yes")
                 log.info(f"Deleted '{count}' folders with removed entities in the Shared folder, elapsed time: {elapsedTime}")
             else:
-                try:
-                    result, elapsedTime = self.fileSystem.commitDelete()
-                    log.info(f"Deleted '{count}' folders with removed entities in the Shared folder, elapsed time: {elapsedTime}")
-                except UserAbortedException as ex:
-                    log.warning("User aborted operation, nothing was deleted.")
+                result, elapsedTime = self.fileSystem.commitDelete()
+                log.info(f"Deleted '{count}' folders with removed entities in the Shared folder, elapsed time: {elapsedTime}")
+        else:
+            log.info(f"This is a dryrun, did not delete '{count}' entity folders")
 
     def purgeWipedPlayfieldsOld(self, dryrun=True, leavetemplates=False, force=False):
         """
@@ -589,7 +589,7 @@ class EsmMain:
 
         if savegame is given, will use that instead of the current savegame, also the server may keep running.
         """
-        log.debug(f"{__name__}.cleanupSharedFolder: savegame: '{savegame}', dryrun: '{dryrun}', force: '{force}'")
+        #log.debug(f"{__name__}.cleanupSharedFolder: savegame: '{savegame}', dryrun: '{dryrun}', force: '{force}'")
 
         savegamePath = self.getSavegamePath(savegame)
 

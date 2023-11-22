@@ -245,12 +245,11 @@ class EsmWipeService:
                     markedTpCounter += 1
         return markedPfCounter, markedTpCounter
     
-    def deleteEntityFiles(self, entities: List[Entity]):
+    def deleteEntityFiles(self, sharedFolderPath: Path, entities: List[Entity]):
         """marks the folders associated with the given entities from Shared for deletion
 
         returns the amount of still existing folders marked for deletion
         """
-        sharedFolderPath = self.fileSystem.getAbsolutePathTo("saves.games.savegame.shared")
         markedCounter = 0
         for entity in entities:
             idPath = sharedFolderPath.joinpath(entity.id)
@@ -260,28 +259,31 @@ class EsmWipeService:
                 markedCounter += 1
         return markedCounter
     
-    def purgeRemovedEntities(self, database: EsmDatabaseWrapper=None, dbLocationPath: Path=None, dryrun=True):
+    def purgeRemovedEntities(self, database: EsmDatabaseWrapper=None, savegamePath: Path=None, dryrun=True):
         """purge any entity that is marked as removed in the db
         
         returns the amount of entity folders marked for deletion
         """
-        if database is None:
-            database = EsmDatabaseWrapper(dbLocationPath)
+        dbLocationPath = savegamePath.joinpath(self.config.filenames.globaldb)
+        if not dbLocationPath.exists():
+            raise WrongParameterError(f"provided savegame does not have its database at {dbLocationPath}")
+        database = EsmDatabaseWrapper(dbLocationPath)
+        sharedFolderPath = savegamePath.joinpath(self.config.foldernames.shared)
         # get all entites marked as removed in the db
         removedEntities = database.retrievePurgeableRemovedEntities()
         database.closeDbConnection()
         if len(removedEntities) < 1:
-            log.info("no entities marked as removed")
+            log.info("No entities marked as removed. Nothing to do.")
             return 0
-        log.debug(f"got {len(removedEntities)} entites marked as removed")
+        log.debug(f"got {len(removedEntities)} entities marked as removed")
         if dryrun:
-            csvFilename = Path(f"esm-clean-removed-entites.csv").resolve()
+            csvFilename = Path(f"esm-clean-removed-entities.csv").resolve()
             log.info(f"Will output the list of {len(removedEntities)} entities that should have been removed as '{csvFilename}'")
             self.printListOfEntitiesAsCSV(csvFilename=csvFilename, entities=removedEntities)
             return len(removedEntities)
         else:
             # purge all their files from the current savegame
-            return self.deleteEntityFiles(removedEntities)
+            return self.deleteEntityFiles(sharedFolderPath, removedEntities)
 
     def purgeWipedPlayfields(self, leavetemplates=False):
         """

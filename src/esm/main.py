@@ -66,11 +66,8 @@ def ramdiskPrepare():
     """Prepares the file structure to be used with a ramdisk by moving the savegame to the gamesmirror folder. This will also help you create a new savegame if none exists."""
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)
-        try:
-            esm.checkAndWaitForOtherInstances()
-            esm.ramdiskPrepare()
-        except Exception as ex:
-            log.error(f"Error trying to prepare: {ex}")
+        esm.checkAndWaitForOtherInstances()
+        esm.ramdiskPrepare()
 
 
 @cli.command(name="ramdisk-setup", short_help="sets up the ramdisk")
@@ -103,11 +100,8 @@ def ramdiskUninstall(force):
     """
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)
-        try:
-            esm.checkAndWaitForOtherInstances()
-            esm.ramdiskUninstall(force=force)
-        except Exception as ex:
-            log.error(f"Error trying to uninstall: {ex}")
+        esm.checkAndWaitForOtherInstances()
+        esm.ramdiskUninstall(force=force)
 
 
 @cli.command(name="server-start", short_help="starts the server, returns when the server shuts down")
@@ -267,24 +261,19 @@ def deleteAll():
 
 
 @cli.command(name="tool-cleanup-removed-entities", short_help="delete entity files that are marked as removed in the database")
-@click.option('--dblocation', metavar='file', help="location of database file to be used in dry mode. Defaults to use the current savegames DB")
+@click.option('--savegame', metavar='path', help="location of savegame to use, e.g. to use this on a different savegame or savegame copy") 
 @click.option('--nodryrun', is_flag=True, help="set to actually execute the purge on the disk")
 @click.option('--force', is_flag=True, help=f"if set, do not ask interactively before file deletion")
-def toolCleanupRemovedEntities(dblocation, nodryrun, force):
-    """Will purge all entities that are marked as removed in the database. This requires the server to be shut down, since it modifies the files on the filesystem.
+def toolCleanupRemovedEntities(savegame, nodryrun, force):
+    """Will delete all related files to all entities that are marked as removed in the database. 
+
+    If --savegame is the current savegame, this requires the server to be shut down, since it modifies the files on the filesystem. Make sure to have a recent backup aswell.
     
     Defaults to use a dryrun, so the results are only written to a csv file for you to check.
-    If you use the dry mode just to see how it works, you may aswell define a different savegame database.
-    When NOT in dry mode, you can NOT specify a different database to make sure you do not accidentally purge the wrong playfields folder.
     """
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)  
-        esm.checkAndWaitForOtherInstances()
-
-        if nodryrun and dblocation:
-            log.error(f"--nodryrun and --dblocation can not be used together for safety reasons.")
-        else:
-            esm.cleanupRemovedEntities(dbLocation=dblocation, dryrun=not nodryrun, force=force)
+        esm.cleanupRemovedEntities(savegame=savegame, dryrun=not nodryrun, force=force)
 
 
 @cli.command(name="tool-cleanup-shared", short_help="removes any obsolete entries in the shared folder")
@@ -296,14 +285,10 @@ def toolCleanupShared(savegame, nodryrun, force):
 
     If --savegame is the current savegame, this requires the server to be shut down, since it modifies the files on the filesystem. Make sure to have a recent backup aswell.
 
-    Use --savegame if you want to try this tool on a backup or a different savegame.
-    
     Defaults to use a dryrun, so the results are only written to a csv file for you to check.
-    If you use the dry mode just to see how it works, you may aswell define a different savegame.
     """
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)  
-        #esm.checkAndWaitForOtherInstances()
         esm.cleanupSharedFolder(savegame=savegame, dryrun=not nodryrun, force=force)
 
 
@@ -333,6 +318,10 @@ def toolClearDiscovered(dblocation, nodryrun, territory, showterritories, listfi
         esm = ServiceRegistry.get(EsmMain)  
         esm.checkAndWaitForOtherInstances()
 
+        if showterritories:
+            showConfiguredTerritories(esm)
+            return
+
         if territory and listfile:
             raise WrongParameterError(f"--territory and --listfile can not be combined.")
 
@@ -344,10 +333,6 @@ def toolClearDiscovered(dblocation, nodryrun, territory, showterritories, listfi
 
         if territory:
             checkTerritoryParameter(territory, esm)
-        
-        if showterritories:
-            showConfiguredTerritories(esm)
-            return
         
         esm.clearDiscovered(dblocation=dblocation, dryrun=not nodryrun, territoryName=territory, inputFile=listfile, inputNames=names)
 
@@ -477,7 +462,7 @@ def wipeTool(listfile, territory, showterritories, wipetype, showtypes, nocleard
 
         esm.wipeTool(inputFilePath=inputFilePath, territoryName=territory, wipetype=WipeType.byName(wipetype), cleardiscoveredby=not nocleardiscoveredby, minage=minage, dbLocation=dblocation, dryrun=not nodryrun)
 
-def showConfiguredTerritories(esm):
+def showConfiguredTerritories(esm: EsmMain):
     click.echo("Configured custom territories:\n\n" + "\n".join(f"{ct.name}" for ct in esm.configService.getAvailableTerritories()))
     click.echo(f"\nUse {Territory.GALAXY} to wipe the whole galaxy.\n")
 
@@ -491,7 +476,7 @@ def checkWipeTypeParameter(wipetype):
     else:
         raise WrongParameterError(f"Wipe type '{wipetype}' not valid, must be one of: {wtl}")
 
-def checkTerritoryParameter(territory, esm):
+def checkTerritoryParameter(territory, esm: EsmMain):
     availableTerritories = esm.configService.getAvailableTerritories()
     atn = list(map(lambda x: x.name, availableTerritories))
     if territory and (territory in atn or territory == Territory.GALAXY):
