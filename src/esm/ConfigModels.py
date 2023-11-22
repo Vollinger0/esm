@@ -44,14 +44,14 @@ class ConfigBackups(BaseModel):
     minDiskSpaceForStaticBackup: str = Field("2G", pattern=FILESIZEPATTERN, description="if disk space on the drive with the backups has less free space than this, do not create a backup. gnu notation")
     additionalBackupPaths: List[Path] = Field([], description="list of full paths to source files or directories to backup additionally. Those will all end up in the folder 'Additional' in the backup")
 
-class FileOps(TypedDict):
+class FileOps(BaseModel):
     """ represents an file operation for the update-command with file path patterns for src and dst """
     src: str
     dst: str
 
 class ConfigUpdates(BaseModel):
     scenariosource: Path = Field("D:/Servers/Scenarios", description="source directory with the scenario folders that will be used to copy to the servers scenario folder")
-    additional: List[FileOps] = Field([], description="additional stuff to copy when calling the esm game-update command")
+    additional: List[FileOps] = Field([], description="additional stuff to copy when calling the esm game-update command, every line has to look like e.g. { src: 'foo', dst: 'bar' }")
 
 class ConfigDeletes(BaseModel):
     backupGameLogs: bool = Field(True, description="backup all game logs on deleteall command")

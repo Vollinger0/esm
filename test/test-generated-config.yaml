@@ -26,7 +26,7 @@ backups:
   additionalBackupPaths: []                                                                                                             # list of full paths to source files or directories to backup additionally. Those will all end up in the folder 'Additional' in the backup
 updates:
   scenariosource: D:/Servers/Scenarios   # source directory with the scenario folders that will be used to copy to the servers scenario folder
-  additional: []                         # additional stuff to copy when calling the esm game-update command
+  additional: []                         # additional stuff to copy when calling the esm game-update command, every line has to look like e.g. { src: 'foo', dst: 'bar' }
 deletes:
   backupGameLogs: true   # backup all game logs on deleteall command
   backupEahLogs: true    # backup all eah logs on deleteall command?

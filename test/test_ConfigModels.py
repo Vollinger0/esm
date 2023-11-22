@@ -103,3 +103,26 @@ class test_ConfigModels(unittest.TestCase):
             # check default values
             self.assertEqual(config.ramdisk.drive, "R:")
             self.assertEqual(config.backups.amount, 4)
+
+    def test_emptyFileOpsStillIterable(self):
+        from esm.ConfigModels import MainConfig
+
+        configFilePath = Path("test/esm-test-config.yaml")
+        with open(configFilePath, "r") as configFile:
+            configContent = yaml.safe_load(configFile)
+            config = MainConfig.model_validate(configContent)
+            self.assertEqual(config.server.dedicatedYaml, Path("test/test-dedicated.yaml"))
+
+        newModel = MainConfig.model_validate(test_ConfigModels.REQUIRED_MODEL)
+        self.assertEqual(len(newModel.updates.additional), 0)
+
+        configFilePath = Path("esm-custom-config.yaml.example")
+        with open(configFilePath, "r") as configFile:
+            configContent = yaml.safe_load(configFile)
+        newModel2 = MainConfig.model_validate(configContent)
+        self.assertEqual(len(newModel2.updates.additional), 2)
+
+        self.assertEqual(newModel2.updates.additional[0].src, "D:/Servers/Scenarios/ProjectA/SharedData/Content/Bundles/ItemIcons/*.*")
+        for x in newModel2.updates.additional:
+            self.assertIsNotNone(x.dst)
+            self.assertIsNotNone(x.src)
