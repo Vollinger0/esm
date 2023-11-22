@@ -42,11 +42,11 @@ This will create the distributable files with all its dependencies in `dist/esm`
 
 - [+] refactor tools, make them wipe instead, or make all tools have the option to additionally purge too? Make it more conscise.
   - [+] tool-wipe (--territory|--file) (--purge|--wipetype) --purgeleavetemplates --nocleardiscovered --minimumage
-  - [ ] tool-clear-discovered (--territory|--file)
-  - [ ] tool-purge-wiped
+  - [ ] tool-clear-discoveredby (--territory|--file) 
+  - [ ] tool-cleanup-purge-wiped
   - [ ] tool-cleanup-shared
   - [ ] tool-cleanup-removed-entities
-- [-] tool to purge a list of playfields passed in the command line and/or file?
+- [-] tool to wipe/purge a list of playfields passed in the command line and/or file?
 
 ### later
 
