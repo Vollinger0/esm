@@ -40,14 +40,6 @@ This will create the distributable files with all its dependencies in `dist/esm`
 
 ### WIP
 
-- [x] refactor tools, make them wipe instead, or make all tools have the option to additionally purge too? Make it more conscise.
-  - [x] tool-wipe (--territory|--file) --wipetype --nocleardiscovered --minimumage
-  - [x] tool-clear-discoveredby (--territory|--file) 
-  - [-] tool-cleanup-purge-wiped
-  - [x] tool-cleanup-shared
-  - [x] tool-cleanup-removed-entities
-- [-] tool to wipe/purge a list of playfields passed in the command line and/or file?
-
 ### later
 
 - [ ] provide full installation package with install bat, that installs esm, the tools (osfmount, peazip, etc.)?
@@ -74,6 +66,13 @@ This will create the distributable files with all its dependencies in `dist/esm`
 
 ### done
 
+- [x] refactor tools, make them wipe instead, or make all tools have the option to additionally purge too? Make it more conscise.
+  - [x] tool-wipe (--territory|--file) --wipetype --nocleardiscovered --minimumage
+  - [x] tool-clear-discoveredby (--territory|--file) 
+  - [-] tool-cleanup-purge-wiped
+  - [x] tool-cleanup-shared
+  - [x] tool-cleanup-removed-entities
+- [-] tool to wipe/purge a list of playfields passed in the command line and/or file?
 - [x] refactor configuration once again: put base-config as default-config into the module, and provide an example custom config. The game has to do some sanity checks on startup to make sure the required configurations are in place (like installdir, dedicated yaml, etc.) - Or use something more sophisticated, e.g. a proper getter for config properties that retrieve it from custom -> base -> fallback to a default. => use pydantic!
 - [x] check requirements should do a test copy with robocopy
 - [x] when useRamdisk is enabled, enable checks for its file structure, when its not, do not start use the synchronizer (of course)

@@ -4,7 +4,7 @@ import time
 import logging
 from esm.EsmMain import EsmMain
 from esm.Tools import getElapsedTime, getTimer
-from esm.main import wipeTool
+from esm.main import terminateGalaxy, wipeTool
 
 log = logging.getLogger(__name__)
 
@@ -112,9 +112,10 @@ log.debug(f"Logging to: {esm.logFile}")
                              'purgeleaveentities': False, 'nocleardiscoveredby': False, 'minimumage': 30, 'dbLocationPath': 'D:\\Servers\\20230708_survival_Anvils6_global.db.org',   
                              'nodryrun': False, 'force': False, 'database': <esm.EsmDatabaseWrapper.EsmDatabaseWrapper object at 0x0000021443752BD0>}
 """
-esm.wipeTool(dbLocationPath=Path("../20230708_survival_Anvils6_global.db.org").resolve(), nodryrun=False, territoryName="GALAXY", minimumage=30)
+#esm.wipeTool(dbLocationPath=Path("../20230708_survival_Anvils6_global.db.org").resolve(), nodryrun=False, territoryName="GALAXY", minimumage=30)
 #wipeTool(dblocation = "D:\\Servers\\20230708_survival_Anvils6_global.db.org", nodryrun=False, territoryName="GALAXY", minimumage=30)
 
+#terminateGalaxy()
 #esm.checkRequirements()
 #testInstallFromSteam()
 #testRamdiskPrepare()

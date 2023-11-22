@@ -28,6 +28,7 @@ class EsmDedicatedServer:
     contains constants for the different startmodes and gfxmodes
     """
     process = None
+    gfxMode: bool = None
 
     @cached_property
     def config(self) -> MainConfig:
@@ -41,6 +42,9 @@ class EsmDedicatedServer:
     def epmClient(self) -> EsmEpmRemoteClientService:
         return ServiceRegistry.get(EsmEpmRemoteClientService)
     
+    def __init__(self):
+        self.gfxMode = self.config.server.gfxMode
+
     def startServer(self, checkForRamdisk=True, checkForDiskSpace=True):
         """
         Start the server with the configured mode.
@@ -77,12 +81,12 @@ class EsmDedicatedServer:
             log.debug(f"debug mode enabled!")
         log.debug(f"Process returned: {process}")
         self.process = process
-        return self.process
+        return process
 
     def getCommandForDirectMode(self):
         pathToExecutable = Path(f"{self.config.paths.install}/{self.config.foldernames.dedicatedserver}/{self.config.filenames.dedicatedExe}").resolve()
         arguments = [pathToExecutable]
-        if self.config.server.gfxMode:
+        if self.gfxMode:
             log.debug(f"gfxMode is true")
         else:
             log.debug(f"gfxMode is false")
@@ -130,8 +134,8 @@ class EsmDedicatedServer:
 
     def getCommandForLauncherMode(self):
         launcherExeFileName = self.config.filenames.launcherExe
-        pathToExecutable = Path(f"{self.config.paths.install}/{launcherExeFileName}").resolve()
-        if self.config.server.gfxMode:
+        pathToExecutable = self.config.paths.install.joinpath(launcherExeFileName).resolve()
+        if self.gfxMode:
             log.debug(f"gfxMode is true")
             startDedi = "-startDediWithGfx"
         else:
@@ -156,7 +160,9 @@ class EsmDedicatedServer:
         """
         get the numeric build number from the first line in the file 'BuildNumber.txt' in the installdir
         """
-        buildNumberFilePath = Path(f"{self.config.paths.install}/{self.config.filenames.buildNumber}").resolve()
+        buildNumberFilePath = self.config.paths.install.joinpath(self.config.filenames.buildNumber).resolve()
+        if not buildNumberFilePath.exists() or not buildNumberFilePath.is_file():
+            raise FileNotFoundError(f"BuildNumber.txt not found at '{buildNumberFilePath}'")
         with open(buildNumberFilePath, "r") as buildNumberFilePath:
             firstLine = buildNumberFilePath.readline()
             cleanedString = re.sub(r'[^a-zA-Z0-9]', '', firstLine)
