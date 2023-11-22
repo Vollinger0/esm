@@ -235,6 +235,10 @@ class EsmMain:
         """
         calls steam to install the game via steam to the given installation directory
         """
+        pathToExecutable = Path(f"{self.config.paths.install}/{self.config.foldernames.dedicatedserver}/{self.config.filenames.dedicatedExe}").resolve()
+        if pathToExecutable.exists():
+            raise AdminRequiredException(f"The server seems to be already installed at '{self.config.paths.install}'. Please check the config, or use the game-update command to update the game.")
+
         return self.steamService.installGame()
     
     def updateGame(self, steam=True, additionals=True):
