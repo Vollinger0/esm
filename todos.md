@@ -21,6 +21,10 @@
 - [ ] add switch to backup-tool to make backups EWA-compatible
 - [ ] provide tool to fix item icons as good as possible in EWA, current process:
    1. open item list in eah, CTRL+A, CTRL+C and copy into text file? Or find out how the item list file in epf got created
+   - info from notoats: should be trivial to convert to python
+      blocksmap.dat: https://gist.github.com/NotOats/36b6192b4703d55aa5ce334388ff1990
+      my old ECF file reader: https://gist.github.com/NotOats/a585298736c70930c89545c4c56aeae9
+      just load the item list from ECF files ("BlocksConfig.ecf", "ItemsConfig.ecf") and overwrite with blocksmap.dat entries
    1. read itemid, itemname, devicename from that eah list
    1. find block by matching devicename with blocktype
    1. find customicon name
