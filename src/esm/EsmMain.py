@@ -755,9 +755,11 @@ class EsmMain:
 
         if inputFilePath is not None:
             systemAndPlayfieldNames = self.readSystemAndPlayfieldListFromFile(inputFilePath)
+            log.info(f"calling wipetool for {len(systemAndPlayfieldNames)} names, wipetype={wipetype.value.name}, cleardiscoveredby={cleardiscoveredby}, minage={minage}, dbLocationPath={dbLocationPath}, dryrun={dryrun}")
         else:
             territory = self.wipeService.getCustomTerritoryByName(territoryName)
             if territoryName == Territory.GALAXY:
                 territory = Territory(Territory.GALAXY, 0,0,0,99999999)
+            log.info(f"calling wipetool for territory {territory.name}, wipetype={wipetype.value.name}, cleardiscoveredby={cleardiscoveredby}, minage={minage}, dbLocationPath={dbLocationPath}, dryrun={dryrun}")
 
         self.wipeService.wipeTool(systemAndPlayfieldNames, territory, wipetype, cleardiscoveredby, minage, dbLocationPath, dryrun)
