@@ -13,15 +13,19 @@ log = logging.getLogger(__name__)
 
 class EsmDatabaseWrapper:
 
+    gameDbPath: str
+    dbConnectString: str = None
+    dbConnection: sqlite3.Connection = None
+    gameDbCursor: sqlite3.Cursor = None
+    readOnly: str = True
+
     @cached_property
     def config(self) -> MainConfig:
         return ServiceRegistry.get(EsmConfigService).config
     
-    def __init__(self, gameDbPath: None) -> None:
-        self.gameDbPath = None
-        self.dbConnectString = None
-        self.dbConnection = None
-        self.gameDbCursor = None
+    def __init__(self, gameDbPath = None, readOnly=True) -> None:
+        self.readOnly = readOnly
+        self.gameDbPath = gameDbPath
         self.setGameDbPath(gameDbPath)
     
     def setGameDbPath(self, gameDbPath: Path):
@@ -32,15 +36,27 @@ class EsmDatabaseWrapper:
             raise FileNotFoundError("no game db path was set to connect to. call #setGameDbPath() first.")
         return self.gameDbPath
     
-    def getGameDbString(self, mode="ro"):
+    def setWriteMode(self):
         if not self.dbConnectString:
-            self.dbConnectString = f"file:/{self.getGameDbPath().as_posix()}?mode={mode}"
+            self.readOnly = False
+        else:
+            raise ConnectionAbortedError("cannot set write mode if a connection string is set. Use a new db Wrapper instance instead.")
+    
+    def getDbMode(self):
+        if self.readOnly:
+            return "ro"
+        else:
+            return "rw"
+
+    def getGameDbString(self):
+        if not self.dbConnectString:
+            self.dbConnectString = f"file:/{self.getGameDbPath().as_posix()}?mode={self.getDbMode()}"
         return self.dbConnectString
     
-    def getGameDbConnection(self, mode="ro") -> sqlite3.Connection:
+    def getGameDbConnection(self) -> sqlite3.Connection:
         if not self.dbConnection:
             log.debug(f"Opening game database at '{self.gameDbPath}'")
-            dbConnectString = self.getGameDbString(mode)
+            dbConnectString = self.getGameDbString()
             log.debug(f"using database connect string '{dbConnectString}'")
             self.dbConnection = sqlite3.connect(dbConnectString, uri=True)
         return self.dbConnection
@@ -51,9 +67,9 @@ class EsmDatabaseWrapper:
             self.dbConnection.close()
             self.dbConnection = None
 
-    def getGameDbCursor(self, mode="ro"):
+    def getGameDbCursor(self):
         if not self.gameDbCursor:
-            connection = self.getGameDbConnection(mode)
+            connection = self.getGameDbConnection()
             self.gameDbCursor = connection.cursor()
         return self.gameDbCursor
     
@@ -159,8 +175,11 @@ class EsmDatabaseWrapper:
     
     def deleteFromDiscoveredPlayfields(self, playfields: List[Playfield], batchSize = 5000):
         """ 
-        this will delete the rows from DiscoveredPlayfields for all playfields given
-        will do the deletion statements in batches
+        Deletes the discovered-by info for the given playfields by deleting all related rows from DiscoveredPlayfields
+
+        Will do the deletion statements in batches to avoid memory usage and performance issues.
+
+        **Attention: this needs the db connection to be opened in rw mode!**
         """
         pfIds = list(map(lambda obj: obj.pfid, playfields))
         log.debug(f"deleting {len(pfIds)} pfids from DiscoveredPlayfields")

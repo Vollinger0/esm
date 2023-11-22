@@ -236,13 +236,13 @@ class EsmMain:
         """
         return self.steamService.installGame()
     
-    def updateGame(self, nosteam=False, noadditionals=False):
+    def updateGame(self, steam=True, additionals=True):
         """
         calls steam to update the game via steam and call any additionally configured steps (like updating the scenario, copying files etc.)
         """
-        return self.steamService.updateGame(nosteam=nosteam, noadditionals=noadditionals)
+        return self.steamService.updateGame(steam, additionals)
     
-    def updateScenario(self, sourcePathParameter: str = None, nodryrun: bool=False):
+    def updateScenario(self, sourcePathParameter: str = None, dryrun: bool=True):
         """
         synchronizes the source scenario folder with the games scenario folder.
         only new files or files whose size or content differ are copied, deleted files in the destination are removed.
@@ -266,11 +266,11 @@ class EsmMain:
             log.warning(f"Path to game scenarios folder '{destinationPath}' does not exist. Will create the directory assuming the configuration is correct.")
             destinationPath.mkdir(parents=False, exist_ok=False)
 
-        if nodryrun:
+        if dryrun:
+            log.info(f"Would synchronize scenario from '{sourcePath}' to '{destinationPath}'. If you want to actually run it, pass --nodryrun.")
+        else:
             log.info(f"Synchronizing scenario from '{sourcePath}' to '{destinationPath}'")
             return self.fileSystem.synchronize(sourcePath, destinationPath)
-        else:
-            log.info(f"Would synchronize scenario from '{sourcePath}' to '{destinationPath}'. If you want to actually run it, pass --nodryrun.")
 
     
     def deleteAll(self):
@@ -384,7 +384,7 @@ class EsmMain:
                 log.info(f"No savegame exists at '{savegamePath}'. This is either a configuration error or none exists. You might need to create a new one later.")
                 return False
             
-    def wipeEmptyPlayfieldsOld(self, dbLocation=None, wipeType=None, territory=None, nodryrun=False, nocleardiscoveredby=False):
+    def wipeEmptyPlayfieldsOld(self, dbLocation=None, wipeType=None, territory=None, dryrun=True, cleardiscoveredby=True):
         """
         Wipes all defined playfields with the defined wipetype, filtering out any playfield that has a player, player owned structure or terrain placeable on it.
 
@@ -392,7 +392,7 @@ class EsmMain:
         Takes about a minute to wipe 50k playfields on a 30GB savegame. 
         Comparison: EAH's "wipe empty playfield" function takes 36hs and does not take into account terrain placeables.
         """
-        if nodryrun and self.dedicatedServer.isRunning():
+        if not dryrun and self.dedicatedServer.isRunning():
             raise ServerNeedsToBeStopped("Can not execute wipe empty playfields with --nodryrun if the server is running. Please stop it first.")
 
         if dbLocation is None:
@@ -417,8 +417,8 @@ class EsmMain:
         else:
             raise WrongParameterError(f"Wipe type '{wipeType}' not valid, must be one of: {wtl}")
         
-        log.info(f"Calling wipe empty playfields for dbLocation: '{dbLocation}' territory '{territory}', wipeType '{wipeType}', nodryrun '{nodryrun}', nocleardiscoveredby '{nocleardiscoveredby}'")
-        self.wipeService.wipeTerritory(dbLocation, territory, WipeType.byName(wipeType), nodryrun, nocleardiscoveredby)
+        log.info(f"Calling wipe empty playfields for dbLocation: '{dbLocation}' territory '{territory}', wipeType '{wipeType}', dryrun '{dryrun}', cleardiscoveredby '{cleardiscoveredby}'")
+        self.wipeService.wipeTerritory(dbLocation, territory, WipeType.byName(wipeType), dryrun, cleardiscoveredby)
 
     def ramdiskRemount(self):
         """
@@ -450,7 +450,7 @@ class EsmMain:
         log.info("Calling ramdisk setup to mount it again with the current configuration and sync the savegame again.")
         self.ramdiskSetup()
 
-    def clearDiscovered(self, dbLocation, nodryrun, inputFile=None, inputNames=None):
+    def clearDiscovered(self, dbLocation, dryrun=True, inputFile=None, inputNames=None):
         """
         resolves the given system- and playfieldnames from the file or the names array and clears the discovered by info for these completely
         The game saves an entry for every player, even if it was discovered before, so this tool will delete them all so it goes back to "Undiscovered".
@@ -465,7 +465,7 @@ class EsmMain:
             else:
                 raise WrongParameterError(f"DbLocation '{dbLocation}' is not a valid database location path.")
         log.info(f"Clearing discovered by infos for {len(names)} names.")
-        self.wipeService.clearDiscoveredByInfo(dbLocation=dbLocation, names=names, nodryrun=nodryrun)
+        self.wipeService.clearDiscoveredByInfo(dbLocation=dbLocation, systemAndPlayfieldNames=names, dryrun=dryrun)
 
     def readSystemAndPlayfieldListFromFile(self, inputFile, inputNames: List[str]=None):
         """
@@ -483,11 +483,11 @@ class EsmMain:
                 raise WrongParameterError(f"input file at '{inputFilePath}' not found")
         return names
 
-    def purgeEmptyPlayfieldsOld(self, dbLocation=None, nodryrun=False, nocleardiscoveredby=False, minimumage=30, leavetemplates=False, force=False):
+    def purgeEmptyPlayfieldsOld(self, dbLocation=None, dryrun=True, cleardiscoveredby=True, minimumage=30, leavetemplates=False, force=False):
         """
         checks for playfields that haven't been visited for the minimumage days and purges them from the filesystem
         """
-        if nodryrun and self.dedicatedServer.isRunning():
+        if not dryrun and self.dedicatedServer.isRunning():
             raise ServerNeedsToBeStopped("Can not purge empty playfields with --nodryrun if the server is running. Please stop it first.")
 
         if dbLocation is None:
@@ -503,16 +503,16 @@ class EsmMain:
             raise WrongParameterError(f"Minimum age in days is 1, you chose '{minimumage}'")
 
         try:
-            log.info(f"Calling purge empty playfields for dbLocation: '{dbLocation}', minimumage '{minimumage}', nodryrun '{nodryrun}', nocleardiscoveredby '{nocleardiscoveredby}', leavetemplates '{leavetemplates}', force '{force}'")
-            self.wipeService.purgeEmptyPlayfields(dbLocation=dbLocation, minimumage=minimumage, nodryrun=nodryrun, nocleardiscoveredby=nocleardiscoveredby, leavetemplates=leavetemplates, force=force)
+            log.info(f"Calling purge empty playfields for dbLocation: '{dbLocation}', minimumage '{minimumage}', dryrun '{dryrun}', cleardiscoveredby '{cleardiscoveredby}', leavetemplates '{leavetemplates}', force '{force}'")
+            self.wipeService.purgeEmptyPlayfields(dbLocation=dbLocation, minimumage=minimumage, dryrun=dryrun, cleardiscoveredby=cleardiscoveredby, leavetemplates=leavetemplates, force=force)
         except UserAbortedException as ex:
             log.warning(f"User aborted the operation, nothing deleted.")
 
-    def purgeRemovedEntitiesOld(self, dbLocation=None, nodryrun=False, force=False):
+    def purgeRemovedEntitiesOld(self, dbLocation=None, dryrun=True, force=False):
         """
         will purge all entity folders in the shared folder of entities that are marked as deleted in the database
         """
-        if nodryrun and self.dedicatedServer.isRunning():
+        if not dryrun and self.dedicatedServer.isRunning():
             raise ServerNeedsToBeStopped("Can not purge removed entities with --nodryrun if the server is running. Please stop it first.")
 
         if dbLocation is None:
@@ -524,9 +524,11 @@ class EsmMain:
             else:
                 raise WrongParameterError(f"DbLocation '{dbLocation}' is not a valid database location path.")
 
-        log.info(f"Purging removed entities for dbLocation: '{dbLocation}', nodryrun '{nodryrun}'")
-        count = self.wipeService.purgeRemovedEntities(dbLocation=dbLocation, nodryrun=nodryrun)
-        if nodryrun:
+        log.info(f"Purging removed entities for dbLocation: '{dbLocation}', dryrun '{dryrun}'")
+        count = self.wipeService.purgeRemovedEntities(dbLocation=dbLocation, dryrun=dryrun)
+        if dryrun:
+            log.info(f"Would have deleted '{count}' folders with removed entities in the Shared folder, but this is a dryrun")
+        else:
             if force:
                 result, elapsedTime = self.fileSystem.commitDelete(override="yes")
                 log.info(f"Deleted '{count}' folders with removed entities in the Shared folder, elapsed time: {elapsedTime}")
@@ -537,14 +539,14 @@ class EsmMain:
                 except UserAbortedException as ex:
                     log.warning("User aborted operation, nothing was deleted.")
 
-    def purgeWipedPlayfieldsOld(self, nodryrun=False, leavetemplates=False, force=False):
+    def purgeWipedPlayfieldsOld(self, dryrun=True, leavetemplates=False, force=False):
         """
         search for wipeinfo.txt containing "all" for all playfields and purge those (and their templates) completely.
         """
-        if nodryrun and self.dedicatedServer.isRunning():
+        if not dryrun and self.dedicatedServer.isRunning():
             raise ServerNeedsToBeStopped("Can not purge wiped playfields with --nodryrun if the server is running. Please stop it first.")
 
-        log.info(f"Executing purge on wiped playfields: nodryrun '{nodryrun}', leavetemplates '{leavetemplates}', force '{force}'")
+        log.info(f"Executing purge on wiped playfields: dryrun '{dryrun}', leavetemplates '{leavetemplates}', force '{force}'")
         with Timer() as timer:
             wipedPlayfieldNames, playfieldCount, templateCount = self.wipeService.purgeWipedPlayfields(leavetemplates)
         log.info(f"Marked {playfieldCount} playfield folders and {templateCount} template folders for deletion, time elapsed: {timer.elapsedTime}")
@@ -553,7 +555,12 @@ class EsmMain:
             log.info(f"Nothing to purge")
             return
 
-        if nodryrun:
+        if dryrun:
+            fileName = f"esm-purgewipedplayfields.lst"
+            with open(fileName, "w", encoding='utf-8') as file:
+                file.writelines([line + '\n' for line in wipedPlayfieldNames])
+            log.warning(f"Dry mode is active, exported list of playfields to purge as '{fileName}'")
+        else:
             if force:
                 result, elapsedTime = self.fileSystem.commitDelete(override="yes")
                 log.info(f"Purged {playfieldCount} playfield and {templateCount} template folders, time elapsed: {elapsedTime}.")
@@ -563,17 +570,12 @@ class EsmMain:
                     log.info(f"Purged {playfieldCount} playfield and {templateCount} template folders, time elapsed: {elapsedTime}.")
                 except UserAbortedException as ex:
                     log.warning("User aborted operation, nothing was deleted.")
-        else:
-            fileName = f"esm-purgewipedplayfields.lst"
-            with open(fileName, "w", encoding='utf-8') as file:
-                file.writelines([line + '\n' for line in wipedPlayfieldNames])
-            log.warning(f"Dry mode is active, exported list of playfields to purge as '{fileName}'")
     
-    def cleanupSharedFolder(self, dbLocation=None, nodryrun=False, force=False):
+    def cleanupSharedFolder(self, dbLocation=None, dryrun=True, force=False):
         """
         will clean up the shared folder, after checking the entries against the entities table in the db.
         """
-        if nodryrun and self.dedicatedServer.isRunning():
+        if not dryrun and self.dedicatedServer.isRunning():
             raise ServerNeedsToBeStopped("Can not clean up shared folders with --nodryrun if the server is running. Please stop it first.")
 
         if dbLocation is None:
@@ -585,9 +587,9 @@ class EsmMain:
             else:
                 raise WrongParameterError(f"DbLocation '{dbLocation}' is not a valid database location path.")
 
-        log.info(f"Cleaning up shared folder for dbLocation: '{dbLocation}', nodryrun '{nodryrun}', force '{force}'")
+        log.info(f"Cleaning up shared folder for dbLocation: '{dbLocation}', dryrun '{dryrun}', force '{force}'")
         try:
-            self.wipeService.cleanUpSharedFolder(dbLocation=dbLocation, nodryrun=nodryrun, force=force)
+            self.wipeService.cleanUpSharedFolder(dbLocation=dbLocation, dryrun=dryrun, force=force)
         except UserAbortedException:
             log.info(f"User aborted clean up execution.")
 
@@ -620,7 +622,7 @@ class EsmMain:
                         raise AdminRequiredException("Looks like the tool is already running!")
                     sys.exit(ExitCodes.INSTANCE_RUNNING)
 
-    def checkRequirements(self, noadmin=False):
+    def checkRequirements(self, admin=True):
         """
         does a series of tests for integrity of the scripts, config, game, os and whatnot.
         """
@@ -690,7 +692,7 @@ class EsmMain:
             except AdminRequiredException as ex:
                 log.error(f"{ex}")
 
-        if not noadmin and self.config.general.useRamdisk:
+        if admin and self.config.general.useRamdisk:
             log.info(f"Checking if you have the required privileges to run access ramdisks at all")
             ramdriveMounted = self.ramdiskManager.checkRamdrive(simpleCheck=False)
             if not ramdriveMounted:
@@ -709,11 +711,11 @@ class EsmMain:
         else:
             self.openSocket(port)
 
-    def wipeTool(self, inputFilePath: Path=None, territoryName=None, purge=False, wipetype: WipeType=None, purgeleavetemplates=False, purgeleaveentities=False, nocleardiscoveredby=False, minage=30, dbLocationPath=None, nodryrun=False, force=False):
+    def wipeTool(self, inputFilePath: Path=None, territoryName=None, purge=False, wipetype: WipeType=None, purgeleavetemplates=False, purgeleaveentities=False, cleardiscoveredby=True, minage=30, dbLocationPath=None, dryrun=True, force=False):
         """
         the mighty wipe tool
         """
-        if nodryrun and self.dedicatedServer.isRunning():
+        if not dryrun and self.dedicatedServer.isRunning():
             raise ServerNeedsToBeStopped("Can not execute tool-wipe with --nodryrun if the server is running. Please stop it first.")
         
         log.debug(f"{__name__}.{sys._getframe().f_code.co_name} called with params: {locals()}")
@@ -728,4 +730,4 @@ class EsmMain:
             if territoryName == Territory.GALAXY:
                 territory = Territory(Territory.GALAXY, 0,0,0,999999999)
 
-        self.wipeService.wipeTool(systemAndPlayfieldNames=systemAndPlayfieldNames, territory=territory, purge=purge, wipetype=wipetype, purgeleavetemplates=purgeleavetemplates, purgeleaveentities=purgeleaveentities, nocleardiscoveredby=nocleardiscoveredby, minage=minage, dbLocationPath=dbLocationPath, nodryrun=nodryrun, force=force)
+        self.wipeService.wipeTool(systemAndPlayfieldNames=systemAndPlayfieldNames, territory=territory, purge=purge, wipetype=wipetype, purgeleavetemplates=purgeleavetemplates, purgeleaveentities=purgeleaveentities, cleardiscoveredby=cleardiscoveredby, minage=minage, dbLocationPath=dbLocationPath, dryrun=dryrun, force=force)
