@@ -27,3 +27,16 @@ class test_Tools(unittest.TestCase):
         expected = "asdfadfasdf aadf adsf adf s"
         actual = Tools.byteArrayToString(input).strip()
         self.assertEqual(expected, actual)
+
+    def test_listunion(self):
+        list1 = ["a", "b", "c", "p", "q"]
+        list2 = ["x", "y", "z", "p", "q"]
+
+        result = list(set(list1).union(set(list2)))
+        self.assertListEqual(sorted(result), sorted(["a", "b", "c", "p", "q", "x", "y", "z"]))
+
+        result = list(set(list1).intersection(set(list2)))
+        self.assertListEqual(sorted(result), sorted(["p", "q"]))
+
+        result = list(set(list1) - set(list2))
+        self.assertListEqual(sorted(result), sorted(["a", "b", "c"]))

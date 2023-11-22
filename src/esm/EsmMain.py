@@ -728,6 +728,6 @@ class EsmMain:
         else:
             territory = self.wipeService.getCustomTerritoryByName(territoryName)
             if territoryName == Territory.GALAXY:
-                territory = Territory(Territory.GALAXY, 0,0,0,999999999)
+                territory = Territory(Territory.GALAXY, 0,0,0,99999999)
 
         self.wipeService.wipeTool(systemAndPlayfieldNames=systemAndPlayfieldNames, territory=territory, purge=purge, wipetype=wipetype, purgeleavetemplates=purgeleavetemplates, purgeleaveentities=purgeleaveentities, cleardiscoveredby=cleardiscoveredby, minage=minage, dbLocationPath=dbLocationPath, dryrun=dryrun, force=force)

@@ -273,7 +273,7 @@ class EsmRamdiskManager:
         self.synchronizerThread.start()
         log.debug(f"ram to mirror synchronizer started with an interval of {syncInterval}")
     
-    def syncTask(self, event, syncInterval):
+    def syncTask(self, event: Event, syncInterval):
         timePassed = 0
         while True:
             time.sleep(1)

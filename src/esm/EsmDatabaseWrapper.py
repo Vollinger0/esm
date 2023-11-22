@@ -158,7 +158,8 @@ class EsmDatabaseWrapper:
         pfsWithPlayers = self.retrievePFsWithPlayers()
 
         log.debug("merging all lists, removing duplicates")
-        nonEmptyPlayfields = list(set(pfsWithPlayerStructures) | set(pfsWithPlaceables) | set(pfsWithPlayers))
+        # merge all 3 lists by using the set.union methods
+        nonEmptyPlayfields = list(set(pfsWithPlayerStructures).union(set(pfsWithPlaceables)).union(set(pfsWithPlayers)))
         log.debug(f"total amount of non empty playfields: {len(nonEmptyPlayfields)}")
         return nonEmptyPlayfields
 
@@ -181,6 +182,9 @@ class EsmDatabaseWrapper:
 
         **Attention: this needs the db connection to be opened in rw mode!**
         """
+        if self.readOnly:
+            raise ConnectionError("this operation requires the db to be open in write mode.")
+
         pfIds = list(map(lambda obj: obj.pfid, playfields))
         log.debug(f"deleting {len(pfIds)} pfids from DiscoveredPlayfields")
         cursor = self.getGameDbCursor()
@@ -309,7 +313,7 @@ class EsmDatabaseWrapper:
         # return the last of the loop (which will be the first sst entry, being the oldest times)
         return startticks, stoptime
     
-    def retrievePuregableRemovedEntities(self) -> List[Entity]:
+    def retrievePurgeableRemovedEntities(self) -> List[Entity]:
         """return all entities that are marked as removed from the db
 
         * type must be structure (isstructure=1 => is SV HV CV or BA)

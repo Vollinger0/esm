@@ -41,12 +41,11 @@ class EsmWipeService:
         """
         database = EsmDatabaseWrapper(dbLocation)
         if not dryrun and cleardiscoveredby:
-            # we need to open the db in rw mode, if we are to clear the discoverd-by info
             database.setWriteMode()
+
         with Timer() as timer:
             allSolarSystems = database.retrieveSSsAll()
             if territoryString == Territory.GALAXY:
-                territory = Territory(Territory.GALAXY,0,0,0,9999999999)
                 solarSystems = allSolarSystems
             else:
                 territory = self.getCustomTerritoryByName(territoryString)
@@ -56,9 +55,7 @@ class EsmWipeService:
             log.info(f"The amount of empty but discovered playfields that can be wiped is: {len(emptyPlayfields)}")
 
             if cleardiscoveredby and len(emptyPlayfields) > 0:
-                self.clearDiscoveredByInfoForPlayfields(playfields=emptyPlayfields, database=database, dryrun=dryrun, closeConnection=False, doPrint=False)
-
-            database.closeDbConnection()
+                self.clearDiscoveredByInfoForPlayfields(playfields=emptyPlayfields, database=database, dryrun=dryrun, closeConnection=True, doPrint=False)
         log.info(f"Connection to database closed. Time elapsed reading from the database: {timer.elapsedTime}")
 
         if len(emptyPlayfields) < 1:
@@ -304,7 +301,7 @@ class EsmWipeService:
                 raise WrongParameterError("neither database nor dblocation was provided to access the database")
             database = EsmDatabaseWrapper(dbLocation)
         # get all entites marked as removed in the db
-        removedEntities = database.retrievePuregableRemovedEntities()
+        removedEntities = database.retrievePurgeableRemovedEntities()
         database.closeDbConnection()
         log.debug(f"got {len(removedEntities)} entites marked as removed")
         if dryrun:
@@ -412,8 +409,8 @@ class EsmWipeService:
             log.info(f"Selecting playfields for wipe from list of {len(systemAndPlayfieldNames)} names")
             log.debug(f"extracting solar systems and playfields from the list of {len(systemAndPlayfieldNames)} names")
             solarSystemNames, playfieldNames = Tools.extractSystemAndPlayfieldNames(systemAndPlayfieldNames)
-            selectedSolarSystems = database.retrieveSolarsystemsByNames(solarSystemNames)
-            selectedPlayFields = database.retrievePlayfieldsByNames(playfieldNames)
+            selectedSolarSystems = database.retrieveSSsByName(solarSystemNames)
+            selectedPlayFields = database.retrievePFsByName(playfieldNames)
             log.debug(f"extracted {len(selectedSolarSystems)} solarsystems and {len(selectedPlayFields)} playfields from {len(systemAndPlayfieldNames)} names in the list")
         if territory:
             log.info(f"Selecting playfields for wipe from custom territory {territory.name}")
@@ -444,7 +441,6 @@ class EsmWipeService:
             return
 
         if cleardiscoveredby:
-            # TODO: re-open database in RW mode to clear discoveredby fields
             database.deleteFromDiscoveredPlayfields(playfieldsToWipe)
 
         if purge:
