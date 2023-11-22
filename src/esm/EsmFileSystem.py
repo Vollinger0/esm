@@ -291,7 +291,9 @@ class EsmFileSystem:
         copies any additionally configured stuff in the config under updates.additional
         """
         additionalStuffList = self.config.updates.additional
-        if additionalStuffList is None or len(additionalStuffList) <= 0:
+        if additionalStuffList is None:
+            return
+        if len(additionalStuffList) == 0:
             return
         
         copiedFiles = 0
@@ -306,7 +308,7 @@ class EsmFileSystem:
             if not Path(destinationPath).is_absolute():
                 destinationPath = Path(f"{self.config.paths.install}/{destinationPath}")
 
-            log.info(f"copying {sourcePath} to {destinationPath}")
+            log.info(f"copying '{sourcePath}' to '{destinationPath}'")
             
             sourcePaths = FsTools.resolveGlobs([sourcePath])
             for source in sourcePaths:
