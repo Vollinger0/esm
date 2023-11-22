@@ -384,41 +384,41 @@ class EsmMain:
                 log.info(f"No savegame exists at '{savegamePath}'. This is either a configuration error or none exists. You might need to create a new one later.")
                 return False
             
-    def wipeEmptyPlayfieldsOld(self, dbLocation=None, wipeType=None, territory=None, dryrun=True, cleardiscoveredby=True):
-        """
-        Wipes all defined playfields with the defined wipetype, filtering out any playfield that has a player, player owned structure or terrain placeable on it.
+    # def wipeEmptyPlayfieldsOld(self, dbLocation=None, wipeType=None, territory=None, dryrun=True, cleardiscoveredby=True):
+    #     """
+    #     Wipes all defined playfields with the defined wipetype, filtering out any playfield that has a player, player owned structure or terrain placeable on it.
 
-        Optimized for speed and huge savegames.
-        Takes about a minute to wipe 50k playfields on a 30GB savegame. 
-        Comparison: EAH's "wipe empty playfield" function takes 36hs and does not take into account terrain placeables.
-        """
-        if not dryrun and self.dedicatedServer.isRunning():
-            raise ServerNeedsToBeStopped("Can not execute wipe empty playfields with --nodryrun if the server is running. Please stop it first.")
+    #     Optimized for speed and huge savegames.
+    #     Takes about a minute to wipe 50k playfields on a 30GB savegame. 
+    #     Comparison: EAH's "wipe empty playfield" function takes 36hs and does not take into account terrain placeables.
+    #     """
+    #     if not dryrun and self.dedicatedServer.isRunning():
+    #         raise ServerNeedsToBeStopped("Can not execute wipe empty playfields with --nodryrun if the server is running. Please stop it first.")
 
-        if dbLocation is None:
-            dbLocation = self.fileSystem.getAbsolutePathTo("saves.games.savegame.globaldb")
-        else:
-            dbLocationPath = Path(dbLocation).resolve().absolute()
-            if dbLocationPath.exists():
-                dbLocation = str(dbLocationPath)
-            else:
-                raise WrongParameterError(f"DbLocation '{dbLocation}' is not a valid database location path.")
+    #     if dbLocation is None:
+    #         dbLocation = self.fileSystem.getAbsolutePathTo("saves.games.savegame.globaldb")
+    #     else:
+    #         dbLocationPath = Path(dbLocation).resolve().absolute()
+    #         if dbLocationPath.exists():
+    #             dbLocation = str(dbLocationPath)
+    #         else:
+    #             raise WrongParameterError(f"DbLocation '{dbLocation}' is not a valid database location path.")
 
-        availableTerritories = self.configService.getAvailableTerritories()
-        atn = list(map(lambda x: x.name, availableTerritories))
-        if territory and (territory in atn or territory == Territory.GALAXY):
-            log.debug(f"valid territory selected '{territory}'")
-        else:
-            raise WrongParameterError(f"Territory '{territory}' not valid, must be one of: {Territory.GALAXY}, {', '.join(atn)}")
+    #     availableTerritories = self.configService.getAvailableTerritories()
+    #     atn = list(map(lambda x: x.name, availableTerritories))
+    #     if territory and (territory in atn or territory == Territory.GALAXY):
+    #         log.debug(f"valid territory selected '{territory}'")
+    #     else:
+    #         raise WrongParameterError(f"Territory '{territory}' not valid, must be one of: {Territory.GALAXY}, {', '.join(atn)}")
 
-        wtl = WipeType.valueList()
-        if wipeType and wipeType in wtl:
-            log.debug(f"valid wipetype selected '{wipeType}'")
-        else:
-            raise WrongParameterError(f"Wipe type '{wipeType}' not valid, must be one of: {wtl}")
+    #     wtl = WipeType.valueList()
+    #     if wipeType and wipeType in wtl:
+    #         log.debug(f"valid wipetype selected '{wipeType}'")
+    #     else:
+    #         raise WrongParameterError(f"Wipe type '{wipeType}' not valid, must be one of: {wtl}")
         
-        log.info(f"Calling wipe empty playfields for dbLocation: '{dbLocation}' territory '{territory}', wipeType '{wipeType}', dryrun '{dryrun}', cleardiscoveredby '{cleardiscoveredby}'")
-        self.wipeService.wipeTerritory(dbLocation, territory, WipeType.byName(wipeType), dryrun, cleardiscoveredby)
+    #     log.info(f"Calling wipe empty playfields for dbLocation: '{dbLocation}' territory '{territory}', wipeType '{wipeType}', dryrun '{dryrun}', cleardiscoveredby '{cleardiscoveredby}'")
+    #     self.wipeService.wipeTerritory(dbLocation, territory, WipeType.byName(wipeType), dryrun, cleardiscoveredby)
 
     def ramdiskRemount(self):
         """
@@ -508,7 +508,7 @@ class EsmMain:
         except UserAbortedException as ex:
             log.warning(f"User aborted the operation, nothing deleted.")
 
-    def purgeRemovedEntitiesOld(self, dbLocation=None, dryrun=True, force=False):
+    def purgeRemovedEntities(self, dbLocation=None, dryrun=True, force=False):
         """
         will purge all entity folders in the shared folder of entities that are marked as deleted in the database
         """
@@ -711,7 +711,7 @@ class EsmMain:
         else:
             self.openSocket(port)
 
-    def wipeTool(self, inputFilePath: Path=None, territoryName=None, purge=False, wipetype: WipeType=None, purgeleavetemplates=False, purgeleaveentities=False, cleardiscoveredby=True, minage=30, dbLocationPath=None, dryrun=True, force=False):
+    def wipeTool(self, inputFilePath: Path=None, territoryName=None, wipetype: WipeType=None, cleardiscoveredby=True, minage: int=None, dbLocationPath: Path=None, dryrun=True):
         """
         the mighty wipe tool
         """
@@ -730,4 +730,4 @@ class EsmMain:
             if territoryName == Territory.GALAXY:
                 territory = Territory(Territory.GALAXY, 0,0,0,99999999)
 
-        self.wipeService.wipeTool(systemAndPlayfieldNames=systemAndPlayfieldNames, territory=territory, purge=purge, wipetype=wipetype, purgeleavetemplates=purgeleavetemplates, purgeleaveentities=purgeleaveentities, cleardiscoveredby=cleardiscoveredby, minage=minage, dbLocationPath=dbLocationPath, dryrun=dryrun, force=force)
+        self.wipeService.wipeTool(systemAndPlayfieldNames, territory, wipetype, cleardiscoveredby, minage, dbLocationPath, dryrun)
