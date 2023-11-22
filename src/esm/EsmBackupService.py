@@ -175,6 +175,7 @@ class EsmBackupService:
         adminConfigFileName = self.config.dedicatedConfig.ServerConfig.AdminConfigFile
         adminConfig = Path(f"{self.fileSystem.getAbsolutePathTo('saves')}/{adminConfigFileName}")
         targetAdminConfig = Path(f"{targetBackupFolder}/{self.config.dedicatedConfig.ServerConfig.SaveDirectory}/{adminConfigFileName}")
+        targetAdminConfig.parent.mkdir(exist_ok=True, parents=True)
         if adminConfig.exists():
             FsTools.copyFile(adminConfig, targetAdminConfig)
         else:
@@ -292,7 +293,7 @@ class EsmBackupService:
             log.error(f"error executing peazip: stdout: \n{process.stdout}\n, stderr: \n{process.stderr}\n")
         
         fileSize = Path(zipFile).stat().st_size
-        log.info(f"Static zip created at {zipFile}, size: {FsTools.realToHumanFileSize(fileSize)}, time to create: {elapsedTime}")
+        log.info(f"Static zip created at '{zipFile}', size: {FsTools.realToHumanFileSize(fileSize)}, time to create: {elapsedTime}")
         return Path(zipFile)
 
         # we'll use a method that is extremely fast, but has a low compression rate

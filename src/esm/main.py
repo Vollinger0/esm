@@ -64,13 +64,13 @@ def showVersion():
     log.info(f"Version is {version}")
 
 
-@cli.command(name="ramdisk-prepare", short_help="prepares the file system for ramdisk setup")
-def ramdiskPrepare():
+@cli.command(name="ramdisk-install", short_help="prepares the file system for ramdisk setup")
+def ramdiskInstall():
     """Prepares the file structure to be used with a ramdisk by moving the savegame to the gamesmirror folder. This will also help you create a new savegame if none exists."""
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)
         esm.checkAndWaitForOtherInstances()
-        esm.ramdiskPrepare()
+        esm.ramdiskInstall()
 
 
 @cli.command(name="ramdisk-setup", short_help="sets up the ramdisk by mounting the ramdisk and copying the savegame to it")
@@ -95,10 +95,10 @@ def ramdiskRemount():
         esm.ramdiskRemount()
 
 
-@cli.command(name="ramdisk-uninstall", short_help="reverts the changes done by ramdisk-prepare.")
+@cli.command(name="ramdisk-uninstall", short_help="reverts the changes done by ramdisk-install.")
 @click.option("--force", is_flag=True, default=False, help="force uninstall even if the configuration says to use a ramdisk")
 def ramdiskUninstall(force):
-    """Reverts the changes done by ramdisk-prepare, moving the savegame back to its original location. Use this if you don't want to run the game on a ramdisk any more.
+    """Reverts the changes done by ramdisk-install, moving the savegame back to its original location. Use this if you don't want to run the game on a ramdisk any more.
     This might need admin privileges, so prepare to confirm the elevated privileges prompt from windows.
     """
     with LogContext():
