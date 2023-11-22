@@ -73,7 +73,7 @@ class test_EsmDedicatedServer(unittest.TestCase):
         # create the buildnumber file in the testdata first
         self.createBuildNumberFile(esmConfig)
         esmDS = EsmDedicatedServer()
-        esmConfig.server.gfxMode = False
+        esmDS.gfxMode = False
 
         command = esmDS.getCommandForDirectMode()
         commandStrings = []
