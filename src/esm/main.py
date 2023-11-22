@@ -206,7 +206,8 @@ def updateScenario(source, nodryrun):
         esm.updateScenario(source, not nodryrun)
 
 @cli.command(name="delete-all", short_help="deletes everything related to the currently configured savegame interactively")
-def deleteAll():
+@click.option("--doit", is_flag=True, help="must be set to actually do anything.")
+def deleteAll(doit):
     """Deletes the savegame, all the related rolling backups, all eah data, logs and executes all configured delete tasks to be able to start a fresh new savegame.
     This uses delete operations that are optimized for maximum speed and efficiency, which you'll need to delete millions of files.
 
@@ -219,6 +220,8 @@ def deleteAll():
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)
         esm.checkAndWaitForOtherInstances()
+        if not doit:
+            raise WrongParameterError("--doit must be set to actually do anything. Didn't you read the help? :p")
         esm.deleteAll()
 
 # TODO: this needs to also clean up the related data in the DB, mark entities and structures as deleted, etc.
