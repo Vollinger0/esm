@@ -424,7 +424,7 @@ class EsmWipeService:
             log.info(f"Clearing discoveredby took {timer.elapsedTime} seconds")
         database.closeDbConnection()
 
-        self.createWipeInfoForPlayfields(playfields=playfieldsToWipe, wipetype=wipetype)
+        self.createWipeInfoForPlayfields(playfields=playfieldsToWipe, wipeType=wipetype)
 
     def resolvePlayfieldsFromTerritory(self, database: EsmDatabaseWrapper, territory: Territory):
         """
