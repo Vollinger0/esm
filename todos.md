@@ -6,18 +6,20 @@
 
 ## later
 
-- [ ] provide full installation package with install bat, that installs esm, the tools (osfmount, peazip, etc.)?
-- [ ] implement warning/talkback via tickets for when an admin is required (e.g. low disk space, etc.)
+- [ ] ask notoats to create a downloadable release of his contained exe, so i can add it as 3rd party requirement
+- [ ] provide full installation package with install bat, that installs esm, the tools (osfmount, peazip, emprc, etc.)?
+- [ ] implement warning/talkback via tickets for when an admin is required (e.g. low disk space, etc.), e.g. as an extra tool, so it can just be planned in EAH, or as delayed task after a startup (e.g. 5 minutes after the server started)
 - [+] fix all FS-modifying tests to use the test fixture of the usually existing ramdisk (R:)
 - [ ] offer some kind of better interactive mode for different stuff
-  - [ ] interactive mode for wipe galaxy tool?
-  - [ ] actually make any option have a -batchmode when there are interactive prompts, defaulting to the most defensive option.
+  - [-] interactive mode for wipe galaxy tool?
+  - [ ] actually make any option have a -batchmode when there are interactive prompts, defaulting to the most defensive option?
 - [ ] implement allowMultpleServerInstances switch? Once enabled, do not check for instances of the game before starting, do not start if startmode is set to direct, etc.
 - [+] create separate windows-gui thingy that resides in the taskbar or similar and provides a shortcut to the cli tool.
 - [ ] fix purge-tools: these need to also delete related data in the database! Probably not difficult to finish implementing, but a PITA to test.
 
 ## optional
 
+- [ ] read the territory config from the galaxyconfig.ecf ourselves. Search for "Child Territory" - Blocks.
 - [ ] add switch to backup-tool to make backups EWA-compatible
 - [ ] provide tool to fix item icons as good as possible in EWA, current process:
    1. open item list in eah, CTRL+A, CTRL+C and copy into text file? Or find out how the item list file in epf got created
