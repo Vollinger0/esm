@@ -3,7 +3,7 @@ import logging
 from pathlib import Path
 import random
 import signal
-import click
+import rich_click as click
 import sys
 from esm.EsmLogger import EsmLogger
 from esm.Exceptions import EsmException, ExitCodes, WrongParameterError
@@ -30,6 +30,37 @@ class LogContext:
         log.info(f"Script finished. Check the logfile ('{Path(self.esm.logFile).absolute()}') if you missed something. Bye!")
         return stopBubbleUp
 
+
+# rich-click configuration for command grouping!
+click.rich_click.COMMAND_GROUPS = {
+    "esm": [
+        {
+            "name": "General",
+            "commands": ["check-requirements", "terminate-galaxy", "version"],
+        },
+        {
+            "name": "Ramdisk",
+            "commands": ["ramdisk-install", "ramdisk-setup", "ramdisk-remount", "ramdisk-uninstall"],
+        },
+        {
+            "name": "Server",
+            "commands": ["server-start", "server-resume", "server-stop", "backup-create", "backup-static-create"],
+        },
+        {
+            "name": "Game",
+            "commands": ["game-install", "game-update", "scenario-update", "delete-all"],
+        },
+        {
+            "name": "Tools",
+            "commands": ["tool-wipe", "tool-cleanup-removed-entities", "tool-cleanup-shared", "tool-clear-discovered"],
+        }
+    ]
+} 
+click.rich_click.STYLE_COMMANDS_TABLE_COLUMN_WIDTH_RATIO = (1, 3)   
+click.rich_click.USE_RICH_MARKUP = True
+click.rich_click.STYLE_COMMAND = "cyan"
+click.rich_click.STYLE_HELPTEXT = ""
+
 #
 # start of cli (click) configuration for the script. see https://click.palletsprojects.com/ for help
 #
@@ -41,15 +72,14 @@ class LogContext:
 @click.option('-w', '--wait', is_flag=True, help="if set, will wait and retry to start command, if there is already an instance running and you want to run a comand that is limited to one instance only. You can set the interval and amount of retries in the configuration. This option is especially useful for automating tasks")
 def cli(verbose, config, wait):
     """ 
-    ESM, the Empyrion Server Manager - will help you set up an optional ramdisk, run the server, do rolling backups, cleanups and other things efficiently.
-    Optimized for speed to be used for busy servers with huge savegames.
-
-    Make sure to check the configuration before running any command!
-
-    \b
-    Tip: You can get more info and options to each command by calling it with the param --help
-         e.g. "esm tool-wipe --help"
-         If you use the --verbose flag, you'll probably even learn how the script works!
+    ESM, the Empyrion Server Manager - will help you set up an optional ramdisk, run the server, do rolling backups, cleanups and other things efficiently.\n
+    \n
+    [green]Optimized for speed to be used for busy servers with huge savegames.[/]\n
+    [red bold]Make sure to check the configuration before running any command![/]\n
+    \n
+    [i]Tip:\n
+    You can get more info and options to each command by calling it with the param --help, e.g. "esm tool-wipe --help"\n
+    If you use the --verbose flag, you'll probably even see how the script does things![/]\n
     """
     if verbose:
         init(streamLogLevel=logging.DEBUG, customConfig=config, waitForPort=wait)
@@ -59,7 +89,7 @@ def cli(verbose, config, wait):
 
 @cli.command(name='version', short_help="shows this programs version")
 def showVersion():
-    """ really just shows the version of esm"""
+    """really just shows the version of esm"""
     version = getPackageVersion()
     log.info(f"Version is {version}")
 
@@ -75,8 +105,9 @@ def ramdiskInstall():
 
 @cli.command(name="ramdisk-setup", short_help="sets up the ramdisk by mounting the ramdisk and copying the savegame to it")
 def ramdiskSetup():
-    """Sets up the ramdisk - this will actually mount it and copy the savegame mirror to it. Use this after a server reboot before starting the server.
-    This might need admin privileges, so prepare to confirm the elevated privileges prompt from windows.
+    """Sets up the ramdisk - this will actually mount it and copy the savegame mirror to it. Use this after a server reboot before starting the server.\n
+    \n
+    [red bold]This might need admin privileges, so prepare to confirm the elevated privileges prompt from windows.[/]\n
     """
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)
@@ -86,8 +117,9 @@ def ramdiskSetup():
 
 @cli.command(name="ramdisk-remount", short_help="unmounts the ramdisk and calls ramdisk-setup again to mount it")
 def ramdiskRemount():
-    """Unmounts the ramdisk and sets it up again. This can be useful if you changed the ramdisk size in the configuration and want to apply those changes.
-    This might need admin privileges, so prepare to confirm the elevated privileges prompt from windows.
+    """Unmounts the ramdisk and sets it up again. This can be useful if you changed the ramdisk size in the configuration and want to apply those changes.\n
+    \n
+    [red bold]This might need admin privileges, so prepare to confirm the elevated privileges prompt from windows.[/]\n
     """
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)
@@ -98,8 +130,9 @@ def ramdiskRemount():
 @cli.command(name="ramdisk-uninstall", short_help="reverts the changes done by ramdisk-install.")
 @click.option("--force", is_flag=True, default=False, help="force uninstall even if the configuration says to use a ramdisk")
 def ramdiskUninstall(force):
-    """Reverts the changes done by ramdisk-install, moving the savegame back to its original location. Use this if you don't want to run the game on a ramdisk any more.
-    This might need admin privileges, so prepare to confirm the elevated privileges prompt from windows.
+    """Reverts the changes done by ramdisk-install, moving the savegame back to its original location. Use this if you don't want to run the game on a ramdisk any more.\n
+    \n
+    [red bold]This might need admin privileges, so prepare to confirm the elevated privileges prompt from windows.[/]\n
     """
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)
@@ -109,9 +142,9 @@ def ramdiskUninstall(force):
 
 @cli.command(name="server-start", short_help="starts the server (and the synchronizer, if needed). Returns when the server shuts down")
 def startServer():
-    """Starts up the server. If ramdisk usage is enabled, this will automatically start the ram2mirror synchronizer thread too. The script will return when the server shut down.
-
-    Stopping this script with CTRL+C will *NOT* shut down the server. If you want to do that do that either via other means or use the server-stop command in a new console.
+    """Starts up the server. If ramdisk usage is enabled, this will automatically start the ram2mirror synchronizer thread too. The script will return when the server shut down.\n
+    \n
+    Stopping this script with CTRL+C will *NOT* shut down the server. If you want to do that do that either via other means or use the server-stop command in a new console.\n
     """
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)
@@ -190,15 +223,15 @@ def updateGame(nosteam, noadditionals):
 
 
 @cli.command(name="scenario-update", short_help="updates the configured scenario on the server from the local copy")
-@click.option("--source", metavar="path", help="path to the scenario source folder to update the scenario from. Overrides the source path in the configuration")
+@click.option("--source", metavar="<path>", help="path to the scenario source folder to update the scenario from. Overrides the source path in the configuration")
 @click.option("--nodryrun", is_flag=True, help="If set, will *not* do a dry run of the update.")
 def updateScenario(source, nodryrun):
-    """Updates the scenario on the server using the passed or configured scenario source folder. This will make sure that only files that actually have different content are updated to minimize client downloads.
-
-    Since steam does not allow for anonymouse downloads, you'll need to get the scenario and copy it to the scenario source folder yourself.
-    Alternatively, you may define the scenario source path with the --source param
-
-    The server may not be running for this.
+    """Updates the scenario on the server using the passed or configured scenario source folder. This will make sure that only files that actually have different content are updated to minimize client downloads.\n
+    \n
+    Since steam does not allow for anonymouse downloads, you'll need to get the scenario and copy it to the scenario source folder yourself.\n
+    Alternatively, you may define the scenario source path with the --source param\n
+    \n
+    [red bold]The server may not be running for this.[/]\n
     """
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)
@@ -208,14 +241,14 @@ def updateScenario(source, nodryrun):
 @cli.command(name="delete-all", short_help="deletes everything related to the currently configured savegame interactively")
 @click.option("--doit", is_flag=True, help="must be set to actually do anything.")
 def deleteAll(doit):
-    """Deletes the savegame, all the related rolling backups, all eah data, logs and executes all configured delete tasks to be able to start a fresh new savegame.
-    This uses delete operations that are optimized for maximum speed and efficiency, which you'll need to delete millions of files.
-
-    Be aware that this will take a lot of time and delete a lot of data if you have a big savegame!
-
-    AGAIN: THIS WILL DELETE ALL SAVEGAME RELATED DATA.
-
-    You may want to use this for starting a new season exclusively, because after this, you will have to.
+    """Deletes the savegame, all the related rolling backups, all eah data, logs and executes all configured delete tasks to be able to start a fresh new savegame.\n
+    This uses delete operations that are optimized for maximum speed and efficiency, which you'll need to delete millions of files.\n
+    \n
+    Be aware that this will take a lot of time and delete a lot of data if you have a big savegame!\n
+    \n
+    [red bold]AGAIN: THIS WILL DELETE ALL SAVEGAME RELATED DATA.[/]\n
+    \n
+    You may want to use this for starting a new season exclusively, because after this, you will have to.\n
     """
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)
@@ -276,15 +309,15 @@ def deleteAll(doit):
 
 
 @cli.command(name="tool-cleanup-removed-entities", short_help="delete obsolete entity files that are marked as removed in the database")
-@click.option('--savegame', metavar='path', help="location of savegame to use, e.g. to use this on a different savegame or savegame copy") 
+@click.option('--savegame', metavar='<path>', help="location of savegame to use, e.g. to use this on a different savegame or savegame copy") 
 @click.option('--nodryrun', is_flag=True, help="set to actually execute the purge on the disk")
 @click.option('--force', is_flag=True, help=f"if set, do not ask interactively before file deletion, use with caution")
 def toolCleanupRemovedEntities(savegame, nodryrun, force):
-    """Will delete all related files to all entities that are marked as removed in the database interactively.
-
-    If --savegame is the current savegame, this requires the server to be shut down, since it modifies the files on the filesystem. Make sure to have a recent backup aswell.
-    
-    Defaults to use a dryrun, so the results are only written to a csv file for you to check.
+    """Will delete all related files to all entities that are marked as removed in the database interactively.\n
+    \n
+    If --savegame is the current savegame, this requires the server to be shut down, since it modifies the files on the filesystem. Make sure to have a recent backup aswell.\n
+    \n
+    Defaults to use a dryrun, so the results are only written to a csv file for you to check.\n
     """
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)  
@@ -292,15 +325,15 @@ def toolCleanupRemovedEntities(savegame, nodryrun, force):
 
 
 @cli.command(name="tool-cleanup-shared", short_help="removes any obsolete files in the Shared folder")
-@click.option('--savegame', metavar='path', help="location of savegame to use, e.g. to use this on a different savegame or savegame copy") 
+@click.option('--savegame', metavar='<path>', help="location of savegame to use, e.g. to use this on a different savegame or savegame copy") 
 @click.option('--nodryrun', is_flag=True, help="set to actually execute the purge on the disk")
 @click.option('--force', is_flag=True, help=f"if set, do not ask interactively before file deletion, use with caution")
 def toolCleanupShared(savegame, nodryrun, force):
-    """Will check all entries in the Shared-Folder against the database and remove all the ones that shouldn't exist any more since there is no more related data in the database.
-
-    If --savegame is the current savegame, this requires the server to be shut down, since it modifies the files on the filesystem. Make sure to have a recent backup aswell.
-
-    Defaults to use a dryrun, so the results are only written to a csv file for you to check.
+    """Will check all entries in the Shared-Folder against the database and remove all the ones that shouldn't exist any more since there is no more related data in the database.\n
+    \n
+    If --savegame is the current savegame, this requires the server to be shut down, since it modifies the files on the filesystem. Make sure to have a recent backup aswell.\n
+    \n
+    Defaults to use a dryrun, so the results are only written to a csv file for you to check.\n
     """
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)  
@@ -308,26 +341,26 @@ def toolCleanupShared(savegame, nodryrun, force):
 
 
 @cli.command(name="tool-clear-discovered", short_help="clears the discovered-by info for systems/playields")
-@click.option('--territory', metavar='territory', type=str, help=f"territory where to clear the discovered-by info. Use {Territory.GALAXY} for the whole galaxy or any of the configured ones, use --showterritories to get the list")
+@click.option('--territory', metavar='<territory>', type=str, help=f"territory where to clear the discovered-by info. Use {Territory.GALAXY} for the whole galaxy or any of the configured ones, use --showterritories to get the list")
 @click.option('--showterritories', is_flag=True, help="show the configured territories and exit")
-@click.option('--listfile', metavar='file', help="if this is given, use the text file as input for the system/playfield names additionally to the names passed as argument. The list file has to contain an entry per line, see the help of names for the syntax")
+@click.option('--listfile', metavar='<file>', help="if this is given, use the text file as input for the system/playfield names additionally to the names passed as argument. The list file has to contain an entry per line, see the help of names for the syntax")
 @click.option('--nodryrun', is_flag=True, help="set to actually execute the action on the disk")
-@click.option('--dblocation', metavar='file', help="location of database file to be used. Defaults to use the current savegames database")
+@click.option('--dblocation', metavar='<file>', help="location of database file to be used. Defaults to use the current savegames database")
 @click.argument('names', nargs=-1)
 def toolClearDiscovered(dblocation, nodryrun, territory, showterritories, listfile, names):
-    """This will clear the discovered-by info from given stars/playfields. Just when you want something to be "Undiscovered" again.
-    
-    If you pass a system as parameter, all the playfields in it will be de-discovered.
-
-    Names must be the full names of the playfield, or, if it is a solar system, have the prefix "S:".
-    e.g. "S:Alpha", "S:Beta", "Dread", "UCHN Discovery" - etc.
-
-    If you defined a file as input, make sure it is a textfile with *one entry per line*.
-
-    If you pass a territory, all the stars in that territory will be de-discovered. You can not combine --territory with --files or the names as argument.
-        
-    Defaults to use a dryrun, so the results are only written to a csv file for you to check.
-    If you use the dry mode just to see how it works, you should probably also define the location of a different database.
+    """This will clear the discovered-by info from given stars/playfields. Just when you want something to be "Undiscovered" again.\n
+    \n    
+    If you pass a system as parameter, all the playfields in it will be de-discovered.\n
+    \n
+    Names must be the full names of the playfield, or, if it is a solar system, have the prefix [yellow]S:[/].\n
+    e.g. [yellow]S:Alpha[/], [yellow]S:Beta[/], [yellow]Dread[/], [yellow]UCHN Discovery[/] - etc.\n
+    \n
+    If you defined a file as input, make sure it is a textfile with *one entry per line*.\n
+    \n
+    If you pass a territory, all the stars in that territory will be de-discovered. You can not combine --territory with --files or the names as argument.\n
+    \n        
+    Defaults to use a dryrun, so the results are only written to a csv file for you to check.\n
+    If you use the dry mode just to see how it works, you should probably also define the location of a different database.\n
     """
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)  
@@ -357,9 +390,9 @@ def toolClearDiscovered(dblocation, nodryrun, territory, showterritories, listfi
 @click.option('--i-am-vollinger', is_flag=True, help="quick and graceful shutdown")
 @click.option('--i-am-kreliz', is_flag=True, help="have some pancackes and a coffee instead")
 def terminateGalaxy(i_am_darkestwarrior, i_am_vollinger, i_am_kreliz):
-    """Beware, this function will ^w^w^w
-    
-    Do not press CTRL+C!
+    """Beware, this function will ^w^w^w\n
+    \n    
+    Do not press CTRL+C!\n
     """
     def NoOp(*args):
         raise KeyboardInterrupt()
@@ -402,14 +435,15 @@ def terminateGalaxy(i_am_darkestwarrior, i_am_vollinger, i_am_kreliz):
 @cli.command(name="check-requirements", short_help="checks various configs and requirements")
 @click.option('--nonadmin', is_flag=True, help="skip checks that require admin privileges")
 def checkRequirements(nonadmin):
-    """Will do several checks, including:
-    
-    \b
-    - if 8dot3name generation is enabled on the game drive
-    - if hardlinks are supported on the drives filesystem
-    - configuration of various paths to tools
-    - elevated privileges for accessing ramdisks
-    - free disk space on install dir and savegame dir
+    """Will do several checks, including:\n
+    \n
+    \b\n
+    - if 8dot3name generation is enabled on the game drive\n
+    - if hardlinks are supported on the drives filesystem\n
+    - configuration of various paths to tools\n
+    - elevated privileges for accessing ramdisks\n
+    - free disk space on install dir and savegame dir\n
+    - other things\n
     """
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)
@@ -417,33 +451,33 @@ def checkRequirements(nonadmin):
 
 
 @cli.command(name="tool-wipe", short_help="provides a lot of options to wipe empty playfields, check the help for details")
-@click.option('--listfile', metavar='file', help="if this is given, use the text file as input for the system/playfield names. Syntax: <S:Systemname> for systems, <Playfield> for playfields. The textfile has to be a simple list with one string per line containing either a system or a playfield name with no quotes or special characters.")
-@click.option('--territory', metavar='territory', type=str, help=f"territory to wipe, use {Territory.GALAXY} for the whole galaxy or any of the configured ones, use --showterritories to get the list")
+@click.option('--listfile', metavar='<file>', help="if this is given, use the text file as input for the system/playfield names. Syntax: <S:Systemname> for systems, <Playfield> for playfields. The textfile has to be a simple list with one string per line containing either a system or a playfield name with no quotes or special characters.")
+@click.option('--territory', metavar='<territory>', type=str, help=f"territory to wipe, use {Territory.GALAXY} for the whole galaxy or any of the configured ones, use --showterritories to get the list")
 @click.option('--showterritories', is_flag=True, help="show the configured territories")
 
-@click.option('--wipetype', type=str, help="what type of wipe to apply to the playfields, use --showtypes to get the list of available types")
+@click.option('--wipetype', type=str, metavar="<wipetype>", help="what type of wipe to apply to the playfields, use --showtypes to get the list of available types")
 @click.option('--showtypes', is_flag=True, help="show the supported wipetypes the game supports")
 
 @click.option('--nocleardiscoveredby', is_flag=True, help="if set, will *not* clear the discovered-by infos from the wiped/purged playfields")
-@click.option('--minage', help="the playfields will only be wiped/purged if they have not been visited for the specified amount of days.")
+@click.option('--minage', type=int, help="the playfields will only be wiped/purged if they have not been visited for the specified amount of days.")
 
-@click.option('--dblocation', metavar='file', help="location of database file to be used in dry mode. Defaults to use the current savegames DB")
+@click.option('--dblocation', metavar='<file>', help="location of database file to be used in dry mode. Defaults to use the current savegames DB")
 @click.option('--nodryrun', is_flag=True, help="set to actually execute the changes on the disk")
 def wipeTool(listfile, territory, showterritories, wipetype, showtypes, nocleardiscoveredby, minage, dblocation, nodryrun):
-    """This tool will *wipe* playfields as specified but will not touch any playfield with players, player owned structures or terrain placeables.
-    This feature is similar to EAH's "wipe empty playfields" feature, but also considers terrain placeables (which get wiped in EAH).
-    This also only takes 60 seconds for a 40GB savegame. EAH needs ~37 hours.
-
-    This requires the server to be shut down, since it needs access to the current state of the savegame and the filesystem.
-
-    You can not combine --listfile with --territory
-    You can not combine --dblocation and --nodryrun. This is to make sure you do not accidentally purge the wrong playfields folder.
- 
-    Defaults to use a dryrun, so the results are only written to a csv file for you to check.
-    If you use the dry mode just to see how it works, you may aswell define a different savegame database,
-    e.g. from a backup.
-
-    Tip: use dblocation and dryrun to test your action on a backup a few times before executing it on the live savegame.
+    """This tool will *wipe* playfields as specified but will not touch any playfield with players, player owned structures or terrain placeables.\n
+    This feature is similar to EAH's "wipe empty playfields" feature, but also considers terrain placeables (which get wiped in EAH).\n
+    This also only takes 60 seconds for a 40GB savegame. EAH needs ~37 hours.\n
+    \n
+    This requires the server to be shut down, since it needs access to the current state of the savegame and the filesystem.\n
+    \n
+    You can not combine --listfile with --territory\n
+    You can not combine --dblocation and --nodryrun. This is to make sure you do not accidentally purge the wrong playfields folder.\n
+    \n
+    Defaults to use a dryrun, so the results are only written to a csv file for you to check.\n
+    If you use the dry mode just to see how it works, you may aswell define a different savegame database,\n
+    e.g. from a backup.\n
+    \n
+    Tip: use dblocation and dryrun to test your action on a backup a few times before executing it on the live savegame.\n
     """
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)  
