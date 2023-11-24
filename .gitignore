@@ -13,4 +13,4 @@ test/test.db-wal
 esm-purgewipedplayfields.lst
 esm-clean-removed-entites.csv
 esm-cleanup-shared-folder.lst
-esm-wipe-tool_selectedByFilelist.csv
+esm-wipe-tool_*.csv
