@@ -169,8 +169,6 @@ class EsmWipeService:
 
         force will force delete anything without asking the user.
         """
-        log.warning(f"uncomplete feature! use with caution!")
-
         if database is None:
             if dbLocation is None:
                 raise WrongParameterError("neither database nor dblocation was provided to access the database")
@@ -289,8 +287,6 @@ class EsmWipeService:
         """
         purge all playfields that have a wipeinfo file containing 'all'. also purge its templates if leavetemplates is False
         """
-        log.warning(f"uncomplete feature! use with caution!")
-
         playfieldsFolderPath = self.fileSystem.getAbsolutePathTo("saves.games.savegame.playfields")
         templatesFolderPath = self.fileSystem.getAbsolutePathTo("saves.games.savegame.templates")
 
