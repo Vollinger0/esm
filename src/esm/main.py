@@ -217,7 +217,9 @@ def installGame():
 @click.option('--nosteam', is_flag=True, help="If set, will *not* update the game via steam, just do the additional tasks")
 @click.option('--noadditionals', is_flag=True, help="If set, will *not* do the additional tasks")
 def updateGame(nosteam, noadditionals):
-    """Updates the game via steam and executes the additional copy tasks listed in the configuration"""
+    """Updates the game via steam and executes the additional copy tasks listed in the configuration.
+    Make sure that neither the game nor EAH are running.\n
+    """
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)
         esm.checkAndWaitForOtherInstances()
@@ -232,7 +234,7 @@ def updateGame(nosteam, noadditionals):
 def updateScenario(source, nodryrun):
     """Updates the scenario on the server using the passed or configured scenario source folder. This will make sure that only files that actually have different content are updated to minimize client downloads.\n
     \n
-    Since steam does not allow for anonymouse downloads, you'll need to get the scenario and copy it to the scenario source folder yourself.\n
+    Since steam does not allow for anonymous downloads, you'll need to get the scenario and copy it to the scenario source folder yourself.\n
     Alternatively, you may define the scenario source path with the --source param\n
     \n
     [red bold]The server may not be running for this.[/]\n
