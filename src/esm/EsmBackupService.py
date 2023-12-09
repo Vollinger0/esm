@@ -80,7 +80,7 @@ class EsmBackupService:
 
     def getPreviousBackupNumber(self):
         """
-        find out which was the latest backup by searching for the marker file
+        find out which was the latest backup by searching for the marker file, return its number or None if not found
         """
         backupParentDir = self.fileSystem.getAbsolutePathTo("backup.backupmirrors")
         markerFileName = self.config.backups.marker
@@ -88,10 +88,12 @@ class EsmBackupService:
         folderPrefix = self.config.foldernames.backupmirrorprefix
         for i in range(1, backupAmount + 1):
             folderName = f"{folderPrefix}{i}"
-            markerFile = Path(f"{backupParentDir}/{folderName}/{markerFileName}")
+            markerFile = backupParentDir.joinpath(folderName).joinpath(markerFileName)
             if markerFile.exists():
                 log.debug(f"found marker at {markerFile}")
                 return i
+        log.debug(f"no marker file named {markerFileName} found")
+        return None
     
     def getNextBackupNumber(self, previousNumber):
         backupAmount = self.config.backups.amount
@@ -103,10 +105,10 @@ class EsmBackupService:
         """
         backupParentDir = self.fileSystem.getAbsolutePathTo("backup.backupmirrors")
         folderPrefix = self.config.foldernames.backupmirrorprefix
-        backupFolderPath = Path(f"{backupParentDir}/{folderPrefix}{backupNumber}")
+        backupFolderPath = backupParentDir.joinpath(f"{folderPrefix}{backupNumber}")
         return backupFolderPath
 
-    def removeLinksToTargetBackupFolder(self, targetBackupFolder):
+    def removeLinksToTargetBackupFolder(self, targetBackupFolder: Path):
         """
         Delete any links in the backup folder that might point to our targetBackupFolder
         
@@ -119,18 +121,18 @@ class EsmBackupService:
                 FsTools.deleteLink(link)
         return links
 
-    def createMarkerFile(self, targetBackupFolder):
+    def createMarkerFile(self, targetBackupFolder: Path):
         """
         will create the marker file in the target folder
         """
-        markerFile = Path(f"{targetBackupFolder}/{self.config.backups.marker}")
+        markerFile = targetBackupFolder.joinpath(self.config.backups.marker)
         FsTools.createFileWithContent(markerFile, "This is just a marker file for ESM so it knows which is the latest backup. Don't delete")
 
-    def removeMarkerFile(self, targetBackupFolder):
+    def removeMarkerFile(self, targetBackupFolder: Path):
         """
         just deletes the marker file from specified folder
         """
-        markerFile = Path(f"{targetBackupFolder}/{self.config.backups.marker}")
+        markerFile = targetBackupFolder.joinpath(self.config.backups.marker)
         if markerFile.exists:
             FsTools.deleteFile(markerFile)
 
@@ -158,23 +160,23 @@ class EsmBackupService:
         FsTools.createDir(backupParentDir)
         for i in range(1, self.config.backups.amount + 1):
             folderName=f"{self.config.foldernames.backupmirrorprefix}{i}"
-            FsTools.createDir(Path(f"{backupParentDir}/{folderName}"))
+            FsTools.createDir(backupParentDir.joinpath(folderName))
 
-    def backupSavegame(self, savegameSource, targetBackupFolder):
+    def backupSavegame(self, savegameSource: Path, targetBackupFolder: Path):
         """
         actually back up the savegame using the source given
         """
-        targetBackupFolderSaves = f"{targetBackupFolder}/{self.config.dedicatedConfig.ServerConfig.SaveDirectory}/{self.config.dedicatedConfig.GameConfig.GameName}"
+        targetBackupFolderSaves = targetBackupFolder.joinpath(self.config.dedicatedConfig.ServerConfig.SaveDirectory).joinpath(self.config.foldernames.games).joinpath(self.config.dedicatedConfig.GameConfig.GameName)
         self.fileSystem.executeRobocopy(sourcePath=savegameSource, destinationPath=targetBackupFolderSaves)
     
-    def backupGameConfig(self, targetBackupFolder):
+    def backupGameConfig(self, targetBackupFolder: Path):
         """
         backs up some important game configs, like dedicated.yaml, adminconfig.yaml, etc.
         """
         # saves/adminconfig.yaml
         adminConfigFileName = self.config.dedicatedConfig.ServerConfig.AdminConfigFile
-        adminConfig = Path(f"{self.fileSystem.getAbsolutePathTo('saves')}/{adminConfigFileName}")
-        targetAdminConfig = Path(f"{targetBackupFolder}/{self.config.dedicatedConfig.ServerConfig.SaveDirectory}/{adminConfigFileName}")
+        adminConfig = self.fileSystem.getAbsolutePathTo('saves').joinpath(adminConfigFileName)
+        targetAdminConfig = targetBackupFolder.joinpath(self.config.dedicatedConfig.ServerConfig.SaveDirectory).joinpath(adminConfigFileName)
         targetAdminConfig.parent.mkdir(exist_ok=True, parents=True)
         if adminConfig.exists():
             FsTools.copyFile(adminConfig, targetAdminConfig)
@@ -182,52 +184,52 @@ class EsmBackupService:
             log.warning(f"{adminConfigFileName} at '{adminConfig}' does not exist. You probably should have one or something is misconfigured.")
 
         # dedicated.yaml
-        dedicatedYaml = Path(f"{self.config.paths.install}/{self.config.server.dedicatedYaml}")
-        targetDedicatedYaml = Path(f"{targetBackupFolder}/{self.config.server.dedicatedYaml}")
+        dedicatedYaml = self.config.paths.install.joinpath(self.config.server.dedicatedYaml)
+        targetDedicatedYaml = targetBackupFolder.joinpath(self.config.server.dedicatedYaml)
         if dedicatedYaml.exists():
             FsTools.copyFile(dedicatedYaml, targetDedicatedYaml)
         else:
             log.warning(f"dedicated yaml at '{dedicatedYaml}' does not exist. This shouldn't happen")
     
-    def backupToolData(self, targetBackupFolder):
+    def backupToolData(self, targetBackupFolder: Path):
         """
         backs up the EAH tool data, so that can be restored too
         """
-        toolDataFolder = f"{self.config.paths.eah}/Config" 
-        targetBackupFolderTool = f"{targetBackupFolder}/Tool"
+        toolDataFolder = self.config.paths.eah.joinpath("Config")
+        targetBackupFolderTool = targetBackupFolder.joinpath("Tool")
         self.fileSystem.executeRobocopy(sourcePath=toolDataFolder, destinationPath=targetBackupFolderTool)
 
-    def backupAdditionalPaths(self, additionalBackupPaths, targetBackupFolder):
+    def backupAdditionalPaths(self, additionalBackupPaths, targetBackupFolder: Path):
         """
         saves any configured additional paths to the backup in a "additional" folder.
         """
-        targetPath = Path(f"{targetBackupFolder}/Additional/")
+        targetPath = targetBackupFolder.joinpath("Additional")
         FsTools.createDir(targetPath)
         for additionalBackupPath in additionalBackupPaths:
             sourcePath = Path(additionalBackupPath)
             if sourcePath.is_dir():
                 # copy dir as is
                 dirName = Path(sourcePath).name
-                targetDirPath = f"{targetPath}/{dirName}"
+                targetDirPath = targetPath.joinpath(dirName)
                 log.debug(f"Copying additional dir from {sourcePath} -> {targetDirPath}")
                 self.fileSystem.executeRobocopy(sourcePath=sourcePath, destinationPath=targetDirPath)
             else:
                 # copy file
                 fileName = Path(sourcePath).name
-                targetFilePath = f"{targetPath}/{fileName}"
+                targetFilePath = targetPath.joinpath(fileName)
                 log.debug(f"Copying additional file from {sourcePath} -> {targetFilePath}")
                 if sourcePath.exists():
                     FsTools.copyFile(source=sourcePath, destination=targetFilePath)
                 else:
                     log.warn(f"Configured additional backup source at {sourcePath} does not exist.")
 
-    def createBackupLink(self, targetBackupFolder):
+    def createBackupLink(self, targetBackupFolder: Path):
         """
         create the symlink in the parent backup folder to the rolling backup, returns its path
         """
         parentDir = self.fileSystem.getAbsolutePathTo("backup")
         linkName = self.getBackupFolderLinkName()
-        linkPath = Path(f"{parentDir}/{linkName}")
+        linkPath = parentDir.joinpath(linkName)
         FsTools.createLink(linkPath=linkPath, targetPath=targetBackupFolder)
         return linkPath
 
