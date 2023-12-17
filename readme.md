@@ -143,4 +143,4 @@ A: You probably clicked in its window and activated the "quick-edit" mode of the
 
 Go down this [rabbit hole](readme_development.md).
 
-#### copyright by Vollinger 2023
+#### copyright by Vollinger 2023-2024

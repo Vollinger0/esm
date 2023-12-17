@@ -20,3 +20,5 @@ When you use this system the *first* few times (depending on configured amount o
 When using the ramdisk, the game is not dependent on the server's disk io any more - which enables you to create rolling backups or static zip backups in the background as you please, since the game's performance will not be affected by that any more nor will any data corrupt due to concurrent file access.
 
 If the ramdisk is disabled, the backup will use the actual savegame as source and require the server to be shut down. It will still be a lot faster than EAH's system though.
+
+#### copyright by Vollinger 2023-2024
