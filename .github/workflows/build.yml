@@ -7,7 +7,7 @@ on:
       - "*"
 
 jobs:
-  build-windows:
+  release-esm-windows:
     runs-on: windows-2022
     steps:
       - name: Checkout
@@ -32,11 +32,15 @@ jobs:
         run: |
           python -m PyInstaller esm.spec --noconfirm
 
-      - name: Create Release
+      - name: Info before release
+        run: |
+          echo "github.ref_name is: ${{ github.ref_name }}"
+
+      - name: Create release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          tag: ${{ github.ref_name }}
-        run: gh release create "$tag" --generate-notes dist/esm-${{ github.ref_name }}.zip
+        run: |
+          gh release create v${{ github.ref_name }} dist/esm-${{ github.ref_name }}.zip
 
         # uses: softprops/action-gh-release@v1
         # with:
@@ -77,5 +81,3 @@ jobs:
       #     asset_path: dist\esm-${{ github.ref_name }}.zip
       #     asset_name: esm-${{ github.ref_name }}.zip
       #     asset_content_type: application/zip            
-
-
