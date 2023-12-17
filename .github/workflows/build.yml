@@ -1,0 +1,50 @@
+name: release workflow
+
+# triggers the workflow on any push to a tag (including when a tag is created)
+on:
+  push:
+    tags:
+      - "*"
+
+jobs:
+  build-windows:
+    runs-on: windows-2022
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          architecture: 'x64'
+
+      - name: Install requirements
+        run: |
+          pip install -r requirements.txt
+      
+      - name: Update project version
+        run: |
+          # set the version in the pyproject.toml to the git tag
+          (Get-Content pyproject.toml) -replace 'version\s*=\s*"(.*)"', "version = `"${{ github.ref }}`"" | Set-Content pyproject.toml
+  
+      - name: Run PyInstaller
+        run: |
+          python -m PyInstaller esm.spec --noconfirm
+
+      - name: Create release
+        id: create_release
+        uses: actions/create-release@v1
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: ${{ github.ref }}
+          draft: false
+          prerelease: false
+
+      - name: Upload release artifact
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: dist\esm-${{ github.ref }}.zip
+          asset_name: esm-${{ github.ref }}.zip
+          asset_content_type: application/zip            
