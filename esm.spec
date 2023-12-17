@@ -3,6 +3,10 @@ from pathlib import Path
 import shutil
 import subprocess
 from PyInstaller.utils.hooks import copy_metadata
+from esm import __main__ as info
+
+version = info.getPackageVersion()
+print(f"esm version: {version}")
 
 # install the esm module so dist will pick up the current state
 subprocess.run("pip install -e .", shell=True)
@@ -83,10 +87,9 @@ for src, dst in datafiles:
     shutil.copy(srcPath, dstPath)
 
 # create a zip file of the distribution in the dist folder, ready do share
-from esm import main
 sourcePath = targetDir
 backupDir = targetDir.parent
-version = main.getPackageVersion()
+version = info.getPackageVersion()
 zipFilename = backupDir.joinpath(f"esm-{version}")
 archived = shutil.make_archive(zipFilename, 'zip', sourcePath)
 print(f"zipped distribution as: {archived}")

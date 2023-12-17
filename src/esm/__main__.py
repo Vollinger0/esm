@@ -1,4 +1,8 @@
+import importlib
 import sys
+
+def getPackageVersion():
+    return importlib.metadata.version(__package__)
 
 # entry file for when the package is called directly
 def main() -> int:
