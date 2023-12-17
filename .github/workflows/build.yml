@@ -32,6 +32,12 @@ jobs:
         run: |
           python -m PyInstaller esm.spec --noconfirm
 
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: dist\esm-${{ github.ref_name }}.zip
+          prelease: false
+
       # - name: Create release
       #   id: create_release
       #   uses: actions/create-release@v1
@@ -41,18 +47,30 @@ jobs:
       #     draft: false
       #     prerelease: false
 
-      - name: create release
-        uses: "marvinpinto/action-automatic-releases@latest"
-        with:
-          repo_token: "${{ secrets.GITHUB_TOKEN }}"
-          prerelease: false
-          files: |
-            dist\esm-${{ github.ref_name }}.zip
+      # - name: create release
+      #   uses: "marvinpinto/action-automatic-releases@latest"
+      #   with:
+      #     repo_token: "${{ secrets.GITHUB_TOKEN }}"
+      #     prerelease: false
+      #     files: |
+      #       dist\esm-${{ github.ref_name }}.zip
+
+      # - name: Create release
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #     tag: ${{ github.ref_name }}
+      #   run: |
+      #     gh release create "$tag" \
+      #         --repo="$GITHUB_REPOSITORY" \
+      #         --title="${GITHUB_REPOSITORY#*/} ${tag#v}" \
+      #         --generate-notes
 
       # - name: Upload release artifact
       #   uses: actions/upload-release-asset@v1
       #   with:
-      #     upload_url: ${{ steps.create_release.outputs.upload_url }}
+      #     # upload_url: ${{ steps.create_release.outputs.upload_url }}
       #     asset_path: dist\esm-${{ github.ref_name }}.zip
       #     asset_name: esm-${{ github.ref_name }}.zip
       #     asset_content_type: application/zip            
+
+
