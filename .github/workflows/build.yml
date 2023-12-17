@@ -32,19 +32,27 @@ jobs:
         run: |
           python -m PyInstaller esm.spec --noconfirm
 
-      - name: Create release
-        id: create_release
-        uses: actions/create-release@v1
-        with:
-          tag_name: ${{ github.ref_name }}
-          release_name: ${{ github.ref_name }}
-          draft: false
-          prerelease: false
+      # - name: Create release
+      #   id: create_release
+      #   uses: actions/create-release@v1
+      #   with:
+      #     tag_name: ${{ github.ref_name }}
+      #     release_name: ${{ github.ref_name }}
+      #     draft: false
+      #     prerelease: false
 
-      - name: Upload release artifact
-        uses: actions/upload-release-asset@v1
+      - name: create release
+        uses: "marvinpinto/action-automatic-releases@latest"
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: dist\esm-${{ github.ref_name }}.zip
-          asset_name: esm-${{ github.ref_name }}.zip
-          asset_content_type: application/zip            
+          repo_token: "${{ secrets.GITHUB_TOKEN }}"
+          prerelease: false
+          files: |
+            dist\esm-${{ github.ref_name }}.zip
+
+      # - name: Upload release artifact
+      #   uses: actions/upload-release-asset@v1
+      #   with:
+      #     upload_url: ${{ steps.create_release.outputs.upload_url }}
+      #     asset_path: dist\esm-${{ github.ref_name }}.zip
+      #     asset_name: esm-${{ github.ref_name }}.zip
+      #     asset_content_type: application/zip            
