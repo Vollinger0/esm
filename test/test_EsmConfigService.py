@@ -4,7 +4,7 @@ import unittest
 
 from pydantic import ValidationError
 from esm.EsmConfigService import EsmConfigService
-from esm.Exceptions import AdminRequiredException
+from esm.exceptions import AdminRequiredException
 from esm.ServiceRegistry import ServiceRegistry
 
 log = logging.getLogger(__name__)

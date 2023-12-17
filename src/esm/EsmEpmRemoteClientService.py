@@ -5,7 +5,7 @@ from pathlib import Path
 import subprocess
 from typing import List
 from esm.ConfigModels import MainConfig
-from esm.Exceptions import RequirementsNotFulfilledError
+from esm.exceptions import RequirementsNotFulfilledError
 from esm.EsmConfigService import EsmConfigService
 
 from esm.ServiceRegistry import Service, ServiceRegistry

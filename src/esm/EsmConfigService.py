@@ -5,7 +5,7 @@ from functools import cached_property
 from pathlib import Path
 from esm.ConfigModels import DediConfig, MainConfig
 from esm.DataTypes import Territory
-from esm.Exceptions import AdminRequiredException
+from esm.exceptions import AdminRequiredException
 from esm.ServiceRegistry import Service, ServiceRegistry
 from esm.Tools import mergeDicts
 

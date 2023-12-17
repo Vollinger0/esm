@@ -10,7 +10,7 @@ from typing import List
 
 import humanize
 
-from esm.Exceptions import SafetyException
+from esm.exceptions import SafetyException
 from esm.Tools import byteArrayToString
 
 log = logging.getLogger(__name__)
