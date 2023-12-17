@@ -35,8 +35,8 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v1
         with:
-          files: dist\esm-${{ github.ref_name }}.zip
-          prelease: false
+          files: dist/esm-${{ github.ref_name }}.zip
+          prerelease: false
 
       # - name: Create release
       #   id: create_release
