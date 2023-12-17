@@ -36,8 +36,4 @@ Make sure you are in the current env of the script, then execute:
 
 This will create the distributable files with all its dependencies in `dist/esm`. Pack it up and distribute.
 
-## TODOS
-
-[here](todos.md)
-
 #### copyright by Vollinger 2023
