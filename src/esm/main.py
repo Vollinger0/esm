@@ -6,7 +6,7 @@ import signal
 import rich_click as click
 import sys
 from esm.EsmLogger import EsmLogger
-from esm.Exceptions import EsmException, ExitCodes, WrongParameterError
+from esm.exceptions import EsmException, ExitCodes, WrongParameterError
 from esm.DataTypes import Territory, WipeType
 from esm.ServiceRegistry import ServiceRegistry
 from esm.EsmMain import EsmMain

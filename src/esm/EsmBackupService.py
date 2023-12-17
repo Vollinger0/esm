@@ -4,7 +4,7 @@ from datetime import datetime
 from functools import cached_property
 from pathlib import Path
 from esm.ConfigModels import MainConfig
-from esm.Exceptions import AdminRequiredException, RequirementsNotFulfilledError, ServerNeedsToBeStopped
+from esm.exceptions import AdminRequiredException, RequirementsNotFulfilledError, ServerNeedsToBeStopped
 from esm.EsmConfigService import EsmConfigService
 from esm.EsmDedicatedServer import EsmDedicatedServer
 from esm.EsmFileSystem import EsmFileSystem

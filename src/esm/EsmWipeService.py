@@ -5,7 +5,7 @@ from pathlib import Path
 import sys
 from typing import List
 from esm.ConfigModels import MainConfig
-from esm.Exceptions import WrongParameterError
+from esm.exceptions import WrongParameterError
 from esm import Tools
 from esm.DataTypes import Entity, Playfield, SolarSystem, Territory, WipeType
 from esm.EsmConfigService import EsmConfigService

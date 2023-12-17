@@ -3,7 +3,7 @@ import os
 from pathlib import Path
 import shutil
 import unittest
-from esm.Exceptions import SafetyException
+from esm.exceptions import SafetyException
 from esm.FsTools import FsTools
 from TestTools import TestTools
 

@@ -1,6 +1,6 @@
 import logging
 from typing import TypeVar
-from esm.Exceptions import ServiceNotFoundError
+from esm.exceptions import ServiceNotFoundError
 
 log = logging.getLogger(__name__)
 

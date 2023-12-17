@@ -5,7 +5,7 @@ import subprocess
 from esm.ConfigModels import MainConfig
 from esm.EsmConfigService import EsmConfigService
 from esm.EsmFileSystem import EsmFileSystem
-from esm.Exceptions import RequirementsNotFulfilledError
+from esm.exceptions import RequirementsNotFulfilledError
 from esm.ServiceRegistry import Service, ServiceRegistry
 from esm.Tools import getElapsedTime, getTimer
 

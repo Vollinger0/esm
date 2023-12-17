@@ -5,7 +5,7 @@ import socket
 import time
 import sys
 from typing import List
-from esm.Exceptions import AdminRequiredException, ExitCodes, RequirementsNotFulfilledError, ServerNeedsToBeStopped, UserAbortedException, WrongParameterError
+from esm.exceptions import AdminRequiredException, ExitCodes, RequirementsNotFulfilledError, ServerNeedsToBeStopped, UserAbortedException, WrongParameterError
 from esm.ConfigModels import MainConfig
 from esm.DataTypes import Territory, WipeType
 from esm.EsmLogger import EsmLogger
