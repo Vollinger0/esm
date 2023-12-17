@@ -102,4 +102,4 @@
 - [x] usecase: kill gameserver (via sigterm)
 - [x] usecase: start up gameserver
 
-### copyright by Vollinger 2023
+#### copyright by Vollinger 2023-2024

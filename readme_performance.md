@@ -50,3 +50,5 @@ The `esm scenario-update` command will make sure this does not happen and will u
 
 ### Outsourcing the SharedData
 You can zip and put the shared data on *another* server, filehoster or something else for your players to download. That data then has to be copied to the clients cache folder that corresponds to your server.
+
+#### copyright by Vollinger 2023-2024
