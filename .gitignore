@@ -15,4 +15,4 @@ esm-clean-removed-entites.csv
 esm-cleanup-shared-folder.lst
 esm-wipe-tool_*.csv
 .no_git_bash_prompt
-
+.mailmap
