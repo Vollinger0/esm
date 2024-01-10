@@ -28,6 +28,10 @@ Its meant to run fully automated, so you only need to configure it once, then se
 - everything is logged in console and logfiles, so you can always see what the scripts do, did and what happened when.
 - freely configurable in-game announcer for a few actions
 
+### Screenshot
+
+![screenshot](esm_help_screenshot.png)
+
 ## Requirements
 
 - 3rd party: installed steamcmd executable, see <https://developer.valvesoftware.com/wiki/SteamCMD>
