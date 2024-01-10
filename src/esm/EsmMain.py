@@ -721,7 +721,7 @@ class EsmMain:
             log.info(f"Checking if you have the required privileges to run access ramdisks at all")
             ramdriveMounted = self.ramdiskManager.checkRamdrive(simpleCheck=False)
             if not ramdriveMounted:
-                log.error(f"Could either not execute or not access the ramdisk with osf mount. You require admin privileges for ramdisk mode.")
+                log.warning(f"Could either not execute or not access the ramdisk with osf mount. Either it is not mounted yet or you may not have admin privileges to execute osfmount.")
 
         # clean up. the only time we call the fstool directly.
         FsTools.deleteDir(Path(f"{self.config.paths.install}/{self.config.foldernames.esmtests}").resolve(), recursive=True)
