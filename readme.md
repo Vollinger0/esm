@@ -137,11 +137,14 @@ The ramdisk setup keeps a mirror of the savegame on the HDD, it also keeps the t
 - the ramdisk-setup command will not run properly if in the "Autostart" folder of your windows user, due to how windows handles that "need admin privileges" popup on startup.
 
 ## FAQ:
-Q: Trying to start the server in EAH, there are a few consoles popping up and say something like "script is already running, will wait 10 seconds to retry.".
+Q: Trying to start the server in EAH, there are a few consoles popping up and say something like "script is already running, will wait 10 seconds to retry.".\
 A: ESM makes sure it runs only once per configuration. If you have a running instance, stop that first or wait until it finishes doing what it is doing. If you run multiple instances of it on the same server, you need to change the bindingPort in the configuration.
 
-Q: On a gameserver restart, the script doesn't react any more
+Q: On a gameserver restart, the script doesn't react any more\
 A: You probably clicked in its window and activated the "quick-edit" mode of the console. This **will suspend** the script! Click on it again or on the title bar to un-pause it. Check the tips on how to avoid that issue altogether. If you see the spinner spinning, everything is fine.
+
+Q: My terminal/console just shows garbled up characters and strange things like 36m, 2m and 0m everywhere.\
+A: Search for a setting in your terminal/console that controls something like "support for ANSI", or "VT100 drawing support" and enable that.
 
 ## developing and contributing
 
