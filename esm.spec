@@ -13,14 +13,14 @@ subprocess.run("pip install -e .", shell=True)
 
 # define the files to copy to the dist additionally
 datafiles = [
-        ('esm-default-config.yaml.example', '.'),
-        ('esm-custom-config.yaml.example', '.'),
-        ('esm-dedicated.yaml.example', '.'),
+        ('esm-default-config.example.yaml', '.'),
+        ('esm-custom-config.example.yaml', '.'),
+        ('esm-dedicated.example.yaml', '.'),
         ('hamster_sync_lines.csv', '.'),
         ('emprc/EmpyrionPrime.RemoteClient.Console.exe', 'emprc/EmpyrionPrime.RemoteClient.Console.exe'),
-        ('callesm-async.bat.example', '.'),
-        ('callesm-sync.bat.example', '.'),
-        ('esm-starter-for-eah.cmd.example', '.'),
+        ('callesm-async.example.bat', '.'),
+        ('callesm-sync.example.bat', '.'),
+        ('esm-starter-for-eah.example.cmd', '.'),
         ('readme.md', '.'),
         ('readme_install.md', '.'),        
         ('readme_backups.md', '.'),        
