@@ -5,6 +5,7 @@ import socket
 import time
 import sys
 from typing import List
+from esm.EsmSharedDataServer import EsmSharedDataServer
 from esm.exceptions import AdminRequiredException, ExitCodes, RequirementsNotFulfilledError, ServerNeedsToBeStopped, UserAbortedException, WrongParameterError
 from esm.ConfigModels import MainConfig
 from esm.DataTypes import Territory, WipeType
@@ -58,6 +59,10 @@ class EsmMain:
     @cached_property    
     def wipeService(self) -> EsmWipeService:
         return ServiceRegistry.get(EsmWipeService)
+    
+    @cached_property
+    def sharedDataServer(self) -> EsmSharedDataServer:
+        return ServiceRegistry.get(EsmSharedDataServer)
     
     @cached_property
     def configService(self) -> EsmConfigService:
@@ -763,3 +768,9 @@ class EsmMain:
             log.info(f"calling wipetool for territory {territory.name}, wipetype={wipetype.value.name}, cleardiscoveredby={cleardiscoveredby}, minage={minage}, dbLocationPath={dbLocationPath}, dryrun={dryrun}")
 
         self.wipeService.wipeTool(systemAndPlayfieldNames, territory, wipetype, cleardiscoveredby, minage, dbLocationPath, dryrun)
+
+    def startSharedDataServer(self):
+        """
+        starts the shared data server
+        """
+        self.sharedDataServer.start()

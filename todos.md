@@ -2,10 +2,12 @@
 
 ## WIP
 
-- [+] GUI!
+- [+] add separate tool that allows to download the shared data folder of the currently configured game
+- [ ] implement bandwidth-limits to shared-data-download tool
 
 ## later
 
+- [+] GUI!
 - [ ] ask notoats to create a downloadable release of his contained exe, so i can add it as 3rd party requirement
 - [ ] provide full installation package with install bat, that installs esm, the tools (osfmount, peazip, emprc, etc.)?
 - [ ] implement warning/talkback via tickets for when an admin is required (e.g. low disk space, etc.), e.g. as an extra tool, so it can just be planned in EAH, or as delayed task after a startup (e.g. 5 minutes after the server started)

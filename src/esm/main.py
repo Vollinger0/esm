@@ -52,7 +52,7 @@ click.rich_click.COMMAND_GROUPS = {
         },
         {
             "name": "Tools commands",
-            "commands": ["tool-wipe", "tool-cleanup-removed-entities", "tool-cleanup-shared", "tool-clear-discovered"],
+            "commands": ["tool-wipe", "tool-cleanup-removed-entities", "tool-cleanup-shared", "tool-clear-discovered", "tool-shareddata-server"],
         },
         {
             "name": "Experimental - use with caution!",
@@ -392,6 +392,18 @@ def toolClearDiscovered(dblocation, nodryrun, territory, showterritories, listfi
             checkTerritoryParameter(territory, esm)
         
         esm.clearDiscovered(dblocation=dblocation, dryrun=not nodryrun, territoryName=territory, inputFile=listfile, inputNames=names)
+
+
+@cli.command(name="tool-shareddata-server", short_help="starts a webserver to serve the shared data as a downloadable zip")
+def toolSharedDataServer():
+    """This will start a webserver to serve the shared data as a downloadable zip.\n
+    \n    
+    This can be started completely separate from the main server and will run in the background until you stop it via CTRL+C.\n
+    \n
+    """
+    with LogContext():
+        esm = ServiceRegistry.get(EsmMain)  
+        esm.startSharedDataServer()
 
 
 @cli.command(name="terminate-galaxy", short_help="creates a singularity to destroy everything")
