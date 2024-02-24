@@ -1,6 +1,7 @@
 import logging
 import shutil
 import signal
+import socket
 import threading
 import humanize
 import http.server
@@ -37,11 +38,12 @@ class EsmSharedDataServer:
         log.info(f"Created SharedData zip file as '{wwwrootZipFilePath}' using the cache folder name '{self.config.downloadtool.cacheFolderName}' with a size of {humanize.naturalsize(zipFileSize, gnu=True)}.")
 
         # start webserver on configured port and serve the zip and also the index.html that explains how to handle the shared data
-        myHostIp = "127.0.0.1"
-        servingUrl = f"http://{myHostIp}:{self.config.downloadtool.serverPort}/{self.config.downloadtool.zipName}.zip"
+        myHostIp = self.getOwnIp()
+        servingUrlIndex = f"http://{myHostIp}:{self.config.downloadtool.serverPort}"
+        servingUrl = f"{servingUrlIndex}/{self.config.downloadtool.zipName}"
         log.info(f"Server configured to allow max {humanize.naturalsize(self.config.downloadtool.maxGlobalBandwith, gnu=False)}/s in total network bandwidth.")
         log.info(f"Server configured to allow max {humanize.naturalsize(self.config.downloadtool.maxClientBandwith, gnu=False)}/s network bandwith per connection.")
-        log.info(f"Started download server. Shared data zip file can be downloaded at: '{servingUrl}'")
+        log.info(f"Started download server. Shared data zip file can be downloaded at: '{servingUrl}' (instructions: '{servingUrlIndex}')")
         def NoOp(*args):
             raise KeyboardInterrupt()
         try:
@@ -52,6 +54,19 @@ class EsmSharedDataServer:
             log.info(f"SharedData server shutting down.")
         finally:
             log.info(f"SharedData server stopped serving.")
+
+    def getOwnIp(self):
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        s.settimeout(0)
+        try:
+            # doesn't even have to be reachable
+            s.connect(('10.254.254.254', 1))
+            myIp = s.getsockname()[0]
+        except Exception:
+            myIp = '127.0.0.1'
+        finally:
+            s.close()
+        return myIp
 
     def prepareIndexHtml(self):
         # copy the index.template.html into the wwwroot folder and replace $SHAREDDATAZIPFILENAME with the name of the zip file
@@ -122,6 +137,7 @@ class EsmSharedDataServer:
                 httpd.serve_forever()        
         except Exception as e:
             log.debug(e)
+
 
 class ThrottledHandler(http.server.SimpleHTTPRequestHandler):
 
