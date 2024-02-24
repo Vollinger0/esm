@@ -166,7 +166,7 @@ class ThrottledHandler(http.server.SimpleHTTPRequestHandler):
     zipFileSize = 0
 
     # allowed default assets for downloads
-    defaultAssets = ['index.html', 'favicon.ico', 'style.css']
+    defaultAssets = ['index.html', 'favicon.ico', 'styles.css']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=ThrottledHandler.rootDirectory, **kwargs)

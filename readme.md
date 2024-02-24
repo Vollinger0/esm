@@ -27,6 +27,7 @@ Its meant to run fully automated, so you only need to configure it once, then se
 - almost all features, limits, timeouts and paths are configurable
 - everything is logged in console and logfiles, so you can always see what the scripts do, did and what happened when.
 - freely configurable in-game announcer for a few actions
+- special downloadserver as tool, that creates and serves the shared data folder as downloadable zip, see performance section
 
 ### Screenshot
 
