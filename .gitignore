@@ -17,4 +17,5 @@ esm-wipe-tool_*.csv
 .no_git_bash_prompt
 .mailmap
 temp
-wwwroot
+wwwroot/*.zip
+wwwroot/index.html

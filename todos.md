@@ -2,9 +2,6 @@
 
 ## WIP
 
-- [+] add separate tool that allows to download the shared data folder of the currently configured game
-- [ ] implement bandwidth-limits to shared-data-download tool
-
 ## later
 
 - [+] GUI!
@@ -38,6 +35,8 @@
 
 ## done
 
+- [x] add separate tool that allows to download the shared data folder of the currently configured game
+- [x] implement bandwidth-limits to shared-data-download tool
 - [x] refactor tools, make them wipe instead, or make all tools have the option to additionally purge too? Make it more conscise.
   - [x] tool-wipe (--territory|--file) --wipetype --nocleardiscovered --minimumage
   - [x] tool-clear-discoveredby (--territory|--file) 
