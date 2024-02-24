@@ -3,7 +3,7 @@
 ## WIP
 
 ## later
-
+- [ ] automatically create esm-default-config.example.yaml when building release
 - [+] GUI!
 - [ ] ask notoats to create a downloadable release of his contained exe, so i can add it as 3rd party requirement
 - [ ] provide full installation package with install bat, that installs esm, the tools (osfmount, peazip, emprc, etc.)?

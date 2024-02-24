@@ -1,4 +1,5 @@
 import logging
+from pathlib import Path
 from rich.logging import RichHandler
 from rich.console import Console
 
@@ -7,7 +8,7 @@ class EsmLogger:
     provides facilities for logging
     """
     console = None # global rich console to use for logging to console
-
+    
     @staticmethod 
     def setUpLogging(logFile, fileLogLevel=logging.DEBUG, streamLogLevel=logging.DEBUG):
         dateformat = "%Y-%m-%d %H:%M:%S"
@@ -29,4 +30,6 @@ class EsmLogger:
             handlers=[
                 streamHandler,
                 fileLoggingHandler
-            ])
+            ],
+            force=True)
+        logging.debug(f"Logging initialized, logging to: '{Path(logFile).resolve()}'")

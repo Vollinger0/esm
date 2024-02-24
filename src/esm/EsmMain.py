@@ -83,6 +83,9 @@ class EsmMain:
         self.customConfigFilePath = customConfigFilePath
 
         # set up logging
+        self.setUpLogging(caller, fileLogLevel, streamLogLevel)
+
+    def setUpLogging(self, caller, fileLogLevel=logging.DEBUG, streamLogLevel=logging.DEBUG):
         self.logFile = Path(caller).stem + ".log"
         EsmLogger.setUpLogging(self.logFile, fileLogLevel=fileLogLevel, streamLogLevel=streamLogLevel)
 

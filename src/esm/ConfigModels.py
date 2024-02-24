@@ -122,12 +122,12 @@ class DediConfig(BaseModel):
 
 class DownloadToolConfig(BaseModel):
     """represents the download tool config"""
-    serverPort: int = Field(27440, description="port of the webserver to listen to")
-    maxGlobalBandwith: int = Field(50*1024*1024, description="max bandwith to use for the downloads globally in bytes")
-    maxClientBandwith: int = Field(30*1024*1024, description="max bandwith to use for the download per client in bytes")
+    serverPort: int = Field(27440, description="port of the webserver to listen to. Make sure you this port is reachable from outside")
+    maxGlobalBandwith: int = Field(50*1024*1024, description="max bandwith to use for the downloads globally in bytes, e.g. 50 MB/s")
+    maxClientBandwith: int = Field(30*1024*1024, description="max bandwith to use for the download per client in bytes, eg. 30 MB/s")
     rateLimit: str = Field("10 per minute", description="rate limit of max allowed requests per ip address per time unit, e.g. '10 per minute' or '10 per hour'")
     cacheFolderName: str = Field("DediGame_127.0.0.1_123456789", description="name of the folder included in the zip file, which will look something like 'DediGame_127.0.0.1_12346789', depending on gamename, server ip and seed")
-    zipName: str = Field("shareddata_copy_to_saves_cache.zip", description="The filename of the zip file that will be provided as download")
+    zipName: str = Field("shareddata_copy_to_empyrion_saves_cache.zip", description="The filename of the zip file that will be provided as download")
     wwwroot: str = Field("wwwroot", description="folder to use as wwwroot, where the download will be served from")
     tempFolder: str = Field("temp", description="temporary folder for creating the downloadable zip")
 

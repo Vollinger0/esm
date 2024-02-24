@@ -96,8 +96,8 @@ class EsmSharedDataServer:
 
     def createSharedDataZipFile(self, pathToScenarioFolder: Path) -> Path:
         # just using something smaller for debugging
-        pathToSharedDataFolder = pathToScenarioFolder.joinpath("SharedData/Content/Extras")
-        #pathToSharedDataFolder = pathToScenarioFolder.joinpath("SharedData")
+        #pathToSharedDataFolder = pathToScenarioFolder.joinpath("SharedData/Content/Extras")
+        pathToSharedDataFolder = pathToScenarioFolder.joinpath("SharedData")
 
         if not pathToSharedDataFolder.exists():
             log.warning(f"Path to the shared data in the games scenario folder '{pathToSharedDataFolder}' does not exist. Please check the configuration.")
@@ -206,7 +206,7 @@ class ThrottledHandler(http.server.SimpleHTTPRequestHandler):
         try:
             return super().do_GET()
         except Exception as ex:
-            log.warning(f"Error while serving file {file}: {ex}")
+            log.warn(f"Error while serving file {file}: {ex}")
 
         
     def copyfile(self, source, outputfile) -> None:

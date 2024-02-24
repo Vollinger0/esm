@@ -26,6 +26,9 @@ datafiles = [
         ('readme_backups.md', '.'),        
         ('readme_performance.md', '.'),
         ('readme_development.md', '.'),
+        ('index.template.html', '.'),
+        ('wwwroot/styles.css', 'wwwroot/styles.css'),
+        ('wwwroot/favicon.ico', 'wwwroot/favicon.ico'),
         ]
 
 a = Analysis(

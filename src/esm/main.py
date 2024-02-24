@@ -16,10 +16,10 @@ log = logging.getLogger(__name__)
 
 class LogContext:
     """context for cli commands to have some basic logging from the start"""
+
     def __enter__(self):
         self.esm = ServiceRegistry.get(EsmMain)
         log.debug(f"Script started with params: {sys.argv}")
-        log.debug(f"Logging to: '{Path(self.esm.logFile).absolute()}'")
 
     def __exit__(self, exc_type, exc_value, traceback):
         # if an EsmException happened, we want to stop the bubble up 
@@ -403,6 +403,7 @@ def toolSharedDataServer():
     """
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)  
+        esm.setUpLogging(caller="esm-shareddata-server")
         esm.startSharedDataServer()
 
 
