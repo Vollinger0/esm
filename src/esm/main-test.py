@@ -132,4 +132,6 @@ log.debug(f"Logging to: {esm.logFile}")
 #testClearDiscoveredBy()
 #testcleanupSharedFolder()
 
+esm.sharedDataServer.start()
+
 log.info(f"Script finished successfully. Check the logfile ({esm.logFile}) if you missed something. Bye!")
