@@ -8,6 +8,8 @@ class EsmLogger:
     provides facilities for logging
     """
     console = None # global rich console to use for logging to console
+    fileLogLevel = logging.DEBUG
+    streamLogLevel = logging.DEBUG
     
     @staticmethod 
     def setUpLogging(logFile, fileLogLevel=logging.DEBUG, streamLogLevel=logging.DEBUG):
@@ -17,6 +19,7 @@ class EsmLogger:
         # set a nice logging line and logging level for the logfile
         fileLoggingHandler = logging.FileHandler(logFile)
         fileLoggingHandler.setLevel(fileLogLevel)
+        EsmLogger.fileLogLevel = fileLogLevel
         fileLoggingHandler.setFormatter(logging.Formatter(fmt="[%(asctime)s] %(process)d %(levelname)s %(message)s", datefmt=dateformat))
         
         # use rich stream handler for stdout, will reuse the global console object, since logging can't handle spinners and animations.
@@ -24,6 +27,7 @@ class EsmLogger:
         streamHandler = RichHandler(show_path=False, console=EsmLogger.console)
         streamHandler.setFormatter(logging.Formatter(fmt="%(message)s", datefmt=dateformat))
         streamHandler.setLevel(streamLogLevel)
+        EsmLogger.streamLogLevel = streamLogLevel
 
         logging.basicConfig(
             level=logging.DEBUG,

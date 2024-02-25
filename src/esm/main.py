@@ -402,8 +402,8 @@ def toolSharedDataServer():
     \n
     """
     with LogContext():
-        esm = ServiceRegistry.get(EsmMain)  
-        esm.setUpLogging(caller="esm-shareddata-server")
+        esm = ServiceRegistry.get(EsmMain)
+        esm.setUpLogging(caller="esm-shareddata-server", streamLogLevel=EsmLogger.streamLogLevel, fileLogLevel=EsmLogger.fileLogLevel)
         esm.startSharedDataServer()
 
 
