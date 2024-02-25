@@ -53,7 +53,7 @@ class EsmSharedDataServer:
         except KeyboardInterrupt:
             log.info(f"SharedData server shutting down.")
         finally:
-            log.info(f"SharedData server stopped serving.")
+            log.info(f"SharedData server stopped serving. Total downloads: {ThrottledHandler.globalZipDownloads}")
 
     def getOwnIp(self):
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
