@@ -3,7 +3,6 @@
 ## WIP
 
 ## later
-- [ ] automatically create esm-default-config.example.yaml when building release
 - [+] GUI!
 - [ ] ask notoats to create a downloadable release of his contained exe, so i can add it as 3rd party requirement
 - [ ] provide full installation package with install bat, that installs esm, the tools (osfmount, peazip, emprc, etc.)?
@@ -35,6 +34,7 @@
 
 ## done
 
+- [x] automatically create esm-default-config.example.yaml when building release
 - [x] add separate tool that allows to download the shared data folder of the currently configured game
 - [x] implement bandwidth-limits to shared-data-download tool
 - [x] refactor tools, make them wipe instead, or make all tools have the option to additionally purge too? Make it more conscise.
