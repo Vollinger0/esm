@@ -226,7 +226,7 @@ class ThrottledHandler(http.server.SimpleHTTPRequestHandler):
 
 
     def throttle_copy(self, source, outputfile, limit):
-        bufsize = 4096 # the smaller, the more often we'll iterate through here
+        bufsize = 8192 # the smaller, the more often we'll iterate through here
         bytesSent = 0
         startTime = time.time()
         while True:
