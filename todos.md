@@ -2,6 +2,7 @@
 
 ## WIP
 
+
 ## later
 - [+] GUI!
 - [ ] ask notoats to create a downloadable release of his contained exe, so i can add it as 3rd party requirement
@@ -34,6 +35,7 @@
 
 ## done
 
+- [x] fix logging of dirsync on scenario update
 - [x] automatically create esm-default-config.example.yaml when building release
 - [x] add separate tool that allows to download the shared data folder of the currently configured game
 - [x] implement bandwidth-limits to shared-data-download tool

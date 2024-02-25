@@ -340,4 +340,4 @@ class EsmFileSystem:
 
         # use this strange old library to sync the directories.
         from dirsync import sync
-        sync(sourcePath, destinationPath, action='sync', purge=True, create=True, content=True, verbose=True)
+        sync(sourcePath, destinationPath, action='sync', purge=True, create=True, content=True, verbose=True, logger=log)
