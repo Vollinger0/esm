@@ -41,6 +41,10 @@ paths:
   eah: 'D:/Servers/Empyrion/DedicatedServer/EmpyrionAdminHelper' # path to EAH, for backing up its data
   steamcmd: 'D:/Servers/Tools/steamcmd/steamcmd.exe' # path to steamcmd for installs and updates of the game server
 
+downloadtool:
+  serverPort: 27440                                     # port of the webserver to listen to. Make sure you this port is reachable from outside
+  cacheFolderName: DediGame_127.0.0.1_123456789         # name of the folder included in the zip file, which will look something like 'DediGame_127.0.0.1_12346789', depending on gamename, server ip and seed
+
 galaxy:
   territories: # faction territory definitions (look up their definitions in the file "$scenario/Content/Configuration/GalaxyConfig.ecf" of your scenario!)
     - faction: "zirax"

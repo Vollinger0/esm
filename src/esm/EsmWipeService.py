@@ -2,7 +2,6 @@ from functools import cached_property
 import logging
 from math import sqrt
 from pathlib import Path
-import sys
 from typing import List
 from esm.ConfigModels import MainConfig
 from esm.exceptions import WrongParameterError

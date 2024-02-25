@@ -42,13 +42,20 @@ Btw, this is *way* more reliable than without a ramdisk, because an OS crash can
 
 ## About scenarios and shared data downloads
 
-The games network bandwith is limited to 5MB/s on the server. This bandwith has to be shared by all players currently playing and all players who want to download anything. If you have big scenario updates, prepare to have network issues for the rest of the day.
+The games network bandwith seems to be limited to ~10MB/s for the whole server. This bandwith has to be shared by all players currently playing and all players who want to download anything. If you have big scenario updates, prepare to have network issues for the rest of the day. Unless, of course, you use the shared data server tool (see below).
 
 ### Things to consider
-The game does not check for content changes on the SharedData-files of the scenario. It only checks for the last modification date of these files. Once that changes, a re-download is triggered for the client. If you touch all the files in the shared folder, the clients will redownload the whole scenario although nothing changed.
-The `esm scenario-update` command will make sure this does not happen and will update the game scenario files accordingly.
+The game does not check for content changes on the SharedData-files of the scenario. It only checks for the last modification date of these files. Once that changes, a re-download is triggered for the client. If you touch all the files in the shared folder, the clients will redownload the whole scenario although nothing really changed.
+The `esm scenario-update` command will make sure this does not happen and will update the game scenario files only, if their content really changed, minimizing the need for everyone to redownload things.
 
-### Outsourcing the SharedData
-You can zip and put the shared data on *another* server, filehoster or something else for your players to download. That data then has to be copied to the clients cache folder that corresponds to your server.
+### The Shared Data Server Tool
+To overcome the bandwidth limit and avoid that players already on the server get network issues due to other players downloading the shared data, this tool will work around this problem.
+The tool `esm tool-shareddata-server` will automatically generate a zip file from the current shared data folder of the running scenario and serve them in a custom webserver especially written for that. With this, you can provide your players an alternative way to download the shared data without being limited by eleon. They'll have to unpack that shared data into their game installation manually though.
+Since the webserver will run on the same server as the game, it has a sophisticated configuration to limit the bandwith/connection aswell as the global bandwith used. It also includes several security measures like a rate limiter and an internal whitelist for paths.
+If your server connection supports e.g. 100 MB/s, you can limit the webserver to not use more than 50MB/s, to make sure the running gameserver network throughput is not affected and the game doesn't lag out the players due to the downloads. If you so desire, you can also limit the bandwith per connection, to make sure that nobody can occupy the whole bandwith. Although this shouldn't take more than 10 seconds, since shared data can't possibly be bigger than 500 MB (current scenario size limit).
+
+Make sure to configure the `cacheFolderName` properly. It should be something like "MyServerDediGameName_123.234.34.56_123456789". I don't know how the last part is generated yet, so you have to connect to your server, then look in your games saves/cache folder to see what folder name you got there for that game and then adjust the configuration of esm to create that foldername in the zip.
+
+This tool logs in its own logfile.
 
 #### copyright by Vollinger 2023-2024

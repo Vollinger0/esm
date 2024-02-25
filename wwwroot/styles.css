@@ -1,0 +1,78 @@
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: var(--background-color);
+    color: var(--text-color);
+    margin: 0;
+}
+
+header {
+    background-color: var(--header-background);
+    color: var(--header-text);
+    text-align: center;
+    padding: 1em;
+}
+
+section {
+    max-width: 600px;
+    margin: 2em auto;
+    padding: 1em;
+    background-color: var(--section-background);
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+}
+
+footer {
+    text-align: center;
+    padding: 1em;
+    background-color: var(--footer-background);
+    color: var(--footer-text);
+}
+
+a {
+    color: var(--link-color);
+    font-weight: bold;
+    font-size: larger
+}
+
+li {
+    padding: 4px
+}
+
+pre {
+    color: lightblue;
+    font-size: large;
+    font-weight: bold;
+}
+
+h2 pre {
+    font-size: larger;
+}
+
+footer {
+    font-size: smaller;
+}
+
+/* Dark Mode */
+:root {
+    --background-color: #f4f4f4;
+    --text-color: #333;
+    --header-background: #333;
+    --header-text: #fff;
+    --section-background: #fff;
+    --footer-background: #333;
+    --footer-text: #fff;
+    --link-color: #007BFF;
+}
+
+@media (prefers-color-scheme: dark) {
+    :root {
+        --background-color: #222;
+        --text-color: #fff;
+        --header-background: #555;
+        --header-text: #fff;
+        --section-background: #333;
+        --footer-background: #555;
+        --footer-text: #fff;
+        --link-color: #4CAF50;
+    }
+}

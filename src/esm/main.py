@@ -16,10 +16,10 @@ log = logging.getLogger(__name__)
 
 class LogContext:
     """context for cli commands to have some basic logging from the start"""
+
     def __enter__(self):
         self.esm = ServiceRegistry.get(EsmMain)
-        log.debug(f"Script started")
-        log.debug(f"Logging to: '{Path(self.esm.logFile).absolute()}'")
+        log.debug(f"Script started with params: {sys.argv}")
 
     def __exit__(self, exc_type, exc_value, traceback):
         # if an EsmException happened, we want to stop the bubble up 
@@ -52,7 +52,7 @@ click.rich_click.COMMAND_GROUPS = {
         },
         {
             "name": "Tools commands",
-            "commands": ["tool-wipe", "tool-cleanup-removed-entities", "tool-cleanup-shared", "tool-clear-discovered"],
+            "commands": ["tool-wipe", "tool-cleanup-removed-entities", "tool-cleanup-shared", "tool-clear-discovered", "tool-shareddata-server"],
         },
         {
             "name": "Experimental - use with caution!",
@@ -392,6 +392,21 @@ def toolClearDiscovered(dblocation, nodryrun, territory, showterritories, listfi
             checkTerritoryParameter(territory, esm)
         
         esm.clearDiscovered(dblocation=dblocation, dryrun=not nodryrun, territoryName=territory, inputFile=listfile, inputNames=names)
+
+
+@cli.command(name="tool-shareddata-server", short_help="starts a webserver to serve the shared data as a downloadable zip")
+def toolSharedDataServer():
+    """This will start a webserver to serve the shared data of the configured scenario as a downloadable zip.\n
+    \n    
+    The tool will recreate the zip every time it is started, the server will provide a help at (/) and the download at the configured path.\n
+    Make sure to configure the "cacheFolder" property in the configuration, since this needs to be similar to what the game clients would create.\n
+    This can be started completely separate from the main server and will run in the background until you stop it via CTRL+C.\n
+    \n
+    """
+    with LogContext():
+        esm = ServiceRegistry.get(EsmMain)
+        esm.setUpLogging(caller="esm-shareddata-server", streamLogLevel=EsmLogger.streamLogLevel, fileLogLevel=EsmLogger.fileLogLevel)
+        esm.startSharedDataServer()
 
 
 @cli.command(name="terminate-galaxy", short_help="creates a singularity to destroy everything")

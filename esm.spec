@@ -11,21 +11,35 @@ print(f"esm version: {version}")
 # install the esm module so dist will pick up the current state
 subprocess.run("pip install -e .", shell=True)
 
+
+print(f"create a new esm-default-config.example.yaml from default config model")
+from esm.ConfigModels import MainConfig
+from easyconfig import create_app_config
+configFilePath = Path("esm-default-config.example.yaml")
+if configFilePath.exists(): configFilePath.unlink()
+newModel = MainConfig.model_validate({'server': {'dedicatedYaml': "REQUIRED"}, "paths": {"install": "REQUIRED"}})
+config = create_app_config(newModel)
+config.load_config_file(configFilePath)
+
+print ("Proceeding with pyinstaller spec")
 # define the files to copy to the dist additionally
 datafiles = [
-        ('esm-default-config.yaml.example', '.'),
-        ('esm-custom-config.yaml.example', '.'),
-        ('esm-dedicated.yaml.example', '.'),
+        ('esm-default-config.example.yaml', '.'),
+        ('esm-custom-config.example.yaml', '.'),
+        ('esm-dedicated.example.yaml', '.'),
         ('hamster_sync_lines.csv', '.'),
         ('emprc/EmpyrionPrime.RemoteClient.Console.exe', 'emprc/EmpyrionPrime.RemoteClient.Console.exe'),
-        ('callesm-async.bat.example', '.'),
-        ('callesm-sync.bat.example', '.'),
-        ('esm-starter-for-eah.cmd.example', '.'),
+        ('callesm-async.example.bat', '.'),
+        ('callesm-sync.example.bat', '.'),
+        ('esm-starter-for-eah.example.cmd', '.'),
         ('readme.md', '.'),
         ('readme_install.md', '.'),        
         ('readme_backups.md', '.'),        
         ('readme_performance.md', '.'),
         ('readme_development.md', '.'),
+        ('index.template.html', '.'),
+        ('wwwroot/styles.css', 'wwwroot/styles.css'),
+        ('wwwroot/favicon.ico', 'wwwroot/favicon.ico'),
         ]
 
 a = Analysis(
@@ -73,6 +87,7 @@ coll = COLLECT(
     name='esm',
 )
 
+print("Manually copying datafiles to distfolder")
 # since the datafile-functinality of pyinstaller is sub-optimal, lets copy our datafiles to the dist folder ourselves.
 workspaceDir = Path(".").resolve()
 print(f"working directory is: {workspaceDir}")
@@ -86,6 +101,7 @@ for src, dst in datafiles:
     if not Path(dstPath.parent).exists(): Path(dstPath.parent).mkdir(parents=True, exist_ok=True)
     shutil.copy(srcPath, dstPath)
 
+print("Zipping distribution")
 # create a zip file of the distribution in the dist folder, ready do share
 sourcePath = targetDir
 backupDir = targetDir.parent

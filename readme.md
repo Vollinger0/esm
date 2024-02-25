@@ -27,6 +27,7 @@ Its meant to run fully automated, so you only need to configure it once, then se
 - almost all features, limits, timeouts and paths are configurable
 - everything is logged in console and logfiles, so you can always see what the scripts do, did and what happened when.
 - freely configurable in-game announcer for a few actions
+- special downloadserver as tool, that creates and serves the shared data folder as downloadable zip, see performance section
 
 ### Screenshot
 
@@ -60,10 +61,10 @@ Please follow this [path](readme_install.md).
 1. Select the **esm-dedicated.yaml** in EAH that you copied into the installation dir
 1. DONE, use EAH as before.
 
-In the timetable, you can use the "Run shell" task and call any script from there. If you want to start long running scripts that can run in the background (e.g. the backup), create a copy of the provided `callesm-async.bat.example` in the empyrion installation dir, and edit that so it points to the correct esm installation dir and calls the esm function you'd like to execute.
+In the timetable, you can use the "Run shell" task and call any script from there. If you want to start long running scripts that can run in the background (e.g. the backup), create a copy of the provided `callesm-async.example.bat` in the empyrion installation dir, and edit that so it points to the correct esm installation dir and calls the esm function you'd like to execute.
 
 Example:
-- create `callesm-backup-async.bat` from the template callesm-async.bat.example (edit your file to call `esm backup-create`)
+- create `callesm-backup-async.bat` from the template callesm-async.example.bat (edit your file to call `esm backup-create`)
 - add a "Run Shell" subtask in EAH's time table for your restarts and enter the full path of your script, e.g. `D:\Servers\Tools\esm\callesm-backup-async.bat`
 - Done.
 
@@ -120,7 +121,7 @@ The ramdisk setup keeps a mirror of the savegame on the HDD, it also keeps the t
 
 ## TIPS
 - use the `esm --help` command, and get help for each command with `esm command --help`. This explains stuff and you can get the details directly from there.
-- do not edit the `esm-example-config.yaml`, it is meant as a base configuration file with a lot of explanations for you. Override these settings in your own `esm-custom-config.yaml`
+- do not edit the `esm-default-config.example.yaml`, it is meant as a documentation for your configuration file with a lot of explanations for you. Override these settings in your own `esm-custom-config.yaml`
 - open a windows console first, then start the scripts for the manual execution. This will avoid the console windows getting closed after the scripts finished so you can read the log.
 - all scripts generate logs of what they do, you can always read up anything there.
 - in windows consoles, disable the "quick edit mode", since this **will suspend the execution of scripts(!) and potentially break things**! See https://superuser.com/questions/459609/what-does-it-do-exactly-if-i-click-in-the-window-of-cmd

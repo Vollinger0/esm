@@ -2,10 +2,9 @@
 
 ## WIP
 
-- [+] GUI!
 
 ## later
-
+- [+] GUI!
 - [ ] ask notoats to create a downloadable release of his contained exe, so i can add it as 3rd party requirement
 - [ ] provide full installation package with install bat, that installs esm, the tools (osfmount, peazip, emprc, etc.)?
 - [ ] implement warning/talkback via tickets for when an admin is required (e.g. low disk space, etc.), e.g. as an extra tool, so it can just be planned in EAH, or as delayed task after a startup (e.g. 5 minutes after the server started)
@@ -36,6 +35,10 @@
 
 ## done
 
+- [x] fix logging of dirsync on scenario update
+- [x] automatically create esm-default-config.example.yaml when building release
+- [x] add separate tool that allows to download the shared data folder of the currently configured game
+- [x] implement bandwidth-limits to shared-data-download tool
 - [x] refactor tools, make them wipe instead, or make all tools have the option to additionally purge too? Make it more conscise.
   - [x] tool-wipe (--territory|--file) --wipetype --nocleardiscovered --minimumage
   - [x] tool-clear-discoveredby (--territory|--file) 

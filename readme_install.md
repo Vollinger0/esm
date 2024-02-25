@@ -8,7 +8,7 @@ If you already have a running empyrion game server and even an existing savegame
 ### Install ESM
 
 1. just unpack the zip to a folder of your choice, e.g. `D:\Servers\Tools\esm`
-2. create a copy of [esm-custom-config.yaml.example](esm-custom-config.yaml.example) as `esm-custom-config.yaml`
+2. create a copy of [esm-custom-config.example.yaml](esm-custom-config.example.yaml) as `esm-custom-config.yaml`
 2. open a windows console/terminal, cd into that directory and call `esm -v check-requirements`
 3. if you see colored output with timestamps, you succeeded.
 
@@ -29,8 +29,8 @@ If you already have a installed and working dedicated server, you can skip this 
 
 ### Configure Empyrion
 
-- copy [esm-dedicated.yaml.example](esm-dedicated.yaml.example) as `esm-dedicated.yaml`to the empyrion install dir, or configure the name of the one you are using.
-- copy [esm-starter-for-eah.cmd](esm-starter-for-eah.cmd) to the empyrion install dir
+- copy [esm-dedicated.example.yaml](esm-dedicated.example.yaml) as `esm-dedicated.yaml` to the empyrion install dir, or configure the name of the one you are using.
+- copy [esm-starter-for-eah.example.cmd](esm-starter-for-eah.example.cmd) as `esm-starter-for-eah.cmd` to the empyrion install dir
 - edit the copied `esm-dedicated.yaml` in the empyrion install dir to your liking (alternatively, with EAH)
 - edit the copied `esm-starter-for-eah.cmd` in the empyrion install dir, set the proper path to **esm install dir**.
 
