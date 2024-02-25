@@ -35,7 +35,7 @@ class EsmSharedDataServer:
         self.prepareIndexHtml()
 
         zipFileSize = Path(wwwrootZipFilePath).stat().st_size
-        log.info(f"Created SharedData zip file as '{wwwrootZipFilePath}' using the cache folder name '{self.config.downloadtool.cacheFolderName}' with a size of {humanize.naturalsize(zipFileSize, gnu=True)}.")
+        log.info(f"Created SharedData zip file as '{wwwrootZipFilePath}' using the cache folder name '{self.config.downloadtool.cacheFolderName}' with a size of '{humanize.naturalsize(zipFileSize, gnu=False)}'.")
 
         # start webserver on configured port and serve the zip and also the index.html that explains how to handle the shared data
         myHostIp = self.getOwnIp()
@@ -69,15 +69,17 @@ class EsmSharedDataServer:
         return myIp
 
     def prepareIndexHtml(self):
-        # copy the index.template.html into the wwwroot folder and replace $SHAREDDATAZIPFILENAME with the name of the zip file
+        # copy the index.template.html into the wwwroot folder and replace placeholders
         wwwroot = Path(self.config.downloadtool.wwwroot).resolve()
         indexTemplateFilePath = Path("index.template.html").resolve()
         content = indexTemplateFilePath.read_text()
-        newContent = content.replace("$SHAREDDATAZIPFILENAME", self.config.downloadtool.zipName)
+        content = content.replace("$SHAREDDATAZIPFILENAME", self.config.downloadtool.zipName)
+        content = content.replace("$CACHEFOLDERNAME", self.config.downloadtool.cacheFolderName)
+        
         indexFilePath = wwwroot.joinpath("index.html").resolve()
         if indexFilePath.exists():
             FsTools.deleteFile(indexFilePath)
-        indexFilePath.write_text(newContent)
+        indexFilePath.write_text(content)
         log.debug(f"Created index.html at '{indexFilePath}'")
 
     def moveSharedDataZipFileToWwwroot(self, resultZipFilePath: Path) -> Path:

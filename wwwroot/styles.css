@@ -30,6 +30,26 @@ footer {
 
 a {
     color: var(--link-color);
+    font-weight: bold;
+    font-size: larger
+}
+
+li {
+    padding: 4px
+}
+
+pre {
+    color: lightblue;
+    font-size: large;
+    font-weight: bold;
+}
+
+h2 pre {
+    font-size: larger;
+}
+
+footer {
+    font-size: smaller;
 }
 
 /* Dark Mode */
