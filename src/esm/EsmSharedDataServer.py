@@ -220,7 +220,7 @@ class ThrottledHandler(http.server.SimpleHTTPRequestHandler):
         downloadspeed = ThrottledHandler.zipFileSize / timer.elapsedTime.total_seconds()
         with ThrottledHandler.globalPropertyLock:
             ThrottledHandler.globalZipDownloads += 1
-        log.info(f"Client {self.client_address} successfully downloaded the file '{self.zipFileName}', speed {humanize.naturalsize(downloadspeed, gnu=True)}/s. ({ThrottledHandler.globalZipDownloads} total)")
+        log.info(f"Client {self.client_address} successfully downloaded the file '{self.zipFileName}' in '{humanize.naturaldelta(timer.elapsedTime)}', speed '{humanize.naturalsize(downloadspeed, gnu=False)}/s'. ({ThrottledHandler.globalZipDownloads} total downloads)")
 
 
     def throttle_copy(self, source, outputfile, limit):
