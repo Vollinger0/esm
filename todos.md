@@ -15,6 +15,9 @@
 - [ ] implement allowMultpleServerInstances switch? Once enabled, do not check for instances of the game before starting, do not start if startmode is set to direct, etc.
 - [+] create separate windows-gui thingy that resides in the taskbar or similar and provides a shortcut to the cli tool.
 - [ ] fix purge-tools: these need to also delete related data in the database! Probably not difficult to finish implementing, but a PITA to test.
+- [ ] read the id of the savegame data folder name for the savegame tool from the main dedicated log, once the game has started once.
+  * see logfile and search for the "UniqueId" when the game logs something like: 23-01:04:31.793 18_04 -LOG- Mode=currentQuery, GameSeed=8979695, UniqueId=931593376, EntityId=1001
+  * it may be necessary to find the proper logfile first though, since the logs are not related to the savegame
 
 ## optional
 
