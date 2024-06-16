@@ -1,4 +1,5 @@
 import logging
+import os
 import shutil
 import signal
 import socket
@@ -115,6 +116,18 @@ class EsmSharedDataServer:
         
         log.debug(f"Copying files from '{pathToSharedDataFolder}' to cachefolder '{cacheFolder}'")
         FsTools.copyDir(source=pathToSharedDataFolder, destination=cacheFolder)
+        log.debug(f"Created cachefolder '{cacheFolder}'")
+
+        # increase the modification timestamps of all files by 12 hours
+        timeDifference = self.config.downloadtool.timeToAddToModificationTimestamps
+        for root, dirs, files in os.walk(cacheFolder):
+            for file in files:
+                path = os.path.join(root, file)
+                currentMTime = os.path.getmtime(path)
+                newMTime = currentMTime + timeDifference
+                os.utime(path, (newMTime, newMTime))
+        timeDiffHuman = humanize.naturaldelta(timeDifference)
+        log.debug(f"Altered timestamps of all files in cachefolder '{cacheFolder}', added {timeDiffHuman} to modified timestamps.")
         
         # create zip from the cacheFolder
         log.debug(f"Creating zip from cachefolder '{cacheFolder}' with name '{self.config.downloadtool.zipName}'")

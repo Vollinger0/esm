@@ -2,8 +2,9 @@
 
 ## WIP
 
-
 ## later
+- [ ] bug: delete-all does not back up the esm logs properly
+- [ ] add support for the new shareddata-url feature?
 - [+] GUI!
 - [ ] ask notoats to create a downloadable release of his contained exe, so i can add it as 3rd party requirement
 - [ ] provide full installation package with install bat, that installs esm, the tools (osfmount, peazip, emprc, etc.)?
@@ -35,9 +36,12 @@
    1. save customicon as itemid for EWA.
 - [ ] add cb:shield:$id function to be able to get a ships shield values?
 - [ ] add a AI-powered chatbot, chatgpt-like that roleplays as a spacefaring hamster that reacts to player chat?
+- [ ] add some more placeholders for the html-template, e.g. one for the password from the dedicated.yaml
+
 
 ## done
 
+- [x] fix shared data download: files in the zip have to have their modification timestamp increased by at least 12 hours, since the game assumes anything else to be outdated for some reason.
 - [x] fix logging of dirsync on scenario update
 - [x] automatically create esm-default-config.example.yaml when building release
 - [x] add separate tool that allows to download the shared data folder of the currently configured game
