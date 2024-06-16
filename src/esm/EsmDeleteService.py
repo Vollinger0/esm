@@ -130,9 +130,8 @@ class EsmDeleteService:
             source = f"{self.config.paths.eah}/logs/*"
             self.backupLogs(source, logBackupFolder, "EAHLogs")
         if self.config.deletes.backupEsmLogs:            
-            source = f"{self.config.paths.install}/*.log"
-            self.backupLogs(source, logBackupFolder, "ESMLogs")
-            source = f"{self.config.paths.install}/esm/*.log"
+            # use the path of the esm folder
+            source = Path(".").resolve().joinpath("*.log")
             self.backupLogs(source, logBackupFolder, "ESMLogs")
 
         # zip the target folder and remove it afterwards

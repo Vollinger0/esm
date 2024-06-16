@@ -13,12 +13,15 @@ FILESIZEPATTERN = r"^\d+(\.\d+)?\s*[KkMmGgTtPpEeZzYy]$"
 class ConfigGeneral(BaseModel):
     useRamdisk: bool = Field(True, description="if True, use a ramdisk for the savegame. Requires the user to call ramdisk-install and ramdisk-setup to work. Will completely solve your server performance issues.")
     externalizeTemplates: bool = Field(True, description="if True, will 'externalize' the savegame templates, meaning that they will be symlinked back to the hdd when using the ramdisk. This saves aboit 40% of space on the ramdisk!")
-    bindingPort: int = Field(6969, lt=65535, gt=1024, description="default port to bind application to, just used to make sure only one instance can run with one config at a time.")
+    bindingPort: int = Field(6969, lt=65535, gt=1024, description="default port to bind this application to, just used to make sure only one instance can run with one config at a time.")
     multipleInstanceWaitInterval: int = Field(10, description="interval in seconds for checking if there is another script running at script start")
     multipleInstanceWaitTries: int = Field(180, description="amount of times of checking if there is another script running at script start")
     debugMode: bool = Field(False, description="if True, most file system operations will not be executed and processes not started. You probably don't need this unless you're developing this.")
 
 class StartMode(str, Enum):
+    """
+    The start mode defines if eleon's launcher is used or not to start the game. If you use the launcher, you can NOT have multiple instances of the game on the same machine. 
+    """
     DIRECT = "direct" # will bypass the launcher and use the dedicated exe directly. Use this mode if you need to run multiple instances of the server on one machine.
     LAUNCHER = "launcher" # will use the launcher to start the game
 
@@ -45,7 +48,7 @@ class ConfigBackups(BaseModel):
     additionalBackupPaths: List[Path] = Field([], description="list of full paths to source files or directories to backup additionally. Those will all end up in the folder 'Additional' in the backup")
 
 class FileOps(BaseModel):
-    """ represents an file operation for the update-command with file path patterns for src and dst """
+    """ represents a file operation for the update-command with file path patterns for src and dst """
     src: str
     dst: str
 
@@ -54,6 +57,10 @@ class ConfigUpdates(BaseModel):
     additional: List[FileOps] = Field([], description="additional stuff to copy when calling the esm game-update command, every line has to look like e.g. { src: 'foo', dst: 'bar' }")
 
 class ConfigDeletes(BaseModel):
+    """
+    Configure which logs to back up when using the 'deleteall' command
+    You can also configure additional paths of stuff to delete
+    """
     backupGameLogs: bool = Field(True, description="backup all game logs on deleteall command")
     backupEahLogs: bool = Field(True, description="backup all eah logs on deleteall command?")
     backupEsmLogs: bool = Field(True, description="backup all esm logs on deleteall command?")

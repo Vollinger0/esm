@@ -133,5 +133,7 @@ log.debug(f"Logging to: {esm.logFile}")
 #testcleanupSharedFolder()
 #esm.sharedDataServer.start()
 #esm.updateScenario(dryrun=False)
+#esm.config.context['logFile'] = Path("./esm-test.log")
+#esm.deleteService.backupAllLogs()
 
 log.info(f"Script finished successfully. Check the logfile ({esm.logFile}) if you missed something. Bye!")

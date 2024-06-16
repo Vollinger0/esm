@@ -3,7 +3,6 @@
 ## WIP
 
 ## later
-- [ ] bug: delete-all does not back up the esm logs properly
 - [ ] add support for the new shareddata-url feature?
 - [+] GUI!
 - [ ] ask notoats to create a downloadable release of his contained exe, so i can add it as 3rd party requirement
@@ -41,6 +40,7 @@
 
 ## done
 
+- [x] bug: delete-all does not back up the esm logs properly
 - [x] fix shared data download: files in the zip have to have their modification timestamp increased by at least 12 hours, since the game assumes anything else to be outdated for some reason.
 - [x] fix logging of dirsync on scenario update
 - [x] automatically create esm-default-config.example.yaml when building release
