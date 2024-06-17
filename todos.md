@@ -3,25 +3,21 @@
 ## WIP
 
 ## later
-- [ ] add support for the new shareddata-url feature?
-- [+] GUI!
-- [ ] ask notoats to create a downloadable release of his contained exe, so i can add it as 3rd party requirement
-- [ ] provide full installation package with install bat, that installs esm, the tools (osfmount, peazip, emprc, etc.)?
-- [ ] implement warning/talkback via tickets for when an admin is required (e.g. low disk space, etc.), e.g. as an extra tool, so it can just be planned in EAH, or as delayed task after a startup (e.g. 5 minutes after the server started)
+- [ ] read the territory config from the galaxyconfig.ecf ourselves. Search for "Child Territory" - Blocks.
+- [ ] add support for the new shareddata-url feature once it is released and we know how it works
 - [+] fix all FS-modifying tests to use the test fixture of the usually existing ramdisk (R:)
+- [ ] implement allowMultpleServerInstances switch? Once enabled, do not check for instances of the game before starting, do not start if startmode is set to direct, etc.
+- [ ] fix purge-tools: these need to also delete related data in the database! Probably not difficult to finish implementing, but a PITA to test.
+
+## optional
 - [ ] offer some kind of better interactive mode for different stuff
   - [-] interactive mode for wipe galaxy tool?
   - [ ] actually make any option have a -batchmode when there are interactive prompts, defaulting to the most defensive option?
-- [ ] implement allowMultpleServerInstances switch? Once enabled, do not check for instances of the game before starting, do not start if startmode is set to direct, etc.
+- [+] GUI!
 - [+] create separate windows-gui thingy that resides in the taskbar or similar and provides a shortcut to the cli tool.
-- [ ] fix purge-tools: these need to also delete related data in the database! Probably not difficult to finish implementing, but a PITA to test.
-- [ ] read the id of the savegame data folder name for the savegame tool from the main dedicated log, once the game has started once.
-  * see logfile and search for the "UniqueId" when the game logs something like: 23-01:04:31.793 18_04 -LOG- Mode=currentQuery, GameSeed=8979695, UniqueId=931593376, EntityId=1001
-  * it may be necessary to find the proper logfile first though, since the logs are not related to the savegame
-
-## optional
-
-- [ ] read the territory config from the galaxyconfig.ecf ourselves. Search for "Child Territory" - Blocks.
+- [ ] ask notoats to create a downloadable release of his contained exe, so i can add it as 3rd party requirement
+- [ ] provide full installation package with install bat, that installs esm, the tools (osfmount, peazip, emprc, etc.)?
+- [ ] implement warning/talkback via tickets for when an admin is required (e.g. low disk space, etc.), e.g. as an extra tool, so it can just be planned in EAH, or as delayed task after a startup (e.g. 5 minutes after the server started)
 - [ ] add switch to backup-tool to make backups EWA-compatible
 - [ ] provide tool to fix item icons as good as possible in EWA, current process:
    1. open item list in eah, CTRL+A, CTRL+C and copy into text file? Or find out how the item list file in epf got created
@@ -35,11 +31,12 @@
    1. save customicon as itemid for EWA.
 - [ ] add cb:shield:$id function to be able to get a ships shield values?
 - [ ] add a AI-powered chatbot, chatgpt-like that roleplays as a spacefaring hamster that reacts to player chat?
-- [ ] add some more placeholders for the html-template, e.g. one for the password from the dedicated.yaml
-
 
 ## done
-
+- [x] read the id of the savegame data folder name for the savegame tool from the main dedicated log, once the game has started once.
+  * see logfile and search for the "UniqueId" when the game logs something like: 23-01:04:31.793 18_04 -LOG- Mode=currentQuery, GameSeed=8979695, UniqueId=931593376, EntityId=1001
+  * it may be necessary to find the proper logfile first though, since the logs are not related to the savegame
+- [x] add some more placeholders for the html-template, e.g. one for the password from the dedicated.yaml
 - [x] bug: delete-all does not back up the esm logs properly
 - [x] fix shared data download: files in the zip have to have their modification timestamp increased by at least 12 hours, since the game assumes anything else to be outdated for some reason.
 - [x] fix logging of dirsync on scenario update

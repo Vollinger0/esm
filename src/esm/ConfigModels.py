@@ -116,6 +116,13 @@ class DediServerConfig(BaseModel):
     """represents the serverconfig fragment of the dedicated yaml"""
     AdminConfigFile: Optional[str] = None
     SaveDirectory: Optional[str] = None
+    Srv_Name: Optional[str] = None
+    Srv_Description: Optional[str] = None
+    Srv_Password: Optional[str] = None
+    Srv_MaxPlayers: Optional[int] = None
+    MaxAllowedSizeClass: Optional[int] = None
+    PlayerLoginParallelCount: Optional[int] = None
+    PlayerLoginFullServerQueueCount: Optional[int] = None
 
 class DediGameConfig(BaseModel):
     """represents the gameconfig fragment of the dedicated yaml"""
@@ -129,11 +136,12 @@ class DediConfig(BaseModel):
 
 class DownloadToolConfig(BaseModel):
     """represents the download tool config"""
-    serverPort: int = Field(27440, description="port of the webserver to listen to. Make sure you this port is reachable from outside")
+    serverPort: int = Field(27440, description="port of the webserver to listen to. Make sure this port is reachable from outside")
     maxGlobalBandwith: int = Field(50*1000*1000, description="max bandwith to use for the downloads globally in bytes, e.g. 50 MB/s")
-    maxClientBandwith: int = Field(30*1000*1000, description="max bandwith to use for the download per client in bytes, eg. 30 MB/s")
+    maxClientBandwith: int = Field(30*1000*1000, description="max bandwith to use for the download per client in bytes, e.g. 30 MB/s")
     rateLimit: str = Field("10 per minute", description="rate limit of max allowed requests per ip address per time unit, e.g. '10 per minute' or '10 per hour'")
-    cacheFolderName: str = Field("DediGame_127.0.0.1_123456789", description="name of the folder included in the zip file, which will look something like 'DediGame_127.0.0.1_12346789', depending on gamename, server ip and seed")
+    useCustomCacheFolderName: bool = Field(False, description="if true, the custom folder name will be used, if false, the folder name will be generated with following pattern '{gamename}_{serverip}_{uniquegameid}'")
+    customCacheFolderName: str = Field("DediGame_127.0.0.1_123456789", description="name of the folder included in the zip file, which will look something like 'DediGame_127.0.0.1_12346789', depending on gamename, server ip and unique game id")
     zipName: str = Field("shareddata_copy_to_empyrion_saves_cache.zip", description="The filename of the zip file that will be provided as download")
     timeToAddToModificationTimestamps: int = Field(43200, description="how much time should be added to the modification timestamps of the files in the cache folder, so the game recognizes them as up to date. Should be 12 hours (default) or more.")
     wwwroot: str = Field("wwwroot", description="folder to use as wwwroot, where the download will be served from")
@@ -149,9 +157,9 @@ class MainConfig(AppBaseModel, AppConfigMixin):
     paths: ConfigPaths = Field(...)
     foldernames: ConfigFoldernames = Field(ConfigFoldernames(), description="names of different folders, you probably do not need to change any of these")
     filenames: ConfigFilenames = Field(ConfigFilenames(), description="names of different files, you probably do not need to change any of these")
-    communication: ConfigCommunication = Field(ConfigCommunication())
+    communication: ConfigCommunication = Field(ConfigCommunication(), description="configuration for the in-game communication")
     robocopy: ConfigRobocopy = Field(ConfigRobocopy())
     galaxy: Optional[ConfigGalaxy] = None
     dedicatedConfig: Optional[DediConfig] = Field(None)
     context: Optional[dict] = {}
-    downloadtool: DownloadToolConfig = Field(DownloadToolConfig())
+    downloadtool: DownloadToolConfig = Field(DownloadToolConfig(), description="configuration for the shared data download tool")

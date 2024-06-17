@@ -1,5 +1,7 @@
+import glob
 import logging
 import os
+import re
 import shutil
 import signal
 import socket
@@ -13,6 +15,7 @@ from pathlib import Path
 from limits import storage, strategies, parse
 from esm.ConfigModels import MainConfig
 from esm.EsmConfigService import EsmConfigService
+from esm.EsmDedicatedServer import EsmDedicatedServer
 from esm.FsTools import FsTools
 from esm.ServiceRegistry import Service, ServiceRegistry
 from esm.Tools import Timer
@@ -25,6 +28,9 @@ class EsmSharedDataServer:
     @cached_property
     def config(self) -> MainConfig:
         return ServiceRegistry.get(EsmConfigService).config
+    
+    def dedicatedServer(self) -> EsmDedicatedServer:
+        return ServiceRegistry.get(EsmDedicatedServer)
 
     def start(self):
         scenarioName = self.config.dedicatedConfig.GameConfig.CustomScenario
@@ -36,7 +42,7 @@ class EsmSharedDataServer:
         self.prepareIndexHtml()
 
         zipFileSize = Path(wwwrootZipFilePath).stat().st_size
-        log.info(f"Created SharedData zip file as '{wwwrootZipFilePath}' using the cache folder name '{self.config.downloadtool.cacheFolderName}' with a size of '{humanize.naturalsize(zipFileSize, gnu=False)}'.")
+        log.info(f"Created SharedData zip file as '{wwwrootZipFilePath}' using the cache folder name '{self.getCacheFolderName()}' with a size of '{humanize.naturalsize(zipFileSize, gnu=False)}'.")
 
         # start webserver on configured port and serve the zip and also the index.html that explains how to handle the shared data
         myHostIp = self.getOwnIp()
@@ -57,6 +63,11 @@ class EsmSharedDataServer:
             log.info(f"SharedData server stopped serving. Total downloads: {ThrottledHandler.globalZipDownloads}")
 
     def getOwnIp(self):
+        if not self.config.context.get("myOwnIp"):
+            self.config.context["myOwnIp"] = self.findMyOwnIp()
+        return self.config.context.get("myOwnIp")
+
+    def findMyOwnIp(self):
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.settimeout(0)
         try:
@@ -68,14 +79,27 @@ class EsmSharedDataServer:
         finally:
             s.close()
         return myIp
-
+    
+    def replaceInTemplate(self, content: str, placeholder, value):
+        if value:
+            return content.replace(placeholder, str(value))
+        else:
+            return content.replace(placeholder, "")
+    
     def prepareIndexHtml(self):
         # copy the index.template.html into the wwwroot folder and replace placeholders
         wwwroot = Path(self.config.downloadtool.wwwroot).resolve()
         indexTemplateFilePath = Path("index.template.html").resolve()
         content = indexTemplateFilePath.read_text()
-        content = content.replace("$SHAREDDATAZIPFILENAME", self.config.downloadtool.zipName)
-        content = content.replace("$CACHEFOLDERNAME", self.config.downloadtool.cacheFolderName)
+        content = self.replaceInTemplate(content, "$SHAREDDATAZIPFILENAME", self.config.downloadtool.zipName)
+        content = self.replaceInTemplate(content, "$CACHEFOLDERNAME", self.getCacheFolderName())
+        content = self.replaceInTemplate(content, "$SRV_NAME", self.config.dedicatedConfig.ServerConfig.Srv_Name)
+        content = self.replaceInTemplate(content, "$SRV_DESCRIPTION", self.config.dedicatedConfig.ServerConfig.Srv_Description)
+        content = self.replaceInTemplate(content, "$SRV_PASSWORD", self.config.dedicatedConfig.ServerConfig.Srv_Password)
+        content = self.replaceInTemplate(content, "$SRV_MAXPLAYERS", self.config.dedicatedConfig.ServerConfig.Srv_MaxPlayers)
+        content = self.replaceInTemplate(content, "$MAXALLOWEDSIZECLASS", self.config.dedicatedConfig.ServerConfig.MaxAllowedSizeClass)
+        content = self.replaceInTemplate(content, "$PLAYERLOGINPARALLELCOUNT", self.config.dedicatedConfig.ServerConfig.PlayerLoginParallelCount)
+        content = self.replaceInTemplate(content, "$PLAYERLOGINFULLSERVERQUEUECOUNT", self.config.dedicatedConfig.ServerConfig.PlayerLoginFullServerQueueCount)
         
         indexFilePath = wwwroot.joinpath("index.html").resolve()
         if indexFilePath.exists():
@@ -96,6 +120,57 @@ class EsmSharedDataServer:
         shutil.move(resultZipFilePath, wwwroot)
         log.debug(f"result of zip creation: '{wwwrootZipFilePath}'")
         return wwwrootZipFilePath
+    
+    def findUniqueGameId(self):
+        """
+        return the unique game id from the first found log file that contains that string.
+
+        This is the line in Logs/4243/Dedicated_*.log
+        16-19:45:13.388 21_45 -LOG- Mode=currentId, GameSeed=42069420, UniqueId=1519611569, EntityId=5001
+        """
+        # find gameserver logfile and extract unique game id
+        buildNumber = self.dedicatedServer().getBuildNumber()
+        logFileDirectoryPath = self.config.paths.install.joinpath(f"Logs").joinpath(buildNumber).resolve()
+        log.debug(f"Trying to extract unique game id from logfiles in '{logFileDirectoryPath}'")
+        for possiblePath in glob.glob(root_dir=logFileDirectoryPath, pathname="Dedicated_*.log", recursive=True):
+            logFilePath = Path(logFileDirectoryPath).joinpath(possiblePath).resolve()
+            if logFilePath.exists():
+                log.debug(f"Trying to extract unique game id from logfile '{logFilePath}'")
+                with open(logFilePath, 'r') as f:
+                    for line in f:
+                        if "UniqueId" in line:
+                            # extract unique game id from logline, which is the number after the 'UniqueId=' string
+                            uniqueGameId = re.search(r"UniqueId=(\d+)", line).group(1)
+                            return uniqueGameId
+        log.debug(f"Did not find unique game id in any of the Dedicated_*.log files in '{logFileDirectoryPath}'. You may need to start the server at least once so we can find out the id")
+        return None
+    
+    def getUniqueGameId(self):
+        """
+        return the unique game id from context, or find it via #findUniqueGameId()
+        """
+        if not self.config.context.get("uniqueGameId"):
+            self.config.context["uniqueGameId"] = self.findUniqueGameId()
+        return self.config.context.get("uniqueGameId")
+    
+    def getCacheFolderName(self):
+        """
+        constructs the cache folder name with following pattern {gamename}_{serverip}_{unique game id}
+        Unless the cache folder name override is active, then just return what has been configured
+        """
+        if self.config.downloadtool.useCustomCacheFolderName:
+            return self.config.downloadtool.customCacheFolderName
+
+        gameName = self.config.dedicatedConfig.GameConfig.GameName
+        serverIp = self.getOwnIp()
+        uniqueGameId = self.getUniqueGameId()
+        if uniqueGameId:
+            cacheFolderName = f"{gameName}_{serverIp}_{uniqueGameId}"
+            log.debug(f"Generated cache folder name '{cacheFolderName}'")
+            return cacheFolderName
+        else:
+            log.debug(f"Could not determine unique game id. Using default cache folder name '{self.config.downloadtool.customCacheFolderName}'")
+            return self.config.downloadtool.customCacheFolderName
 
     def createSharedDataZipFile(self, pathToScenarioFolder: Path) -> Path:
         # just using something smaller for debugging
@@ -111,7 +186,8 @@ class EsmSharedDataServer:
             log.debug(f"deleting old temporary folder '{tempFolder}'")
             FsTools.deleteDir(tempFolder, True)
         FsTools.createDir(tempFolder)
-        cacheFolder = tempFolder.joinpath(self.config.downloadtool.cacheFolderName)
+        cacheFolderName = self.getCacheFolderName()
+        cacheFolder = tempFolder.joinpath(cacheFolderName)
         FsTools.createDir(cacheFolder)
         
         log.debug(f"Copying files from '{pathToSharedDataFolder}' to cachefolder '{cacheFolder}'")
@@ -119,6 +195,20 @@ class EsmSharedDataServer:
         log.debug(f"Created cachefolder '{cacheFolder}'")
 
         # increase the modification timestamps of all files by 12 hours
+        self.increaseModificationTimestamps(cacheFolder)
+        
+        # create zip from the cacheFolder
+        log.debug(f"Creating zip from cachefolder '{cacheFolder}' with name '{self.config.downloadtool.zipName}'")
+        # remove the extension from the filename to get the name of the zip file
+        zipNameNoExtension = self.config.downloadtool.zipName.split(".")[0]
+        result = shutil.make_archive(zipNameNoExtension, 'zip', tempFolder)
+        resultZipFilePath = Path(result)
+        return resultZipFilePath
+
+    def increaseModificationTimestamps(self, cacheFolder):
+        """
+        increase the modification timestamps of all files in cachefolder by whatever value was set in the config
+        """
         timeDifference = self.config.downloadtool.timeToAddToModificationTimestamps
         for root, dirs, files in os.walk(cacheFolder):
             for file in files:
@@ -128,14 +218,6 @@ class EsmSharedDataServer:
                 os.utime(path, (newMTime, newMTime))
         timeDiffHuman = humanize.naturaldelta(timeDifference)
         log.debug(f"Altered timestamps of all files in cachefolder '{cacheFolder}', added {timeDiffHuman} to modified timestamps.")
-        
-        # create zip from the cacheFolder
-        log.debug(f"Creating zip from cachefolder '{cacheFolder}' with name '{self.config.downloadtool.zipName}'")
-        # remove the extension from the filename to get the name of the zip file
-        zipNameNoExtension = self.config.downloadtool.zipName.split(".")[0]
-        result = shutil.make_archive(zipNameNoExtension, 'zip', tempFolder)
-        resultZipFilePath = Path(result)
-        return resultZipFilePath
     
     def serve(self, zipFileSize: int):
         wwwroot = Path(self.config.downloadtool.wwwroot).resolve()

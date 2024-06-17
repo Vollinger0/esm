@@ -97,4 +97,10 @@ class EsmConfigService:
         territories = []
         for territory in self.config.galaxy.territories:
             territories.append(Territory(territory["faction"].capitalize(), territory["center-x"], territory["center-y"], territory["center-z"], territory["radius"]))
-        return territories        
+        return territories
+    
+    def addToContext(self, key, value):
+        """
+        Add a value to the context
+        """
+        self.config.context[key] = value

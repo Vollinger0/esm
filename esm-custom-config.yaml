@@ -6,6 +6,9 @@ paths:
   eah: 'D:\Servers\Empyrion\DedicatedServer\EmpyrionAdminHelper'
   steamcmd: 'D:\Servers\Tools\steamcmd\steamcmd.exe'
 
+downloadtool:
+  serverPort: 27440
+
 server:
   dedicatedYaml: "esm-dedicated.yaml"
   gfxMode: True
