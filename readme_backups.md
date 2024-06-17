@@ -21,4 +21,10 @@ When using the ramdisk, the game is not dependent on the server's disk io any mo
 
 If the ramdisk is disabled, the backup will use the actual savegame as source and require the server to be shut down. It will still be a lot faster than EAH's system though.
 
+## Other backups
+
+You can always create a static backup using `esm backup-static-create`, which will create a static and zipped backup out of the latest rolling backup with proper naming and leave it in the backup directory. This will **not** get deleted by ESM at any time.
+
+When wiping everything with `esm delete-all`, you will be asked if you want to create a static backup and back up all the logs before the actual deletion, so that tool should provide anything you would need when wiping your server.
+
 #### copyright by Vollinger 2023-2024

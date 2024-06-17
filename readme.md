@@ -8,12 +8,23 @@ Its meant to run fully automated, so you only need to configure it once, then se
 
 ## Features
 
+### Ramdisk
 - automatically sets up and runs a game on a ramdisk, which eliminates most server performance problems
-- provides its own (eah compatible) rolling mirror backup system, that backs up a 50GB savegame in under a minute without even affecting game server performance
-- ability to create static (zipped) backups
 - ability to "prepare" the filesystem for ramdisk usage, aswell as to revert that again if you have a running server already
 - automatically externalizes the savegame templates back to HDD to reduce the needed ramdisk space by ~40%
+
+### Backups
+- provides its own (eah compatible) rolling mirror backup system, that backs up a 50GB savegame in under a minute without even affecting game server performance
+- ability to create static (zipped) backups
+
+### Convenience
 - delete all function to remove any traces of an existing savegame, when you want to start a new season
+- almost all features, limits, timeouts and paths are configurable
+- everything is logged in console and logfiles, so you can always see what the scripts do, did and what happened when.
+- freely configurable in-game announcer for a few actions
+- special downloadserver as tool, that creates and serves the shared data folder as downloadable zip, see performance section
+
+### Game maintenance / performance
 - wipe tool for wiping playfields with no player or player-owned terrain placeables or structures.
 - tool to clear the "discovered-by" infos from playfields and/or systems
 - purge-tools to delete old playfield files, delete the related structures and templates - this will keep your savegame small if used regularly.
@@ -24,10 +35,6 @@ Its meant to run fully automated, so you only need to configure it once, then se
 - fully integrated to be used with EAH
 - supports a direct starting mode (without launcher), when you're running several instances of the game on one machine.
 - various tools to manage the galaxy
-- almost all features, limits, timeouts and paths are configurable
-- everything is logged in console and logfiles, so you can always see what the scripts do, did and what happened when.
-- freely configurable in-game announcer for a few actions
-- special downloadserver as tool, that creates and serves the shared data folder as downloadable zip, see performance section
 
 ### Screenshot
 
@@ -52,7 +59,7 @@ provided:
 
 You'll want to [read this](readme_backups.md).
 
-## install ESM, the game, everything
+## How to install ESM, the game, everything
 
 Please follow this [path](readme_install.md).
 
@@ -136,6 +143,7 @@ The ramdisk setup keeps a mirror of the savegame on the HDD, it also keeps the t
 ## KNOWN ISSUES
 - open windows consoles may pause scripts with the quick edit function. This is terrifying and there's no workaround for the scripts - **turn it off** (see tips) - although turning it off doesn't seem to work reliably either! If you see the "Running Server"-spinner moving, its fine. If it stops, your console froze and the program **is suspended**. Click into it or press Enter until the program continues execution.
 - the ramdisk-setup command will not run properly if in the "Autostart" folder of your windows user, due to how windows handles that "need admin privileges" popup on startup.
+- the delete-all sometimes will fail to unmount the ramdrive. In that case start osfmount yourself and unmount it yourself.
 
 ## FAQ:
 Q: Trying to start the server in EAH, there are a few consoles popping up and say something like "script is already running, will wait 10 seconds to retry.".\
