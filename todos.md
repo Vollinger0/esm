@@ -11,8 +11,9 @@
 
 ## optional
 - [ ] offer some kind of better interactive mode for different stuff
-  - [-] interactive mode for wipe galaxy tool?
-  - [ ] actually make any option have a -batchmode when there are interactive prompts, defaulting to the most defensive option?
+  - [ ] add fzf-like selection, also replace user prompts with that.
+  - [ ] interactive mode for wipe galaxy tool?
+  - [ ] add a -batchmode when there are interactive prompts, in doubt, defaulting to the most defensive option
 - [+] GUI!
 - [+] create separate windows-gui thingy that resides in the taskbar or similar and provides a shortcut to the cli tool.
 - [ ] ask notoats to create a downloadable release of his contained exe, so i can add it as 3rd party requirement
