@@ -128,6 +128,7 @@ class DediGameConfig(BaseModel):
     """represents the gameconfig fragment of the dedicated yaml"""
     GameName: Optional[str] = None
     CustomScenario: Optional[str] = None
+    SharedDataURL: Optional[str] = None
 
 class DediConfig(BaseModel):
     """represents the dedicated yaml"""

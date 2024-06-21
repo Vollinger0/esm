@@ -71,6 +71,9 @@ class EsmSharedDataServer:
         servingUrlAutoZip = f"{servingUrlIndex}/{self.config.downloadtool.autoZipName}"
         log.info(f"Shared data zip file for server is at: '{servingUrlAutoZip}'")
 
+        # check if the configuration of the dedicated yaml (we will not make any changes to it) has the auto zip url configured properly
+        self.checkDedicatedYamlHasAutoZipUrl(servingUrlAutoZip)
+
         def NoOp(*args):
             raise KeyboardInterrupt()
         try:
@@ -86,7 +89,7 @@ class EsmSharedDataServer:
         if not self.config.context.get("myOwnIp"):
             self.config.context["myOwnIp"] = self.findMyOwnIp()
         return self.config.context.get("myOwnIp")
-
+    
     def findMyOwnIp(self):
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         s.settimeout(0)
@@ -99,6 +102,18 @@ class EsmSharedDataServer:
         finally:
             s.close()
         return myIp
+    
+    def checkDedicatedYamlHasAutoZipUrl(self, servingUrlAutoZip):
+        """
+        check that the dedicated yaml has the auto zip url configured properly, and warn about it if not
+        """
+        expectedConfiguration = f"_{servingUrlAutoZip}"
+        if self.config.dedicatedConfig.GameConfig.SharedDataURL == expectedConfiguration:
+            log.info(f"The dedicated yaml has the correct SharedDataURL configuration: '{self.config.dedicatedConfig.GameConfig.SharedDataURL}'.")
+        else:
+            log.warn(f"The dedicated yaml has an incorrect SharedDataURL configuration: '{self.config.dedicatedConfig.GameConfig.SharedDataURL}'. Expected: '{expectedConfiguration}'")
+            dedicatedYamlPath = Path(self.config.paths.install).joinpath(self.config.server.dedicatedYaml).resolve()
+            log.warn(f"Make sure to set the property 'GameConfig.SharedDataURL' to '{expectedConfiguration}' in the dedicated yaml at '{dedicatedYamlPath}'.")
     
     def replaceInTemplate(self, content: str, placeholder, value):
         if value:
@@ -196,8 +211,8 @@ class EsmSharedDataServer:
 
     def createSharedDataZipFiles(self, pathToScenarioFolder: Path) -> List[ZipFile]:
         # just using something smaller for debugging
-        pathToSharedDataFolder = pathToScenarioFolder.joinpath("SharedData/Content/Extras")
-        #pathToSharedDataFolder = pathToScenarioFolder.joinpath("SharedData")
+        #pathToSharedDataFolder = pathToScenarioFolder.joinpath("SharedData/Content/Extras")
+        pathToSharedDataFolder = pathToScenarioFolder.joinpath("SharedData")
 
         if not pathToSharedDataFolder.exists():
             log.warning(f"Path to the shared data in the games scenario folder '{pathToSharedDataFolder}' does not exist. Please check the configuration.")
@@ -252,7 +267,7 @@ class EsmSharedDataServer:
                 newMTime = currentMTime + timeDifference
                 os.utime(path, (newMTime, newMTime))
         timeDiffHuman = humanize.naturaldelta(timeDifference)
-        log.debug(f"Altered timestamps of all files in cachefolder '{cacheFolder}', added {timeDiffHuman} to modified timestamps.")
+        log.debug(f"Altered all files in cachefolder '{cacheFolder}', added {timeDiffHuman} to their last modified timestamps.")
     
     def serve(self, zipFiles: List[ZipFile]):
 
