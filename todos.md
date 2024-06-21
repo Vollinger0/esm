@@ -2,6 +2,7 @@
 
 ## WIP
 - [+] add support for the new shareddata-url feature once it is released and we know how it works
+- [ ] add support for the tool to run along with the shared-data-server, without having to start it separatedly?
 
 ## later
 - [ ] read the territory config from the galaxyconfig.ecf ourselves. Search for "Child Territory" - Blocks.

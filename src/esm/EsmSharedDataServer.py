@@ -14,6 +14,7 @@ import time
 from functools import cached_property
 from pathlib import Path
 from limits import storage, strategies, parse
+from esm import Tools
 from esm.ConfigModels import MainConfig
 from esm.EsmConfigService import EsmConfigService
 from esm.EsmDedicatedServer import EsmDedicatedServer
@@ -60,7 +61,7 @@ class EsmSharedDataServer:
 
         self.prepareIndexHtml()
         # start webserver on configured port and serve the zip and also the index.html that explains how to handle the shared data
-        myHostIp = self.getOwnIp()
+        myHostIp = Tools.getOwnIp(self.config)
         servingUrlIndex = f"http://{myHostIp}:{self.config.downloadtool.serverPort}"
         
         log.info(f"Server configured to allow max {humanize.naturalsize(self.config.downloadtool.maxGlobalBandwith, gnu=False)}/s in total network bandwidth.")
@@ -85,24 +86,6 @@ class EsmSharedDataServer:
         finally:
             log.info(f"SharedData server stopped serving. Total downloads: {ThrottledHandler.globalZipDownloads}")
 
-    def getOwnIp(self):
-        if not self.config.context.get("myOwnIp"):
-            self.config.context["myOwnIp"] = self.findMyOwnIp()
-        return self.config.context.get("myOwnIp")
-    
-    def findMyOwnIp(self):
-        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        s.settimeout(0)
-        try:
-            # doesn't even have to be reachable
-            s.connect(('10.254.254.254', 1))
-            myIp = s.getsockname()[0]
-        except Exception:
-            myIp = '127.0.0.1'
-        finally:
-            s.close()
-        return myIp
-    
     def checkDedicatedYamlHasAutoZipUrl(self, servingUrlAutoZip):
         """
         check that the dedicated yaml has the auto zip url configured properly, and warn about it if not
@@ -132,6 +115,8 @@ class EsmSharedDataServer:
         content = self.replaceInTemplate(content, "$SRV_DESCRIPTION", self.config.dedicatedConfig.ServerConfig.Srv_Description)
         content = self.replaceInTemplate(content, "$SRV_PASSWORD", self.config.dedicatedConfig.ServerConfig.Srv_Password)
         content = self.replaceInTemplate(content, "$SRV_MAXPLAYERS", self.config.dedicatedConfig.ServerConfig.Srv_MaxPlayers)
+        content = self.replaceInTemplate(content, "$SRV_PORT", self.config.dedicatedConfig.ServerConfig.Srv_Port)
+        content = self.replaceInTemplate(content, "$SRV_IP", Tools.getOwnIp(self.config))
         content = self.replaceInTemplate(content, "$MAXALLOWEDSIZECLASS", self.config.dedicatedConfig.ServerConfig.MaxAllowedSizeClass)
         content = self.replaceInTemplate(content, "$PLAYERLOGINPARALLELCOUNT", self.config.dedicatedConfig.ServerConfig.PlayerLoginParallelCount)
         content = self.replaceInTemplate(content, "$PLAYERLOGINFULLSERVERQUEUECOUNT", self.config.dedicatedConfig.ServerConfig.PlayerLoginFullServerQueueCount)
@@ -199,7 +184,7 @@ class EsmSharedDataServer:
             return self.config.downloadtool.customCacheFolderName
 
         gameName = self.config.dedicatedConfig.GameConfig.GameName
-        serverIp = self.getOwnIp()
+        serverIp = Tools.getOwnIp(self.config)
         uniqueGameId = self.getUniqueGameId()
         if uniqueGameId:
             cacheFolderName = f"{gameName}_{serverIp}_{uniqueGameId}"
@@ -316,8 +301,25 @@ class ThrottledHandler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=ThrottledHandler.rootDirectory, **kwargs)
 
+    def do_HEAD(self) -> None:
+        log.debug(f"client {self.client_address[0]}, method {self.command}, path '{self.path}', headers {self.headers}, request_version {self.request_version}")
+        return super().do_HEAD()
+    
+    def do_POST(self) -> None:
+        log.debug(f"client {self.client_address[0]}, method {self.command}, path '{self.path}', headers {self.headers}, request_version {self.request_version}")
+        return super().do_POST()
+    
+    def do_PUT(self) -> None:
+        log.debug(f"client {self.client_address[0]}, method {self.command}, path '{self.path}', headers {self.headers}, request_version {self.request_version}")
+        return super().do_PUT()
+    
+    def do_DELETE(self) -> None:
+        log.debug(f"client {self.client_address[0]}, method {self.command}, path '{self.path}', headers {self.headers}, request_version {self.request_version}")
+        return super().do_DELETE()
+    
     def do_GET(self) -> None:
         client_ip = self.client_address[0]
+        log.debug(f"client {client_ip}, method {self.command}, path '{self.path}', headers {self.headers}, request_version {self.request_version}")
 
         # rate limit check, send 429 if the client is trying to make too many requests
         if not self.rateLimiter.hit(self.rateLimit, "global", client_ip):

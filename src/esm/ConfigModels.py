@@ -120,6 +120,7 @@ class DediServerConfig(BaseModel):
     Srv_Description: Optional[str] = None
     Srv_Password: Optional[str] = None
     Srv_MaxPlayers: Optional[int] = None
+    Srv_Port: Optional[int] = None
     MaxAllowedSizeClass: Optional[int] = None
     PlayerLoginParallelCount: Optional[int] = None
     PlayerLoginFullServerQueueCount: Optional[int] = None

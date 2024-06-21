@@ -5,6 +5,7 @@ import socket
 import time
 import sys
 from typing import List
+from esm import Tools
 from esm.EsmSharedDataServer import EsmSharedDataServer
 from esm.exceptions import AdminRequiredException, ExitCodes, RequirementsNotFulfilledError, ServerNeedsToBeStopped, UserAbortedException, WrongParameterError
 from esm.ConfigModels import MainConfig
@@ -193,7 +194,9 @@ class EsmMain:
         """
         log.info(f"Starting server")
         self.startServer()
-        log.info(f"Server started. Waiting until it shut down or stopped existing.")
+        myHostIp = Tools.getOwnIp(self.config)
+        serverPort = self.config.dedicatedConfig.ServerConfig.Srv_Port
+        log.info(f"Server started. Reachable at {myHostIp}:{serverPort} Waiting until it shut down or stopped existing.")
         self.waitForEnd()
         log.info(f"Server shut down. Executing shutdown tasks.")
         self.onShutdown()

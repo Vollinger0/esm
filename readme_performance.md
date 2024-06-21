@@ -50,17 +50,26 @@ The `esm scenario-update` command will make sure this does not happen and will u
 
 ### The Shared Data Server Tool
 To overcome the bandwidth limit and avoid that players already on the server get network issues due to other players downloading the shared data, this tool will work around this problem.
-The tool `esm tool-shareddata-server` will automatically generate a zip file from the current shared data folder of the running scenario and serve them in a custom webserver especially written for that. With this, you can provide your players an alternative way to download the shared data without being limited by eleon. They'll have to unpack that shared data into their game installation manually though.
-Since the webserver will run on the same server as the game, it has a sophisticated configuration to limit the bandwith/connection aswell as the global bandwith used. It also includes several security measures like a rate limiter and an internal whitelist for paths.
-If your server connection supports e.g. 100 MB/s, you can limit the webserver to not use more than 50MB/s, to make sure the running gameserver network throughput is not affected and the game doesn't lag out the players due to the downloads. If you so desire, you can also limit the bandwith per connection, to make sure that nobody can occupy the whole bandwith. Although this shouldn't take more than 10 seconds, since shared data can't possibly be bigger than 500 MB (current scenario size limit). You can also rate-limit the amount of requests per minute per IP, to avoid simple DoS-attacks (default: 10/m).
+The tool `esm tool-shareddata-server` will automatically generate a manual download zip file from the current shared data folder of the running scenario and serve them in a custom http webserver especially written for that. With this, you can provide your players an alternative way to download the shared data without being limited by the gameservers bandwith limitation. They'll have to unpack that shared data into their game installation manually though.
 
-The tool serves the the zip and a landing page generated from the `index.template.html` with the instructions on how to use the shared data zip. You can freely edit the template to your liking, following placeholders will be replaced when the tools is started:
-- "$SHAREDDATAZIPFILENAME" - with the name of the zipfile according to the configuration
+Since Empyrion v1.11.7, the server now also supports a similar feature, where an admin can configure the SharedDataURL to externalize the client download for the shared data. For this to work, the shared-data-tool will offer another zip file of the shared data that you can configure in your dedicated yaml, make sure to add it with a leading underscore like follows, to prevent the game to try to find the download url itself, since it will fail.
+```
+  SharedDataURL: _http://123.456.789.123:12345/SharedData.zip  # replace ip with serverd url from the logs of the tool
+```
+If you change the name of the so-called auto-zip (autoZipName), make sure to update the dedicated yaml aswell, esm will warn you if the configurations do not match.
+**If you use this feature, make sure to have the shared-data-tool server started when serving the game**. Restart it on scenario or game updates, so the zips get recreated.
+
+Since the webserver will run on the same server as the game and probably be publicly available, it has a sophisticated configuration to limit the bandwith/connection aswell as the global bandwith used. It also includes several security measures like a rate limiter and an internal whitelist for paths.
+If your server connection supports e.g. 100 MB/s, you can limit the webserver to not use more than e.g. 50MB/s, to make sure the running gameserver network throughput is not affected and the game doesn't lag out the players due to the downloads. If you so desire, you can also limit the bandwith per connection, to make sure that nobody can occupy the whole bandwith. Although this shouldn't take more than 10 seconds, since shared data can't possibly be bigger than 500 MB (current scenario size limit). You can also rate-limit the amount of requests per minute per IP, to avoid simple DoS-attacks (default: 10/m). Check the `esm-default-config.example.yaml` for all configuration options, especially configure the port that is publicly available for your server, since the game clients of your players will need to connect to that.
+
+The tool serves both zips and a landing page generated from the `index.template.html` with the instructions on how to use the manual shared data zip. You can freely edit the template to your liking, following placeholders will be replaced when the tools is started:
+- "$SHAREDDATAZIPFILENAME" - with the name of the manual zipfile according to the configuration
 - "$CACHEFOLDERNAME" - with the name of the cache folder according to the configuration
 
 Following values are taken directly from the dedicated yaml:
-- "$SRV_NAME", "$SRV_DESCRIPTION", "$SRV_PASSWORD", "$SRV_MAXPLAYERS", "$MAXALLOWEDSIZECLASS", "$PLAYERLOGINPARALLELCOUNT", "$PLAYERLOGINFULLSERVERQUEUECOUNT"
-
+- "$SRV_NAME", "$SRV_DESCRIPTION", "$SRV_PASSWORD", "$SRV_MAXPLAYERS", "$MAXALLOWEDSIZECLASS", "$PLAYERLOGINPARALLELCOUNT", "$PLAYERLOGINFULLSERVERQUEUECOUNT", "$SRV_PORT"
+Following values will be provided by esm:
+- "$SRV_IP" - with the external server ip (may not be accurate if your server is behind a proxy or similar)
 
 The name of the folder in the zip file will be generated by ESM and looks like "MyServerDediGameName_123.234.34.56_123456789", consisting of game name, server ip and unique game id (you can look up the latter in the logfiles). This is usually created automatically by your client once you connect to the server - this is what we are replacing. If for some reason the cache folder name is generated wrong and you need it to be different, use `useCustomCacheFolderName: true` and provide a custom folder name in `customCacheFolderName: DediGame_127.0.0.1_123456789` in the configuration of the download tool.
 
