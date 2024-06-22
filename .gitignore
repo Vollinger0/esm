@@ -19,3 +19,4 @@ esm-wipe-tool_*.csv
 temp
 wwwroot/*.zip
 wwwroot/index.html
+esm-custom-config_test.yaml

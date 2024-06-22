@@ -1,6 +1,7 @@
 import logging
 import os
 import shutil
+import socket
 import subprocess
 import traceback
 from datetime import timedelta
@@ -9,6 +10,7 @@ from timeit import default_timer as timer
 from typing import List
 
 from esm.ConfigModels import MainConfig
+from esm.DataTypes import ZipFile
 
 log = logging.getLogger(__name__)
 
@@ -109,3 +111,38 @@ def byteArrayToString(byteArray: bytearray, encoding="UTF-8"):
         return decoded_string
     except UnicodeDecodeError:
         return None
+
+def getOwnIp(config: MainConfig):
+    """
+    return the external ip of the server from the context or find it out calling findMyOwnIp()
+    """
+    if not config.context.get("myOwnIp"):
+        config.context["myOwnIp"] = findMyOwnIp()
+    return config.context.get("myOwnIp")
+
+def findMyOwnIp():
+    """
+    return the external ip of the server from the internet
+    """
+    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    s.settimeout(0)
+    try:
+        # doesn't even have to be reachable
+        s.connect(('10.254.254.254', 1))
+        myIp = s.getsockname()[0]
+    except Exception:
+        myIp = '127.0.0.1'
+    finally:
+        s.close()
+    return myIp
+
+def findZipFileByName(zipFileList: List[ZipFile], containedIn: str = None, startsWith: str = None) -> ZipFile:
+    """
+    returns the according zipfile of the list if the name is in containedIn or starts with startsWith
+    """
+    for zipFile in zipFileList:
+        if containedIn and zipFile.name in containedIn:
+            return zipFile
+        if startsWith and zipFile.name.startswith(startsWith):
+            return zipFile
+    return None

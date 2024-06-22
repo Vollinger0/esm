@@ -22,7 +22,8 @@ Its meant to run fully automated, so you only need to configure it once, then se
 - almost all features, limits, timeouts and paths are configurable
 - everything is logged in console and logfiles, so you can always see what the scripts do, did and what happened when.
 - freely configurable in-game announcer for a few actions
-- special downloadserver as tool, that creates and serves the shared data folder as downloadable zip, see performance section
+- special downloadserver as tool, that creates and serves the shared data folder as manually downloadable zip, see [performance section](readme_performance.md) or the ...
+- [shareddata-server tool](readme_shareddata.md) that will automate the SharedDataURL feature by creating the zip automatically and serving it via the esm downloadserver
 
 ### Game maintenance / performance
 - wipe tool for wiping playfields with no player or player-owned terrain placeables or structures.
@@ -54,6 +55,7 @@ provided:
 ## All about performance, ramdisk, shared data downloads and more
 
 [This](readme_performance.md) will tell you all you need to know about it.
+If you're interested improving network limitations in the game, read about [the shareddata-server tool](readme_shareddata.md)
 
 ## All about the backups
 

@@ -2,6 +2,7 @@ import logging
 import unittest
 
 from esm import Tools
+from esm.DataTypes import ZipFile
 
 log = logging.getLogger(__name__)
 
@@ -40,3 +41,14 @@ class test_Tools(unittest.TestCase):
 
         result = list(set(list1) - set(list2))
         self.assertListEqual(sorted(result), sorted(["a", "b", "c"]))
+
+    def test_findZipFileByName(self):
+        zip1 = ZipFile(name="foobar_moep.zip")
+        zip2 = ZipFile(name="SharedData.zip")
+        list = [zip1, zip2]
+
+        result = Tools.findZipFileByName(list, "/SharedData.zip", None)
+        self.assertEqual(result, zip2)
+
+        result = Tools.findZipFileByName(list, None, "Shared")
+        self.assertEqual(result, zip2)

@@ -6,9 +6,6 @@ paths:
   eah: 'D:\Servers\Empyrion\DedicatedServer\EmpyrionAdminHelper'
   steamcmd: 'D:\Servers\Tools\steamcmd\steamcmd.exe'
 
-downloadtool:
-  serverPort: 27440
-
 server:
   dedicatedYaml: "esm-dedicated.yaml"
   gfxMode: True
@@ -16,10 +13,10 @@ server:
 
 ramdisk:
   size: "1G"
-  synchronizeRamToMirrorInterval: 60
+  synchronizeRamToMirrorInterval: 360
 
 communication:
-  announceSyncProbability: 1
+  announceSyncProbability: 0.1
   
 backups:
   additionalBackupPaths: # list of full paths to source files or directories to backup additionally. Those will all end up in the folder "Additional" in the backup.
@@ -27,6 +24,7 @@ backups:
     - 'D:/Servers/Tools/esm/esm-custom-config.yaml' # our own configuration
 
 updates: 
+  scenariosource: 'D:/Servers/Scenarios/ProjectA' # source directory with the scenario files that will be copied to the servers scenario folder.
   additional: # additional stuff to copy when calling the esm game-update command
     # If a path is relative, it will be assumed to be relative to the installation path.
     # source path globs (wildcards) are supported
@@ -44,6 +42,9 @@ deletes:
     # paths to files/directories could point to like mod data, etc.. This accepts filesystem globbing (wildcards) like *.dat or similar.
     # if a path is relative, it will be assumed to be relative to the installation path.
     - 'Content/Mods/EncryptoidModPack/Mods/AdminTetherport/Database'
+    
+downloadtool:
+  useSharedDataURLFeature: True
 
 galaxy:
   territories: #faction Territory Definitions (look up their definitions in the file "$scenario/Content/Configuration/GalaxyConfig.ecf" of your scenario)

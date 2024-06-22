@@ -1,4 +1,5 @@
 from enum import Enum
+from pathlib import Path
 
 class Territory:
     """
@@ -112,3 +113,21 @@ class Entity:
         return False        
     def __hash__(self):
         return hash(self.id)
+
+
+class ZipFile:
+    """
+    internal entity for handling zip files in the download server
+    """
+    name: str = None
+    path: str = None
+    size: int = 0
+    downloads: int = 0
+    wwwrootPath: Path = None
+
+    def __init__(self, name: str, path: str = None, size: int = 0, downloads: int = 0, wwwrootPath: Path = None):
+        self.name = name
+        self.path = path
+        self.size = size
+        self.downloads = downloads
+        self.wwwrootPath = wwwrootPath

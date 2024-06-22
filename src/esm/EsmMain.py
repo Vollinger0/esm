@@ -5,6 +5,7 @@ import socket
 import time
 import sys
 from typing import List
+from esm import Tools
 from esm.EsmSharedDataServer import EsmSharedDataServer
 from esm.exceptions import AdminRequiredException, ExitCodes, RequirementsNotFulfilledError, ServerNeedsToBeStopped, UserAbortedException, WrongParameterError
 from esm.ConfigModels import MainConfig
@@ -193,7 +194,9 @@ class EsmMain:
         """
         log.info(f"Starting server")
         self.startServer()
-        log.info(f"Server started. Waiting until it shut down or stopped existing.")
+        myHostIp = Tools.getOwnIp(self.config)
+        serverPort = self.config.dedicatedConfig.ServerConfig.Srv_Port
+        log.info(f"Server started. Reachable at '{myHostIp}:{serverPort}' - Waiting until it shut down or stopped existing.")
         self.waitForEnd()
         log.info(f"Server shut down. Executing shutdown tasks.")
         self.onShutdown()
@@ -731,6 +734,13 @@ class EsmMain:
             if not ramdriveMounted:
                 log.warning(f"Could either not execute or not access the ramdisk with osf mount. Either it is not mounted yet or you may not have admin privileges to execute osfmount.")
 
+        if self.config.dedicatedConfig.GameConfig.SharedDataURL is not None:
+            log.info(f"checking if the shared data url is available")
+            self.dedicatedServer.assertSharedDataURLIsAvailable()
+
+            if self.config.downloadtool.useSharedDataURLFeature is False:
+               log.warn(f"The dedicated yaml defines a shared data url, but esm is configured to NOT use it for the download tool. This is ok if you are using something different than esm to server the shared data zip.")
+
         # clean up. the only time we call the fstool directly.
         FsTools.deleteDir(Path(f"{self.config.paths.install}/{self.config.foldernames.esmtests}").resolve(), recursive=True)
 
@@ -772,8 +782,11 @@ class EsmMain:
 
         self.wipeService.wipeTool(systemAndPlayfieldNames, territory, wipetype, cleardiscoveredby, minage, dbLocationPath, dryrun)
 
-    def startSharedDataServer(self):
+    def startSharedDataServer(self, resume=False):
         """
         starts the shared data server
         """
-        self.sharedDataServer.start()
+        if resume:
+            self.sharedDataServer.resume()
+        else:
+            self.sharedDataServer.start()
