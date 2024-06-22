@@ -8,7 +8,7 @@ The `esm scenario-update` command will make sure this does not happen and will u
 
 ## The Shared Data Server Tool
 To overcome the bandwidth limit and avoid that players already on the server get network issues due to other players downloading the shared data, this tool will work around this problem.
-The tool `esm tool-shareddata-server` will automatically generate a manual download zip file from the current shared data folder of the running scenario and serve them in a custom http webserver especially written for that. With this, you can provide your players an alternative way to download the shared data without being limited by empyrion's limitations. They'll have to unpack that shared data into their game installation manually though.
+The tool `esm tool-shareddata-server` will automatically generate a zip file from the current shared data folder of the running scenario and serve them in a custom http webserver especially written for that. With this, you can provide your players an alternative way to download the shared data without being limited by empyrion's limitations. They'll have to unpack that shared data into their game installation manually though, unless you also enable the SharedDataURL feature mentioned below.
 
 Since Empyrion v1.11.7, the game server now also supports a rather dangerous feature, where an admin can configure the SharedDataURL to externalize the client download for the shared data, but you have to create the zipfile with the correct structure yourself and add the correct configuration. If there are game or scenario updates, you have to repeat that and make sure the url in the configuration changes.
 Be aware though, it has some drawbacks:
@@ -16,14 +16,15 @@ Be aware though, it has some drawbacks:
 ### If the URL did NOT change even though the file did, the game clients will NOT download the file AT ALL AND BREAK THE GAME FOR THE CLIENTS
 ### IF the url is not reachable for some reason, the game clients will NOT download the file AND BREAK THE GAME FOR THE CLIENTS
 ### If the zip file does not have the required structure it will get ignored and break the game on the clients.
-### you have to recreate that file on EVERY game or scenario change, no matter if its only a change in a little file or not
+### You have to recreate that file on EVERY game or scenario change, no matter if its only a change in a little file or not
 
-ESM will automate this for you to minimize those erros. The shared-data-tool will serve another zip file of the shared data with changing filename, since its url needs to be changed every time the file is recreated. It will look like this `SharedData_20240621_235959.zip`. The configuration for the SharedDataURL will be **automatically** changed while the tool is running (the dedicated yaml is edited) and will like this:
+ESM will completely automate this for you to minimize those errors. You only have to set enable the flag `useSharedDataURLFeature` in the esm configuration.
+The shared-data-tool will serve another zip file of the shared data with a changing filename, since its url needs to be changed every time the file is recreated. It will look like this `SharedData_20240621_235959.zip`. The configuration for the SharedDataURL will be **automatically** changed while the tool is running (the dedicated yaml is edited), and changed back when the tool is stopped. The change will look like this:
 ```
   SharedDataURL: _http://123.456.789.123:12345/SharedData_20240621_235959.zip
 ```
 ### If you use this feature, make sure to have the shared-data-tool server started when serving the game and make sure to restart the game server whenever you started or stopped the data-tool.**
-ESM will check this for you and will **not** start if there is a shared data url configured that is not reachable to avoid having an invalid configuration.
+ESM will check this for you on server start and will **ABORT** the server start if there is a shared data url configured that is **not** reachable to avoid having an invalid configuration.
 
 Since the webserver will run on the same server as the game and probably be publicly available, it has a sophisticated configuration to limit the bandwith/connection aswell as the global bandwith used. It also includes several security measures like a rate limiter and an internal whitelist for paths.
 If your server connection supports e.g. 100 MB/s, you can limit the webserver to not use more than e.g. 50MB/s, to make sure the running gameserver network throughput is not affected and the game doesn't lag out the players due to the downloads. If you so desire, you can also limit the bandwith per connection, to make sure that nobody can occupy the whole bandwith. Although this shouldn't take more than 10 seconds, since shared data can't possibly be bigger than 500 MB (current scenario size limit). You can also rate-limit the amount of requests per minute per IP, to avoid simple DoS-attacks (default: 10/m). Check the `esm-default-config.example.yaml` for all configuration options, especially configure the port that is publicly available for your server, since the game clients of your players will need to connect to that.
@@ -42,6 +43,7 @@ The name of the folder in the zip file will be generated by ESM and looks like "
 This tool logs in its own logfile.
 
 ### Recommendation
-I would recommend to use the shareddata-server at the beginning of a season, or on *big* scenario changes **only**, and turn it off when there are only minor changes. This will ensure that minor changes do NOT trigger a redownload of the whole file for all players, and still offers new players a quick enough way to get onto the server. For small changes, the old way (file-by-file sync trough the gameserver) is good enough.
+I would recommend to use the shareddata-server at the beginning of a season, or on *big* scenario changes **only**. Turn it off when there are only minor changes. This will ensure that minor changes do NOT trigger a redownload of the whole file for all players, and still offers new players a quick enough way to get onto the server. For small changes, the old way (file-by-file sync trough the gameserver) is still good enough and faster.
+Remember that when you turn it off, all your players will have to redownload the newly created file.
 
 #### copyright by Vollinger 2023-2024

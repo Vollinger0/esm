@@ -10,6 +10,7 @@ from timeit import default_timer as timer
 from typing import List
 
 from esm.ConfigModels import MainConfig
+from esm.DataTypes import ZipFile
 
 log = logging.getLogger(__name__)
 
@@ -134,3 +135,14 @@ def findMyOwnIp():
     finally:
         s.close()
     return myIp
+
+def findZipFileByName(zipFileList: List[ZipFile], containedIn: str = None, startsWith: str = None) -> ZipFile:
+    """
+    returns the according zipfile of the list if the name is in containedIn or starts with startsWith
+    """
+    for zipFile in zipFileList:
+        if containedIn and zipFile.name in containedIn:
+            return zipFile
+        if startsWith and zipFile.name.startswith(startsWith):
+            return zipFile
+    return None

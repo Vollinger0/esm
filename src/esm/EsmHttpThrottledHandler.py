@@ -3,7 +3,7 @@ import humanize
 import http.server
 import threading
 import time
-from esm.DataTypes import ZipFile
+from esm import Tools
 from esm.Tools import Timer
 from limits import parse, storage, strategies
 from pathlib import Path
@@ -36,7 +36,7 @@ class EsmHttpThrottledHandler(http.server.SimpleHTTPRequestHandler):
     zipFiles = []
 
     # redirect definition, if set e.g. {"source": "GimmeTheSharedData", "destination": autoZipFile.name, "code": 301}
-    redirect = None
+    redirects = None
 
     # allowed default assets for downloads
     defaultAssets = ['index.html', 'favicon.ico', 'styles.css']
@@ -53,20 +53,22 @@ class EsmHttpThrottledHandler(http.server.SimpleHTTPRequestHandler):
             return True
         return False
 
-    def redirectToDestination(self):
+    def handleRedirects(self):
         """
-        check if the requested path is the redirect source path and if so redirect to the corresponding destination
+        check if the requested path equals any of the configured redirects and redirect to the destination.
         """
-        if self.redirect is None: return False
-        source = self.redirect['source']
-        destination = self.redirect['destination']
-        code = self.redirect['code']
-        if source == self.path[1:]:
-            self.send_response_only(code)
-            self.send_header("Location", f"/{destination}")
-            self.end_headers()
-            self.log_request(code)
-            return True
+        if self.redirects is None: return False
+        if len(self.redirects) == 0: return False
+        for redirect in self.redirects:
+            source = redirect['source']
+            destination = redirect['destination']
+            code = redirect['code']
+            if source == self.path[1:]:
+                self.send_response_only(code)
+                self.send_header("Location", f"/{destination}")
+                self.end_headers()
+                self.log_request(code)
+                return True
         return False
 
     def redirectToIndex(self):
@@ -100,7 +102,7 @@ class EsmHttpThrottledHandler(http.server.SimpleHTTPRequestHandler):
         return False
 
     def do_HEAD(self) -> None:
-        if self.redirectToDestination(): return
+        if self.handleRedirects(): return
         if self.pathNotInWhitelist(): return
         if self.fileDoesNotExist(): return
 
@@ -111,7 +113,7 @@ class EsmHttpThrottledHandler(http.server.SimpleHTTPRequestHandler):
     def do_GET(self) -> None:
         if self.redirectToIndex(): return
         if self.hitRateLimit(): return
-        if self.redirectToDestination(): return
+        if self.handleRedirects(): return
         if self.pathNotInWhitelist(): return
         if self.fileDoesNotExist(): return
 
@@ -121,18 +123,9 @@ class EsmHttpThrottledHandler(http.server.SimpleHTTPRequestHandler):
         except Exception as ex:
             log.warn(f"Error while serving file {file}: {ex}")
 
-    def getMatchingZipFile(self, path, zipFileList: List['ZipFile']) -> ZipFile:
-        """
-        returns the according object of the list if the name is in the path
-        """
-        for zipFile in zipFileList:
-            if zipFile.name in path:
-                return zipFile
-        return None
-
     def copyfile(self, source, outputfile) -> None:
         # we'll only limit the speed of the zip file, not the rest of the files
-        zipFile = self.getMatchingZipFile(self.path, EsmHttpThrottledHandler.zipFiles)
+        zipFile = Tools.findZipFileByName(EsmHttpThrottledHandler.zipFiles, containedIn=self.path)
         if zipFile is None:
             return super().copyfile(source, outputfile)
 
@@ -175,3 +168,4 @@ class EsmHttpThrottledHandler(http.server.SimpleHTTPRequestHandler):
     def log_message(self, format: str, *args) -> None:
         message = format % args
         log.debug(f"{self.address_string()} - - [{self.log_date_time_string()}] {message.translate(self._control_char_table)}")
+        

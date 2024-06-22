@@ -18,6 +18,7 @@ log = logging.getLogger(__name__)
 class EsmConfigService:
     """
     Contains all the relevant config for esm, backed by a yaml file that overwrites the default config in the model MainConfig.
+    It also loads the games dedicated yaml file to avoid redundant configuration 
     
     Uses pydantic/easyconfig, so the configuration is a validateable complex model, see ConfigModels for details.
     """
@@ -50,12 +51,6 @@ class EsmConfigService:
     def loadDedicatedYaml(self, mainConfig: MainConfig):
         """
         Reads the dedicated YAML file into the mainconfig.dedicatedConfig property.
-
-        Args:
-            mainConfig (MainConfig): The main configuration object.
-
-        Returns:
-            None
         """
         if mainConfig.paths.install.exists():
             dedicatedYamlPath = mainConfig.paths.install.joinpath(mainConfig.server.dedicatedYaml)
@@ -150,10 +145,15 @@ class EsmConfigService:
 
     def changeSharedDataUrl(self, newSharedDataUrl: str):
         """
-        edits the dedicated yaml to add the shared data url
+        edits the dedicated yaml to add/change the shared data url
         """
-        if self.config.dedicatedConfig.GameConfig.SharedDataURL is not None:
-            log.info(f"There is a SharedDataURL configured in the dedicated yaml, will overwrite it: '{self.config.dedicatedConfig.GameConfig.SharedDataURL}' -> '{newSharedDataUrl}'")
+        sharedDataUrl = self.config.dedicatedConfig.GameConfig.SharedDataURL
+        if sharedDataUrl == newSharedDataUrl:
+            log.info(f"The SharedDataURL is already set to '{newSharedDataUrl}'")
+            return
+        
+        if sharedDataUrl is not None:
+            log.info(f"There is a SharedDataURL configured in the dedicated yaml, will overwrite it: '{sharedDataUrl}' -> '{newSharedDataUrl}'")
         else:
             log.info(f"Adding the SharedDataURL property to the dedicated yaml: '{newSharedDataUrl}'")
 
@@ -212,12 +212,6 @@ class EsmConfigService:
     def setConfigFilePath(self, configFilePath: Path, searchDedicatedYamlLocal=False):
         """
         Set the path to the config file.
-
-        Parameters:
-            configFilePath (Path): The path to the config file.
-
-        Returns:
-            None
         """
         assert isinstance(configFilePath, Path), "configFilePath must be of type Path"
         # invalidate cached property

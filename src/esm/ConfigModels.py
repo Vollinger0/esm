@@ -148,7 +148,7 @@ class DownloadToolConfig(BaseModel):
 
     useCustomCacheFolderName: bool = Field(False, description="if true, the custom folder name will be used, if false, the folder name will be generated with following pattern '{gamename}_{serverip}_{uniquegameid}'")
     customCacheFolderName: str = Field("DediGame_127.0.0.1_123456789", description="name of the folder included in the zip file, which will look something like 'DediGame_127.0.0.1_12346789', depending on gamename, server ip and unique game id")
-    manualZipName: str = Field("shareddata_copy_to_empyrion_saves_cache.zip", description="The filename of the zip file that will be provided as manual download")
+    manualZipName: str = Field("copy_shareddata_to_empyrion_saves_cache.zip", description="The filename of the zip file that will be provided as manual download")
 
     timeToAddToModificationTimestamps: int = Field(43200, description="how much time should be added to the modification timestamps of the files in the cache folder, so the game recognizes them as up to date. Should be 12 hours (default) or more.")
     wwwroot: str = Field("wwwroot", description="folder to use as wwwroot, where the download will be served from")

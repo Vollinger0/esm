@@ -19,11 +19,17 @@ from esm.EsmDedicatedServer import EsmDedicatedServer
 from esm.EsmHttpThrottledHandler import EsmHttpThrottledHandler
 from esm.FsTools import FsTools
 from esm.ServiceRegistry import Service, ServiceRegistry
+from esm.exceptions import RequirementsNotFulfilledError
 
 log = logging.getLogger(__name__)
 
 @Service
 class EsmSharedDataServer:
+    """
+    ESM shared data server.
+    This will automatically create the shared data zips and provide a dedicated webserver to serve them.
+    This supports files for manual download as well as the new SharedDataURL-Feature since v1.11.7
+    """
 
     @cached_property
     def config(self) -> MainConfig:
@@ -37,27 +43,43 @@ class EsmSharedDataServer:
         return ServiceRegistry.get(EsmDedicatedServer)
 
     def start(self):
-        self.checkSharedDataURLConfiguration()
+        """
+        prepare the files and start the shared data server
+        """
         zipFiles = self.prepareZipFiles()
         self.prepareIndexHtml()
+        self.startServer(zipFiles)
 
-        log.info(f"Starting download server")
+    def resume(self):
+        """
+        just resume the shared data server, do not recreate the files nor change configuration
+        """
+        zipFiles = self.findZipFiles()
+        if len(zipFiles) != 2:
+            raise RequirementsNotFulfilledError(f"Expected 2 zip files in the wwwroot folder, found {len(zipFiles)}. Aborting resume since files might be missing, start the server without the resume option to regenerate the data.")
+        self.startServer(zipFiles)
+
+    def startServer(self, zipFiles: List[ZipFile]):
+        """
+        actually start the server
+        """
+        self.checkSharedDataURLConfiguration()
+
         log.info(f"Server configured to allow max {humanize.naturalsize(self.config.downloadtool.maxGlobalBandwith, gnu=False)}/s in total network bandwidth.")
         log.info(f"Server configured to allow max {humanize.naturalsize(self.config.downloadtool.maxClientBandwith, gnu=False)}/s network bandwith per connection.")
 
         myHostIp = Tools.getOwnIp(self.config)
         servingUrlRoot = f"http://{myHostIp}:{self.config.downloadtool.serverPort}"
         
-        # get the manual zipfile from the zipfiles list
-        manualZipFile = list(filter(lambda x: x.name == self.config.downloadtool.manualZipName, zipFiles))[0]
-        servingUrlManualZip = f"{servingUrlRoot}/{manualZipFile.name}"
-        log.info(f"Shared data zip file for manual download is at: '{servingUrlManualZip}' (instructions: '{servingUrlRoot}')")
+        manualZipFile = Tools.findZipFileByName(zipFiles, startsWith=self.config.downloadtool.manualZipName)
+        if manualZipFile:
+            servingUrlManualZip = f"{servingUrlRoot}/{manualZipFile.name}"
+            log.info(f"Shared data zip file for manual download is at: '{servingUrlManualZip}' (instructions: '{servingUrlRoot}')")
 
         if self.config.downloadtool.useSharedDataURLFeature:
-            autoZipFile = list(filter(lambda x: x.name != self.config.downloadtool.manualZipName, zipFiles))[0]
+            autoZipFile = Tools.findZipFileByName(zipFiles, startsWith=self.config.downloadtool.autoZipName.split(".")[0])
             
-            #sharedDataUrl = f"{servingUrlRoot}/{autoZipFile.name}"
-            sharedDataUrl = f"{servingUrlRoot}/GimmeTheSharedData"
+            sharedDataUrl = f"{servingUrlRoot}/{autoZipFile.name}"
 
             log.info(f"Shared data zip file for server is at: '{sharedDataUrl}'")
 
@@ -69,7 +91,8 @@ class EsmSharedDataServer:
             # check if the configuration of the dedicated yaml (we will not make any changes to it) has the auto zip url configured properly
             self.checkDedicatedYamlHasAutoZipUrl(sharedDataUrl)
             log.warn(f"The dedicated yaml has been updated to point to the shared data tool, make sure to restart the server to make it take effect!")
-
+        
+        log.info(f"Starting download server for {len(zipFiles)} zip files (excluding default assets).")
         def NoOp(*args):
             raise KeyboardInterrupt()
         try:
@@ -85,7 +108,7 @@ class EsmSharedDataServer:
                 self.configService.rollbackDedicatedYaml()
                 log.warn(f"The dedicated yaml has been rolled back to its original state, make sure to restart the server for it take effect!")
 
-    def prepareZipFiles(self):
+    def prepareZipFiles(self) -> List[ZipFile]:
         """
         prepare the zip files for download
         """
@@ -99,6 +122,30 @@ class EsmSharedDataServer:
         for zipFile in zipFiles:
             log.info(f"Created SharedData zip file as '{zipFile.wwwrootPath}' with a size of '{humanize.naturalsize(zipFile.size, gnu=False)}'.")
         return zipFiles
+    
+    def findZipFiles(self) -> List[ZipFile]:
+        """
+        find the zip files that we need to serve
+        """
+        wwwroot = Path(self.config.downloadtool.wwwroot).resolve()
+        zipFiles = []
+
+        # check if there is a manual zip file
+        manualZipFilePath = wwwroot.joinpath(self.config.downloadtool.manualZipName)
+        if manualZipFilePath.exists():
+            log.info(f"Found manual shared data zip file '{manualZipFilePath.name}'")
+            zipFiles.append(ZipFile(name=self.config.downloadtool.manualZipName, path=manualZipFilePath, size=manualZipFilePath.stat().st_size))
+
+        if self.config.downloadtool.useSharedDataURLFeature:
+            # check if there are auto zip files, if so, add the latest
+            filePattern = f"{wwwroot.resolve()}/{self.config.downloadtool.autoZipName.split(".")[0]}*.zip"
+            files = glob.glob(pathname=filePattern)
+            path = Path(max(files, key=os.path.getmtime))
+            if path.exists():
+                log.info(f"Found auto shared data zip file '{path.name}'")
+                zipFiles.append(ZipFile(name=path.name, path=path, size=path.stat().st_size))
+
+        return zipFiles
 
     def checkSharedDataURLConfiguration(self):
         """
@@ -108,15 +155,9 @@ class EsmSharedDataServer:
             if self.config.dedicatedConfig.GameConfig.SharedDataURL.startswith(f"_http://{Tools.getOwnIp(self.config)}:"):
                 log.warn(f"The SharedDataURL seems to point to the shared data tool, but the useSharedDataURLFeature toggle is set to false. Please check the configuration of the downloadtool.")
 
-    def resume(self):
-        """
-        just resume the shared data server, do not recreate the files nor change configuration
-        """
-        raise NotImplementedError("oops")
-
     def checkDedicatedYamlHasAutoZipUrl(self, expectedConfiguration):
         """
-        check that the dedicated yaml has the auto zip url configured properly, and warn about it if not
+        check that the dedicated yaml has the configuration we expect, and warn if not.
         """
         if self.config.dedicatedConfig.GameConfig.SharedDataURL == expectedConfiguration:
             log.debug(f"The dedicated yaml has the correct SharedDataURL configuration: '{self.config.dedicatedConfig.GameConfig.SharedDataURL}'.")
@@ -131,7 +172,9 @@ class EsmSharedDataServer:
             return content.replace(placeholder, "")
     
     def prepareIndexHtml(self):
-        # copy the index.template.html into the wwwroot folder and replace placeholders
+        """
+         copy the index.template.html into the wwwroot folder and replace placeholders
+        """
         wwwroot = Path(self.config.downloadtool.wwwroot).resolve()
         indexTemplateFilePath = Path("index.template.html").resolve()
         content = indexTemplateFilePath.read_text()
@@ -154,10 +197,22 @@ class EsmSharedDataServer:
         log.debug(f"Created index.html at '{indexFilePath}'")
 
     def moveSharedDataZipFilesToWwwroot(self, zipFiles: List[ZipFile]) -> List[ZipFile]:
+        """
+        move the zip files to the wwwroot folder
+        """
         wwwroot = Path(self.config.downloadtool.wwwroot).resolve()
 
         if not wwwroot.exists():
             FsTools.createDir(wwwroot)
+
+        # clean up directory first by deleting all zip files
+        filePattern = f"{wwwroot.resolve()}/*.zip"
+        files = glob.glob(pathname=filePattern)
+        for file in files:
+            filePath = Path(file)
+            if filePath.exists():
+                log.debug(f"Deleting old zip file at '{file}'")
+                FsTools.deleteFile(filePath)
 
         for zipFile in zipFiles:
             wwwrootZipFilePath = wwwroot.joinpath(zipFile.name).resolve()
@@ -224,6 +279,7 @@ class EsmSharedDataServer:
 
     def createSharedDataZipFiles(self, pathToScenarioFolder: Path) -> List[ZipFile]:
         # just using something smaller for debugging
+        # TODO
         pathToSharedDataFolder = pathToScenarioFolder.joinpath("SharedData")
         #pathToSharedDataFolder = pathToScenarioFolder.joinpath("SharedData/Content/Extras")
 
@@ -256,9 +312,9 @@ class EsmSharedDataServer:
         if self.config.downloadtool.useSharedDataURLFeature:
             # create auto zip from the folder
             subFolder = tempFolder.joinpath(cacheFolderName)
-            autoZipName = f"{self.config.downloadtool.autoZipName.split(".")[0]}_{time.strftime('%Y%m%d_%H%M%S')}.zip"
-            log.debug(f"Creating auto zip from folder '{subFolder}' with name '{autoZipName}'")
-            autoZipFile = self.createZipFile(subFolder, autoZipName)
+            generatedAutoZipName = f"{self.config.downloadtool.autoZipName.split(".")[0]}_{time.strftime('%Y%m%d_%H%M%S')}.zip"
+            log.debug(f"Creating auto zip from folder '{subFolder}' with name '{generatedAutoZipName}'")
+            autoZipFile = self.createZipFile(subFolder, generatedAutoZipName)
             zipFiles = [manualZipFile, autoZipFile]
         return zipFiles
 
@@ -270,21 +326,24 @@ class EsmSharedDataServer:
         zipfileSize = zipPath.stat().st_size
         return ZipFile(zipFileName, zipPath, zipfileSize, 0, None)
 
-    def increaseModificationTimestamps(self, cacheFolder):
+    def increaseModificationTimestamps(self, folder):
         """
-        increase the modification timestamps of all files in cachefolder by whatever value was set in the config
+        increase the modification timestamps of all files in given folder by whatever value was set in the config
         """
         timeDifference = self.config.downloadtool.timeToAddToModificationTimestamps
-        for root, dirs, files in os.walk(cacheFolder):
+        for root, dirs, files in os.walk(folder):
             for file in files:
                 path = os.path.join(root, file)
                 currentMTime = os.path.getmtime(path)
                 newMTime = currentMTime + timeDifference
                 os.utime(path, (newMTime, newMTime))
         timeDiffHuman = humanize.naturaldelta(timeDifference)
-        log.debug(f"Altered all files in cachefolder '{cacheFolder}', added {timeDiffHuman} to their last modified timestamps.")
+        log.debug(f"Altered all files in folder '{folder}', added {timeDiffHuman} to their last modified timestamps.")
     
     def serve(self, zipFiles: List[ZipFile]):
+        """
+        starts the httpd server using the different configurations for the given zipFiles
+        """
         wwwroot = Path(self.config.downloadtool.wwwroot).resolve()
         serverPort = self.config.downloadtool.serverPort
         handler = EsmHttpThrottledHandler
@@ -294,9 +353,9 @@ class EsmSharedDataServer:
         EsmHttpThrottledHandler.rateLimit = parse(self.config.downloadtool.rateLimit)
         EsmHttpThrottledHandler.zipFiles = zipFiles
 
-        if self.config.downloadtool.useSharedDataURLFeature:
-            autoZipFile = list(filter(lambda x: x.name != self.config.downloadtool.manualZipName, zipFiles))[0]
-            EsmHttpThrottledHandler.redirect = {"source": "GimmeTheSharedData", "destination": autoZipFile.name, "code": 301}
+        # if self.config.downloadtool.useSharedDataURLFeature:
+        #     autoZipFile = Tools.findZipFileByName(zipFiles, startsWith=self.config.downloadtool.autoZipName)
+        #     EsmHttpThrottledHandler.redirects = [{"source": "GimmeTheSharedData", "destination": autoZipFile.name, "code": 301}]
             
         try:
             with socketserver.ThreadingTCPServer(("", serverPort), handler) as httpd:

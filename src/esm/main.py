@@ -396,10 +396,11 @@ def toolClearDiscovered(dblocation, nodryrun, territory, showterritories, listfi
 
 @cli.command(name="tool-shareddata-server", short_help="starts a webserver to serve the shared data as a downloadable zip")
 @click.option('--resume', is_flag=True, help="if set, just resume the server, do not recreate data or change the configuration.")
-def toolSharedDataServer(resume=False):
+def toolSharedDataServer(resume):
     """This will start a webserver to serve the shared data of the configured scenario as a downloadable zip.\n
     \n    
-    The tool will recreate the zip every time it is started, the server will provide instructions at (/) and the download at the configured path.\n
+    The tool will recreate the zip every time it is started, unless you use resume. The server will provide instructions at (/)\n 
+    and the download at the configured path.\n
     Make sure to enable the "useSharedDataURLFeature" property in the configuration, if you want to use that feature with it.\n
     This can be started completely separate from the main server and will run in the background until you stop it via CTRL+C.\n
     \n
@@ -411,10 +412,11 @@ def toolSharedDataServer(resume=False):
 
 
 @cli.command(name="terminate-galaxy", short_help="creates a singularity to destroy everything")
-@click.option('--i-am-darkestwarrior', is_flag=True, help="forces termination and laughs about it")
+@click.option('--i-am-darkestwarrior', is_flag=True, help="forces termination with an evil laugh")
 @click.option('--i-am-vollinger', is_flag=True, help="quick and graceful shutdown")
 @click.option('--i-am-kreliz', is_flag=True, help="have some pancackes and a coffee instead")
-def terminateGalaxy(i_am_darkestwarrior, i_am_vollinger, i_am_kreliz):
+@click.option('--who-is-kr0n', is_flag=True, help="do not... oh look, a squirrel!")
+def terminateGalaxy(i_am_darkestwarrior, i_am_vollinger, i_am_kreliz, who_is_kr0n):
     """Beware, this function will ^w^w^w\n
     \n    
     Do not press CTRL+C!\n

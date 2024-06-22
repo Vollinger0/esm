@@ -125,7 +125,7 @@ class ZipFile:
     downloads: int = 0
     wwwrootPath: Path = None
 
-    def __init__(self, name: str, path: str, size: int, downloads: int, wwwrootPath: Path):
+    def __init__(self, name: str, path: str = None, size: int = 0, downloads: int = 0, wwwrootPath: Path = None):
         self.name = name
         self.path = path
         self.size = size
