@@ -39,7 +39,7 @@ paths:
   epmremoteclient: D:/Servers/Tools/esm/emprc/EmpyrionPrime.RemoteClient.Console.exe  # path to emprc, used to send commands to the server
   eah: D:/Servers/Empyrion/DedicatedServer/EmpyrionAdminHelper                        # path to EAH, for backing up its data
   steamcmd: D:/Servers/Tools/steamcmd/steamcmd.exe                                    # path to steamcmd for installs and updates of the game server
-foldernames:   # names of different folders, you probably do not need to change any of these
+foldernames:    # names of different folders, you probably do not need to change any of these
   games: Games
   backup: Backup
   playfields: Playfields
@@ -52,12 +52,12 @@ foldernames:   # names of different folders, you probably do not need to change 
   savegamemirrorpostfix: _Mirror
   savegametemplatepostfix: _Templates
   esmtests: esm-tests   # this folder will be used to conduct a few tests on the filesystem below the installation dir
-filenames:     # names of different files, you probably do not need to change any of these
+filenames:      # names of different files, you probably do not need to change any of these
   globaldb: global.db
   buildNumber: BuildNumber.txt
   dedicatedExe: EmpyrionDedicated.exe
   launcherExe: EmpyrionLauncher.exe
-communication:
+communication:  # configuration for the in-game communication
   announceSyncEvents: true                # if true, sync events (syncStart, syncEnd) will be announced in the chat
   announceSyncProbability: 0.3            # probability factor that a sync will be announced at all, this is to avoid it being too spammy. something between 0.0 and 1.0
   synceventname: '[0fa336]Hamster-News'   # the name to be used when announcing a sync on the server, may contain bb-code for colors and such
@@ -68,14 +68,16 @@ robocopy:
   options:         # options for the different robocopy operations
     move: /MOVE /E /np /ns /nc /nfl /ndl /mt /r:10 /w:10 /unicode
     copy: /MIR  /np /ns /nc /nfl /ndl /mt /r:10 /w:10 /unicode
-downloadtool:
-  serverPort: 27440                                     # port of the webserver to listen to. Make sure you this port is reachable from outside
-  maxGlobalBandwith: 50000000                           # max bandwith to use for the downloads globally in bytes, e.g. 50 MB/s
-  maxClientBandwith: 30000000                           # max bandwith to use for the download per client in bytes, eg. 30 MB/s
-  rateLimit: 10 per minute                              # rate limit of max allowed requests per ip address per time unit, e.g. '10 per minute' or '10 per hour'
-  useCustomCacheFolderName: false                       # if true, the custom folder name will be used, if false, the folder name will be generated with following pattern '{gamename}_{serverip}_{uniquegameid}'
-  customCacheFolderName: DediGame_127.0.0.1_123456789   # name of the folder included in the zip file, which will look something like 'DediGame_127.0.0.1_12346789', depending on gamename, server ip and unique game id
-  zipName: shareddata_copy_to_empyrion_saves_cache.zip  # The filename of the zip file that will be provided as download
-  timeToAddToModificationTimestamps: 43200              # how much time should be added to the modification timestamps of the files in the cache folder, so the game recognizes them as up to date. Should be 12 hours (default) or more.
-  wwwroot: wwwroot                                      # folder to use as wwwroot, where the download will be served from
-  tempFolder: temp                                      # temporary folder for creating the downloadable zip
+downloadtool:   # configuration for the shared data download tool
+  serverPort: 27440                                           # port of the webserver to listen to. Make sure this port is reachable from outside
+  maxGlobalBandwith: 50000000                                 # max bandwith to use for the downloads globally in bytes, e.g. 50 MB/s
+  maxClientBandwith: 30000000                                 # max bandwith to use for the download per client in bytes, e.g. 30 MB/s
+  rateLimit: 10 per minute                                    # rate limit of max allowed requests per ip address per time unit, e.g. '10 per minute' or '10 per hour'
+  useSharedDataURLFeature: false                              # if true, a zip for the SharedDataURL feature will be created, served and the dedicated yaml will be automatically edited.
+  autoZipName: SharedData.zip                                 # The filename of the zip file for the auto download of the SharedDataURL feature postfixed with _yyyymmdd_hhmmss so the client recognizes this as a new file on recreation.
+  useCustomCacheFolderName: false                             # if true, the custom folder name will be used, if false, the folder name will be generated with following pattern '{gamename}_{serverip}_{uniquegameid}'
+  customCacheFolderName: DediGame_127.0.0.1_123456789         # name of the folder included in the zip file, which will look something like 'DediGame_127.0.0.1_12346789', depending on gamename, server ip and unique game id
+  manualZipName: copy_shareddata_to_empyrion_saves_cache.zip  # The filename of the zip file that will be provided as manual download
+  timeToAddToModificationTimestamps: 43200                    # how much time should be added to the modification timestamps of the files in the cache folder, so the game recognizes them as up to date. Should be 12 hours (default) or more.
+  wwwroot: wwwroot                                            # folder to use as wwwroot, where the download will be served from
+  tempFolder: temp                                            # temporary folder for creating the downloadable zip

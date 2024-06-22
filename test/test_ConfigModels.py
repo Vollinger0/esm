@@ -116,7 +116,7 @@ class test_ConfigModels(unittest.TestCase):
         newModel = MainConfig.model_validate(test_ConfigModels.REQUIRED_MODEL)
         self.assertEqual(len(newModel.updates.additional), 0)
 
-        configFilePath = Path("esm-custom-config.yaml.example")
+        configFilePath = Path("esm-custom-config.example.yaml")
         with open(configFilePath, "r") as configFile:
             configContent = yaml.safe_load(configFile)
         newModel2 = MainConfig.model_validate(configContent)
