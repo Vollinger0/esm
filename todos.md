@@ -37,6 +37,7 @@
 - [ ] add a AI-powered chatbot, chatgpt-like that roleplays as a spacefaring hamster that reacts to player chat?
 
 ## done
+- [x] maybe the shared data tool could remove the shareddataurl property when it is shut down to make sure the server doesn't use it when its off.
 - [-] use http redirects to work around the issue of having to edit the dedicated yaml? It follows, but doesn't care.
 - [x] add support for the new shareddata-url feature once it is released and we know how it works
 - [x] read the id of the savegame data folder name for the savegame tool from the main dedicated log, once the game has started once.

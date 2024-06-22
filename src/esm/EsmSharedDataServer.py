@@ -4,7 +4,6 @@ import os
 import re
 import shutil
 import signal
-import socket
 import threading
 from typing import List
 import humanize
@@ -53,10 +52,14 @@ class EsmSharedDataServer:
         return ServiceRegistry.get(EsmDedicatedServer)
 
     def start(self):
+        if not self.config.downloadtool.useSharedDataURLFeature and self.config.dedicatedConfig.GameConfig.SharedDataURL is not None:
+            if self.config.dedicatedConfig.GameConfig.SharedDataURL.startswith(f"_http://{Tools.getOwnIp(self.config)}:"):
+                log.warn(f"The SharedDataURL seems to point to the shared data tool, but the useSharedDataURLFeature toggle is set to false. Please check the configuration of the downloadtool.")
+
         scenarioName = self.config.dedicatedConfig.GameConfig.CustomScenario
         pathToScenarioFolder = Path(f"{self.config.paths.install}/Content/Scenarios/{scenarioName}").resolve()
 
-        log.info(f"Creating new manual shared data zip file from the current configured scenario at '{pathToScenarioFolder}' for manual download.")
+        log.info(f"Creating new shared data zip files from the current configured scenario at '{pathToScenarioFolder}' for download.")
         zipFiles = self.createSharedDataZipFiles(pathToScenarioFolder)
         zipFiles = self.moveSharedDataZipFilesToWwwroot(zipFiles)
 
@@ -80,14 +83,17 @@ class EsmSharedDataServer:
 
         if self.config.downloadtool.useSharedDataURLFeature:
             autoZipFile = list(filter(lambda x: x.name != self.config.downloadtool.manualZipName, zipFiles))[0]
-            sharedDataUrl = f"{servingUrlRoot}/{self.config.downloadtool.autoZipName}"
-            sharedDataUrlRedirectTarget = f"{servingUrlRoot}/{autoZipFile.name}"
-            log.info(f"Shared data zip file for server is at: '{sharedDataUrl}' which points to '{sharedDataUrlRedirectTarget}'")
+            sharedDataUrl = f"{servingUrlRoot}/{autoZipFile.name}"
+            log.info(f"Shared data zip file for server is at: '{sharedDataUrl}'")
 
+            self.configService.backupDedicatedYaml()
             # actually alter the dedicated.yaml, changing or adding the shareddataurl to what we just created
             sharedDataUrl = f"_{sharedDataUrl}"
+            self.configService.changeSharedDataUrl(sharedDataUrl)
+
             # check if the configuration of the dedicated yaml (we will not make any changes to it) has the auto zip url configured properly
             self.checkDedicatedYamlHasAutoZipUrl(sharedDataUrl)
+            log.warn(f"The dedicated yaml has been updated to point to the shared data tool, make sure to restart the server to make it take effect!")
 
         def NoOp(*args):
             raise KeyboardInterrupt()
@@ -99,6 +105,10 @@ class EsmSharedDataServer:
             log.info(f"SharedData server shutting down.")
         finally:
             log.info(f"SharedData server stopped serving. Total downloads: {ThrottledHandler.globalZipDownloads}")
+            
+            if self.config.downloadtool.useSharedDataURLFeature:
+                self.configService.rollbackDedicatedYaml()
+                log.warn(f"The dedicated yaml has been rolled back to its original state, make sure to restart the server for it take effect!")
 
     def checkDedicatedYamlHasAutoZipUrl(self, expectedConfiguration):
         """
@@ -141,6 +151,9 @@ class EsmSharedDataServer:
 
     def moveSharedDataZipFilesToWwwroot(self, zipFiles: List[ZipFile]) -> List[ZipFile]:
         wwwroot = Path(self.config.downloadtool.wwwroot).resolve()
+
+        if wwwroot.exists():
+            FsTools.deleteDir(wwwroot, recursive=True)
         if not wwwroot.exists():
             FsTools.createDir(wwwroot)
 
@@ -209,8 +222,8 @@ class EsmSharedDataServer:
 
     def createSharedDataZipFiles(self, pathToScenarioFolder: Path) -> List[ZipFile]:
         # just using something smaller for debugging
-        #pathToSharedDataFolder = pathToScenarioFolder.joinpath("SharedData/Content/Extras")
-        pathToSharedDataFolder = pathToScenarioFolder.joinpath("SharedData")
+        #pathToSharedDataFolder = pathToScenarioFolder.joinpath("SharedData")
+        pathToSharedDataFolder = pathToScenarioFolder.joinpath("SharedData/Content/Extras")
 
         if not pathToSharedDataFolder.exists():
             log.warning(f"Path to the shared data in the games scenario folder '{pathToSharedDataFolder}' does not exist. Please check the configuration.")
@@ -270,7 +283,6 @@ class EsmSharedDataServer:
         log.debug(f"Altered all files in cachefolder '{cacheFolder}', added {timeDiffHuman} to their last modified timestamps.")
     
     def serve(self, zipFiles: List[ZipFile]):
-
         wwwroot = Path(self.config.downloadtool.wwwroot).resolve()
         serverPort = self.config.downloadtool.serverPort
         handler = ThrottledHandler
@@ -278,7 +290,6 @@ class EsmSharedDataServer:
         ThrottledHandler.globalBandwidthLimit = self.config.downloadtool.maxGlobalBandwith
         ThrottledHandler.clientBandwidthLimit = self.config.downloadtool.maxClientBandwith
         ThrottledHandler.rateLimit = parse(self.config.downloadtool.rateLimit)
-        ThrottledHandler.autoZipPath = self.config.downloadtool.autoZipName
         ThrottledHandler.zipFiles = zipFiles
         try:
             with socketserver.ThreadingTCPServer(("", serverPort), handler) as httpd:
@@ -329,24 +340,13 @@ class ThrottledHandler(http.server.SimpleHTTPRequestHandler):
             return True
         return False
     
-    def redirectSharedDataUrlToAutozip(self):
-        filename = self.path[1:]
-        if filename == self.autoZipPath:
-            zipFileNameNoExt = self.autoZipPath.split(".")[0]
-            autoZipFile = list(filter(lambda x: x.name.startswith(zipFileNameNoExt), self.zipFiles))[0]
-            #self.send_response_only(302)
-            self.send_response_only(301)
-            self.send_header("Location", f"/{autoZipFile.name}")
-            self.end_headers()
-            return True
-        return False
-    
     def redirectToIndex(self):
         filename = self.path[1:]
         if filename == "":
             self.send_response_only(301)
             self.send_header("Location", "/index.html")
             self.end_headers()
+            self.log_request(301)
             return True
         return False
     
@@ -371,7 +371,6 @@ class ThrottledHandler(http.server.SimpleHTTPRequestHandler):
         return False
     
     def do_HEAD(self) -> None:
-        if self.redirectSharedDataUrlToAutozip(): return
         if self.pathNotInWhitelist(): return
         if self.fileDoesNotExist(): return
         
@@ -381,7 +380,6 @@ class ThrottledHandler(http.server.SimpleHTTPRequestHandler):
 
     def do_GET(self) -> None:
         if self.redirectToIndex(): return
-        if self.redirectSharedDataUrlToAutozip(): return
         if self.hitRateLimit(): return
         if self.pathNotInWhitelist(): return
         if self.fileDoesNotExist(): return
@@ -417,7 +415,7 @@ class ThrottledHandler(http.server.SimpleHTTPRequestHandler):
         log.info(f"Client {self.client_address} successfully downloaded the file '{zipFile.name}' in '{humanize.naturaldelta(timer.elapsedTime)}', speed '{humanize.naturalsize(downloadspeed, gnu=False)}/s'. ({zipFile.downloads} specific downloads, {ThrottledHandler.globalZipDownloads} total downloads)")
 
     def throttle_copy(self, source, outputfile, limit):
-        bufsize = 8192 # the smaller, the more often we'll iterate through here
+        bufsize = 8192 # the smaller, the more often we'll iterate through here so don't use a too small value
         bytesSent = 0
         startTime = time.time()
         while True:

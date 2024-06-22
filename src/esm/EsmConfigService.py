@@ -1,15 +1,16 @@
 import logging
+import os
 from typing import List
 import yaml
 from functools import cached_property
 from pathlib import Path
 from esm.ConfigModels import DediConfig, MainConfig
 from esm.DataTypes import Territory
+from esm.FsTools import FsTools
 from esm.exceptions import AdminRequiredException
 from esm.ServiceRegistry import Service, ServiceRegistry
 from esm.Tools import mergeDicts
 from ruamel.yaml import YAML
-from ruamel.yaml.scalarstring import LiteralScalarString
 
 log = logging.getLogger(__name__)
 
@@ -73,9 +74,27 @@ class EsmConfigService:
             log.error(f"Could not find install dir at  '{mainConfig.paths.install}'. Are you sure the config is correct?")
             raise AdminRequiredException(f"Could not find install dir at  '{mainConfig.paths.install}'. Are you sure the config is correct?")
         
-    def updateYamlProperty(self, filePath: Path, propertyPath, newValue):
+    def backupDedicatedYaml(self):
         """
-        updates a property in a yaml file, preserving its structure as much as possible
+        Backs up the dedicated.yaml file in the install directory.
+        """
+        dedicatedYamlPath = self.config.paths.install.joinpath(self.config.server.dedicatedYaml)
+        dedicatedYamlBackupPath = dedicatedYamlPath.with_suffix(".bak")
+        if dedicatedYamlPath.exists():
+            FsTools.copyFile(source=dedicatedYamlPath, destination=dedicatedYamlBackupPath)
+
+    def rollbackDedicatedYaml(self):
+        """
+        Rolls back the dedicated.yaml file from the backup in the install directory
+        """
+        dedicatedYamlPath = self.config.paths.install.joinpath(self.config.server.dedicatedYaml)
+        dedicatedYamlBackupPath = dedicatedYamlPath.with_suffix(".bak")
+        if dedicatedYamlBackupPath.exists():
+            FsTools.copyFile(source=dedicatedYamlBackupPath, destination=dedicatedYamlPath)
+        
+    def upsertYamlProperty(self, filePath: Path, propertyPath, newValue):
+        """
+        updates or inserts a property in a yaml file, preserving its structure as much as possible
         """
         yaml = YAML(typ="rt", pure=True)
         yaml.preserve_quotes = True
@@ -94,6 +113,41 @@ class EsmConfigService:
         with open(filePath, 'w') as file:
             yaml.dump(data, file)
 
+    def commentOutYamlProperty(self, filePath: Path, propertyPath, valueToMatch):
+        """
+        comments out a property in a yaml file, preserving its structure as much as possible
+        """
+        yaml = YAML(typ="rt", pure=True)
+        yaml.preserve_quotes = True
+
+        # Parse the dot-notation key path into a list
+        key_path_list = propertyPath.split('.')
+
+        with open(filePath, 'r') as file:
+            data = yaml.load(file)
+
+        def comment_key_path(d, key_path_list, value_to_match):
+            if not key_path_list:
+                return
+            for key in key_path_list[:-1]:
+                if isinstance(d, dict) and key in d:
+                    d = d[key]
+                else:
+                    return  # Path not found, do nothing
+            final_key = key_path_list[-1]
+            if isinstance(d, dict) and final_key in d and d[final_key] == value_to_match:
+                # Comment out the key
+                value = d[final_key]
+                d.yaml_set_comment_before_after_key(final_key, before=f"# {final_key}: {value}")
+                d.pop(final_key)
+
+        comment_key_path(data, key_path_list, valueToMatch)
+
+        temp_file_path = f"{filePath}.tmp"
+        with open(temp_file_path, 'w') as file:
+            yaml.dump(data, file)
+        os.replace(temp_file_path, filePath)
+
     def changeSharedDataUrl(self, newSharedDataUrl: str):
         """
         edits the dedicated yaml to add the shared data url
@@ -111,7 +165,7 @@ class EsmConfigService:
                 dedicatedYamlPath = self.config.server.dedicatedYaml
             if dedicatedYamlPath.exists():
                 # replace the existing value of the shareddataurl with our new value, to do it in place, we'll only search&replace with regex by line
-                self.updateYamlProperty(dedicatedYamlPath, "GameConfig.SharedDataURL", newSharedDataUrl)
+                self.upsertYamlProperty(dedicatedYamlPath, "GameConfig.SharedDataURL", newSharedDataUrl)
                 # reload dedicated yaml config
                 self.loadDedicatedYaml(self.config)
                 return
@@ -122,6 +176,39 @@ class EsmConfigService:
             log.error(f"Could not find install dir at  '{self.config.paths.install}'. Are you sure the config is correct?")
             raise AdminRequiredException(f"Could not find install dir at  '{self.config.paths.install}'. Are you sure the config is correct?")
         
+    def commentOutSharedDataUrl(self, sharedDataUrl: str):
+        """
+        edits the dedicated yaml to comment out the shared data url if it contains the given shared data url
+        """
+        if self.config.dedicatedConfig.GameConfig.SharedDataURL is None:
+            log.info(f"There is no SharedDataURL configured in the dedicated yaml, nothing to comment out")
+            return False
+
+        if self.config.dedicatedConfig.GameConfig.SharedDataURL != sharedDataUrl:
+            log.info(f"There is a SharedDataURL configured, but it is not the one that was autoconfigured, so we won't edit it.")
+            return False
+
+        if self.config.paths.install.exists():
+            dedicatedYamlPath = self.config.paths.install.joinpath(self.config.server.dedicatedYaml)
+
+            # override extending install dir - for testing.
+            if self.searchDedicatedYamlLocal:
+                dedicatedYamlPath = self.config.server.dedicatedYaml
+            if dedicatedYamlPath.exists():
+                # replace the existing value of the shareddataurl with our new value, to do it in place, we'll only search&replace with regex by line
+                self.commentOutYamlProperty(dedicatedYamlPath, "GameConfig.SharedDataURL", sharedDataUrl)
+
+                # reload dedicated yaml config
+                self.loadDedicatedYaml(self.config)
+                return
+            else:
+                log.error(f"Could not read dedicated.yaml from path '{dedicatedYamlPath}'. Are you sure the path is correct?")
+                raise AdminRequiredException(f"Could not read dedicated.yaml from path '{dedicatedYamlPath}'. Are you sure the path is correct?")
+        else:
+            log.error(f"Could not find install dir at  '{self.config.paths.install}'. Are you sure the config is correct?")
+            raise AdminRequiredException(f"Could not find install dir at  '{self.config.paths.install}'. Are you sure the config is correct?")
+
+
     def setConfigFilePath(self, configFilePath: Path, searchDedicatedYamlLocal=False):
         """
         Set the path to the config file.
