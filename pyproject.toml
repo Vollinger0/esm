@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "esm"
 version = "0.3.8"
-description = "Your ESM command-line tool for managing a empyrion galactic survival server like a pro"
+description = "Your ESM command-line tool for managing an empyrion galactic survival server like a pro"
 authors = [ {name = "Vollinger"} ]
 license = { file = "LICENSE" }
 readme = "readme.md"
