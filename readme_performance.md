@@ -50,14 +50,21 @@ The `esm scenario-update` command will make sure this does not happen and will u
 
 ### The Shared Data Server Tool
 To overcome the bandwidth limit and avoid that players already on the server get network issues due to other players downloading the shared data, this tool will work around this problem.
-The tool `esm tool-shareddata-server` will automatically generate a manual download zip file from the current shared data folder of the running scenario and serve them in a custom http webserver especially written for that. With this, you can provide your players an alternative way to download the shared data without being limited by the gameservers bandwith limitation. They'll have to unpack that shared data into their game installation manually though.
+The tool `esm tool-shareddata-server` will automatically generate a manual download zip file from the current shared data folder of the running scenario and serve them in a custom http webserver especially written for that. With this, you can provide your players an alternative way to download the shared data without being limited by empyrion's limitations. They'll have to unpack that shared data into their game installation manually though.
 
-Since Empyrion v1.11.7, the server now also supports a similar feature, where an admin can configure the SharedDataURL to externalize the client download for the shared data. For this to work, the shared-data-tool will offer another zip file of the shared data that you can configure in your dedicated yaml, make sure to add it with a leading underscore like follows, to prevent the game to try to find the download url itself, since it will fail.
+Since Empyrion v1.11.7, the game server now also supports a rather dangerous feature, where an admin can configure the SharedDataURL to externalize the client download for the shared data, but you have to create the zipfile with the correct structure yourself and add the correct configuration. If there are game or scenario updates, you have to repeat that and make sure the url changes.
+Be aware though:
+### IF THE ZIPFILE AND THE SERVER SCENARIO ARE NOT IDENTICAL IT WILL BREAK THE GAME ON THE CLIENTS
+### If the URL did NOT change even though the file did, the game clients will NOT download the file AT ALL AND BREAK THE GAME FOR THE CLIENTS
+### IF the url is not reachable for some reason, the game clients will NOT download the file AND BREAK THE GAME FOR THE CLIENTS
+### you have to recreate that file on EVERY game or scenario change, no matter if its only a typo
+
+ESM will automate this for you to minimize those erros. The shared-data-tool will serve another zip file of the shared data behind a http redirect path that will lead to a file with changing filename, since its url needs to be changed every time the file is recreated. It will look like this `SharedData_20240621_235959.zip`. The configuration for the SharedDataURL should look like this:
 ```
-  SharedDataURL: _http://123.456.789.123:12345/SharedData.zip  # replace ip with serverd url from the logs of the tool
+  SharedDataURL: _http://123.456.789.123:12345/SharedData.zip
 ```
-If you change the name of the so-called auto-zip (autoZipName), make sure to update the dedicated yaml aswell, esm will warn you if the configurations do not match.
-**If you use this feature, make sure to have the shared-data-tool server started when serving the game**. Restart it on scenario or game updates, so the zips get recreated.
+### If you use this feature, make sure to have the shared-data-tool server started when serving the game.**
+ESM will check this for you and will **not** start if there is a shared data url configured that is not reachable.
 
 Since the webserver will run on the same server as the game and probably be publicly available, it has a sophisticated configuration to limit the bandwith/connection aswell as the global bandwith used. It also includes several security measures like a rate limiter and an internal whitelist for paths.
 If your server connection supports e.g. 100 MB/s, you can limit the webserver to not use more than e.g. 50MB/s, to make sure the running gameserver network throughput is not affected and the game doesn't lag out the players due to the downloads. If you so desire, you can also limit the bandwith per connection, to make sure that nobody can occupy the whole bandwith. Although this shouldn't take more than 10 seconds, since shared data can't possibly be bigger than 500 MB (current scenario size limit). You can also rate-limit the amount of requests per minute per IP, to avoid simple DoS-attacks (default: 10/m). Check the `esm-default-config.example.yaml` for all configuration options, especially configure the port that is publicly available for your server, since the game clients of your players will need to connect to that.

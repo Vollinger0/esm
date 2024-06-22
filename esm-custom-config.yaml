@@ -13,7 +13,7 @@ server:
 
 ramdisk:
   size: "1G"
-  synchronizeRamToMirrorInterval: 60
+  synchronizeRamToMirrorInterval: 360
 
 communication:
   announceSyncProbability: 0.1
@@ -44,7 +44,7 @@ deletes:
     - 'Content/Mods/EncryptoidModPack/Mods/AdminTetherport/Database'
     
 downloadtool:
-  autoZipName: "SharedData3.zip"
+  useSharedDataURLFeature: True
 
 galaxy:
   territories: #faction Territory Definitions (look up their definitions in the file "$scenario/Content/Configuration/GalaxyConfig.ecf" of your scenario)

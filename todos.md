@@ -1,10 +1,12 @@
 # TODOS
 
 ## WIP
-- [+] add support for the new shareddata-url feature once it is released and we know how it works
-- [ ] add support for the tool to run along with the shared-data-server, without having to start it separatedly?
 
 ## later
+- [ ] add support for the tool to run along with the shared-data-server, without having to start it separatedly
+  - for this, we have to ensure the shared data zip is only created when there were relevant changes in the shared data, otherwise every restart would lead to redownloads.
+  - we would need to compare if there are changes and what size the changes are (to avoid having to redownload everything when only a single file changed)
+  - a configurable treshold for change size in MB at what point it makes sense to enable the shareddataurl or keep the old method.
 - [ ] read the territory config from the galaxyconfig.ecf ourselves. Search for "Child Territory" - Blocks.
 - [+] fix all FS-modifying tests to use the test fixture of the usually existing ramdisk (R:)
 - [ ] implement allowMultpleServerInstances switch? Once enabled, do not check for instances of the game before starting, do not start if startmode is set to direct, etc.
@@ -35,6 +37,8 @@
 - [ ] add a AI-powered chatbot, chatgpt-like that roleplays as a spacefaring hamster that reacts to player chat?
 
 ## done
+- [-] use http redirects to work around the issue of having to edit the dedicated yaml? It follows, but doesn't care.
+- [x] add support for the new shareddata-url feature once it is released and we know how it works
 - [x] read the id of the savegame data folder name for the savegame tool from the main dedicated log, once the game has started once.
   * see logfile and search for the "UniqueId" when the game logs something like: 23-01:04:31.793 18_04 -LOG- Mode=currentQuery, GameSeed=8979695, UniqueId=931593376, EntityId=1001
   * it may be necessary to find the proper logfile first though, since the logs are not related to the savegame

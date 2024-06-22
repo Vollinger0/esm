@@ -142,10 +142,14 @@ class DownloadToolConfig(BaseModel):
     maxGlobalBandwith: int = Field(50*1000*1000, description="max bandwith to use for the downloads globally in bytes, e.g. 50 MB/s")
     maxClientBandwith: int = Field(30*1000*1000, description="max bandwith to use for the download per client in bytes, e.g. 30 MB/s")
     rateLimit: str = Field("10 per minute", description="rate limit of max allowed requests per ip address per time unit, e.g. '10 per minute' or '10 per hour'")
-    autoZipName: str = Field("SharedData.zip", description="The filename of the zip file for the auto download.")
+
+    useSharedDataURLFeature: bool = Field(False, description="if true, a zip for the SharedDataURL feature will be created, served and the dedicated yaml will be automatically edited.")
+    autoZipName: str = Field("SharedData.zip", description="The url path of the zip file for the auto download for the SharedDataURL feature redirecting to the actual file which will have that name postfixed with _yyyymmdd_hhmmss so the client recognize this as a new file.")
+
     useCustomCacheFolderName: bool = Field(False, description="if true, the custom folder name will be used, if false, the folder name will be generated with following pattern '{gamename}_{serverip}_{uniquegameid}'")
     customCacheFolderName: str = Field("DediGame_127.0.0.1_123456789", description="name of the folder included in the zip file, which will look something like 'DediGame_127.0.0.1_12346789', depending on gamename, server ip and unique game id")
     manualZipName: str = Field("shareddata_copy_to_empyrion_saves_cache.zip", description="The filename of the zip file that will be provided as manual download")
+
     timeToAddToModificationTimestamps: int = Field(43200, description="how much time should be added to the modification timestamps of the files in the cache folder, so the game recognizes them as up to date. Should be 12 hours (default) or more.")
     wwwroot: str = Field("wwwroot", description="folder to use as wwwroot, where the download will be served from")
     tempFolder: str = Field("temp", description="temporary folder for creating the downloadable zip")

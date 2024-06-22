@@ -8,6 +8,8 @@ from esm.DataTypes import Territory
 from esm.exceptions import AdminRequiredException
 from esm.ServiceRegistry import Service, ServiceRegistry
 from esm.Tools import mergeDicts
+from ruamel.yaml import YAML
+from ruamel.yaml.scalarstring import LiteralScalarString
 
 log = logging.getLogger(__name__)
 
@@ -70,6 +72,55 @@ class EsmConfigService:
         else:
             log.error(f"Could not find install dir at  '{mainConfig.paths.install}'. Are you sure the config is correct?")
             raise AdminRequiredException(f"Could not find install dir at  '{mainConfig.paths.install}'. Are you sure the config is correct?")
+        
+    def updateYamlProperty(self, filePath: Path, propertyPath, newValue):
+        """
+        updates a property in a yaml file, preserving its structure as much as possible
+        """
+        yaml = YAML(typ="rt", pure=True)
+        yaml.preserve_quotes = True
+
+        with open(filePath, 'r') as file:
+            data = yaml.load(file)
+
+        keys = propertyPath.split('.')
+        d = data
+        for key in keys[:-1]:
+            if key not in d:
+                d[key] = {}
+            d = d[key]
+        d[keys[-1]] = newValue
+
+        with open(filePath, 'w') as file:
+            yaml.dump(data, file)
+
+    def changeSharedDataUrl(self, newSharedDataUrl: str):
+        """
+        edits the dedicated yaml to add the shared data url
+        """
+        if self.config.dedicatedConfig.GameConfig.SharedDataURL is not None:
+            log.info(f"There is a SharedDataURL configured in the dedicated yaml, will overwrite it: '{self.config.dedicatedConfig.GameConfig.SharedDataURL}' -> '{newSharedDataUrl}'")
+        else:
+            log.info(f"Adding the SharedDataURL property to the dedicated yaml: '{newSharedDataUrl}'")
+
+        if self.config.paths.install.exists():
+            dedicatedYamlPath = self.config.paths.install.joinpath(self.config.server.dedicatedYaml)
+
+            # override extending install dir - for testing.
+            if self.searchDedicatedYamlLocal:
+                dedicatedYamlPath = self.config.server.dedicatedYaml
+            if dedicatedYamlPath.exists():
+                # replace the existing value of the shareddataurl with our new value, to do it in place, we'll only search&replace with regex by line
+                self.updateYamlProperty(dedicatedYamlPath, "GameConfig.SharedDataURL", newSharedDataUrl)
+                # reload dedicated yaml config
+                self.loadDedicatedYaml(self.config)
+                return
+            else:
+                log.error(f"Could not read dedicated.yaml from path '{dedicatedYamlPath}'. Are you sure the path is correct?")
+                raise AdminRequiredException(f"Could not read dedicated.yaml from path '{dedicatedYamlPath}'. Are you sure the path is correct?")
+        else:
+            log.error(f"Could not find install dir at  '{self.config.paths.install}'. Are you sure the config is correct?")
+            raise AdminRequiredException(f"Could not find install dir at  '{self.config.paths.install}'. Are you sure the config is correct?")
         
     def setConfigFilePath(self, configFilePath: Path, searchDedicatedYamlLocal=False):
         """

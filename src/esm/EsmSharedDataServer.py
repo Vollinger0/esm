@@ -43,7 +43,11 @@ class EsmSharedDataServer:
 
     @cached_property
     def config(self) -> MainConfig:
-        return ServiceRegistry.get(EsmConfigService).config
+        return self.configService.config
+    
+    @cached_property
+    def configService(self) -> EsmConfigService:
+        return ServiceRegistry.get(EsmConfigService)
     
     def dedicatedServer(self) -> EsmDedicatedServer:
         return ServiceRegistry.get(EsmDedicatedServer)
@@ -62,18 +66,28 @@ class EsmSharedDataServer:
         self.prepareIndexHtml()
         # start webserver on configured port and serve the zip and also the index.html that explains how to handle the shared data
         myHostIp = Tools.getOwnIp(self.config)
-        servingUrlIndex = f"http://{myHostIp}:{self.config.downloadtool.serverPort}"
+        servingUrlRoot = f"http://{myHostIp}:{self.config.downloadtool.serverPort}"
         
         log.info(f"Server configured to allow max {humanize.naturalsize(self.config.downloadtool.maxGlobalBandwith, gnu=False)}/s in total network bandwidth.")
         log.info(f"Server configured to allow max {humanize.naturalsize(self.config.downloadtool.maxClientBandwith, gnu=False)}/s network bandwith per connection.")
         log.info(f"Started download server")
-        servingUrlManualZip = f"{servingUrlIndex}/{self.config.downloadtool.manualZipName}"
-        log.info(f"Shared data zip file for manual download is at: '{servingUrlManualZip}' (instructions: '{servingUrlIndex}')")
-        servingUrlAutoZip = f"{servingUrlIndex}/{self.config.downloadtool.autoZipName}"
-        log.info(f"Shared data zip file for server is at: '{servingUrlAutoZip}'")
 
-        # check if the configuration of the dedicated yaml (we will not make any changes to it) has the auto zip url configured properly
-        self.checkDedicatedYamlHasAutoZipUrl(servingUrlAutoZip)
+        # get the manual zipfile from the zipfiles list
+        manualZipFile = list(filter(lambda x: x.name == self.config.downloadtool.manualZipName, zipFiles))[0]
+
+        servingUrlManualZip = f"{servingUrlRoot}/{manualZipFile.name}"
+        log.info(f"Shared data zip file for manual download is at: '{servingUrlManualZip}' (instructions: '{servingUrlRoot}')")
+
+        if self.config.downloadtool.useSharedDataURLFeature:
+            autoZipFile = list(filter(lambda x: x.name != self.config.downloadtool.manualZipName, zipFiles))[0]
+            sharedDataUrl = f"{servingUrlRoot}/{self.config.downloadtool.autoZipName}"
+            sharedDataUrlRedirectTarget = f"{servingUrlRoot}/{autoZipFile.name}"
+            log.info(f"Shared data zip file for server is at: '{sharedDataUrl}' which points to '{sharedDataUrlRedirectTarget}'")
+
+            # actually alter the dedicated.yaml, changing or adding the shareddataurl to what we just created
+            sharedDataUrl = f"_{sharedDataUrl}"
+            # check if the configuration of the dedicated yaml (we will not make any changes to it) has the auto zip url configured properly
+            self.checkDedicatedYamlHasAutoZipUrl(sharedDataUrl)
 
         def NoOp(*args):
             raise KeyboardInterrupt()
@@ -86,17 +100,15 @@ class EsmSharedDataServer:
         finally:
             log.info(f"SharedData server stopped serving. Total downloads: {ThrottledHandler.globalZipDownloads}")
 
-    def checkDedicatedYamlHasAutoZipUrl(self, servingUrlAutoZip):
+    def checkDedicatedYamlHasAutoZipUrl(self, expectedConfiguration):
         """
         check that the dedicated yaml has the auto zip url configured properly, and warn about it if not
         """
-        expectedConfiguration = f"_{servingUrlAutoZip}"
         if self.config.dedicatedConfig.GameConfig.SharedDataURL == expectedConfiguration:
-            log.info(f"The dedicated yaml has the correct SharedDataURL configuration: '{self.config.dedicatedConfig.GameConfig.SharedDataURL}'.")
+            log.debug(f"The dedicated yaml has the correct SharedDataURL configuration: '{self.config.dedicatedConfig.GameConfig.SharedDataURL}'.")
         else:
-            log.warn(f"The dedicated yaml has an incorrect SharedDataURL configuration: '{self.config.dedicatedConfig.GameConfig.SharedDataURL}'. Expected: '{expectedConfiguration}'")
             dedicatedYamlPath = Path(self.config.paths.install).joinpath(self.config.server.dedicatedYaml).resolve()
-            log.warn(f"Make sure to set the property 'GameConfig.SharedDataURL' to '{expectedConfiguration}' in the dedicated yaml at '{dedicatedYamlPath}'.")
+            log.warn(f"The dedicated yaml '{dedicatedYamlPath}' has an incorrect SharedDataURL configuration: '{self.config.dedicatedConfig.GameConfig.SharedDataURL}'. Expected: '{expectedConfiguration}'")
     
     def replaceInTemplate(self, content: str, placeholder, value):
         if value:
@@ -152,9 +164,10 @@ class EsmSharedDataServer:
         """
         # find gameserver logfile and extract unique game id
         buildNumber = self.dedicatedServer().getBuildNumber()
+        logFilePattern = "Dedicated_*.log"
         logFileDirectoryPath = self.config.paths.install.joinpath(f"Logs").joinpath(buildNumber).resolve()
-        log.debug(f"Trying to extract unique game id from logfiles in '{logFileDirectoryPath}'")
-        for possiblePath in glob.glob(root_dir=logFileDirectoryPath, pathname="Dedicated_*.log", recursive=True):
+        log.debug(f"Trying to extract unique game id from logfiles in '{logFileDirectoryPath}' with pattern '{logFilePattern}'")
+        for possiblePath in glob.glob(root_dir=logFileDirectoryPath, pathname=logFilePattern, recursive=True):
             logFilePath = Path(logFileDirectoryPath).joinpath(possiblePath).resolve()
             if logFilePath.exists():
                 log.debug(f"Trying to extract unique game id from logfile '{logFilePath}'")
@@ -164,7 +177,7 @@ class EsmSharedDataServer:
                             # extract unique game id from logline, which is the number after the 'UniqueId=' string
                             uniqueGameId = re.search(r"UniqueId=(\d+)", line).group(1)
                             return uniqueGameId
-        log.debug(f"Did not find unique game id in any of the Dedicated_*.log files in '{logFileDirectoryPath}'. You may need to start the server at least once so we can find out the id")
+        log.debug(f"Did not find unique game id in any of the {logFilePattern} files in '{logFileDirectoryPath}'. You may need to start the server at least once so esm can find out the id.")
         return None
     
     def getUniqueGameId(self):
@@ -223,13 +236,15 @@ class EsmSharedDataServer:
         # create manual zip from the cacheFolder
         log.debug(f"Creating manual zip from tempFolder '{tempFolder}' with name '{self.config.downloadtool.manualZipName}'")
         manualZipFile = self.createZipFile(tempFolder, self.config.downloadtool.manualZipName)
+        zipFiles = [manualZipFile]
 
-        # create auto zip from the folder
-        subFolder = tempFolder.joinpath(cacheFolderName)
-        log.debug(f"Creating auto zip from folder '{subFolder}' with name '{self.config.downloadtool.autoZipName}'")
-        autoZipFile = self.createZipFile(subFolder, self.config.downloadtool.autoZipName)
-
-        zipFiles = [manualZipFile, autoZipFile]
+        if self.config.downloadtool.useSharedDataURLFeature:
+            # create auto zip from the folder
+            subFolder = tempFolder.joinpath(cacheFolderName)
+            autoZipName = f"{self.config.downloadtool.autoZipName.split(".")[0]}_{time.strftime('%Y%m%d_%H%M%S')}.zip"
+            log.debug(f"Creating auto zip from folder '{subFolder}' with name '{autoZipName}'")
+            autoZipFile = self.createZipFile(subFolder, autoZipName)
+            zipFiles = [manualZipFile, autoZipFile]
         return zipFiles
 
     def createZipFile(self, folder: Path, zipFileName):
@@ -263,6 +278,7 @@ class EsmSharedDataServer:
         ThrottledHandler.globalBandwidthLimit = self.config.downloadtool.maxGlobalBandwith
         ThrottledHandler.clientBandwidthLimit = self.config.downloadtool.maxClientBandwith
         ThrottledHandler.rateLimit = parse(self.config.downloadtool.rateLimit)
+        ThrottledHandler.autoZipPath = self.config.downloadtool.autoZipName
         ThrottledHandler.zipFiles = zipFiles
         try:
             with socketserver.ThreadingTCPServer(("", serverPort), handler) as httpd:
@@ -295,62 +311,82 @@ class ThrottledHandler(http.server.SimpleHTTPRequestHandler):
     # contains the list zip files to handle
     zipFiles = []
 
+    # path that will redirect to the autozip
+    autoZipPath = "SharedData.zip"
+
     # allowed default assets for downloads
     defaultAssets = ['index.html', 'favicon.ico', 'styles.css']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=ThrottledHandler.rootDirectory, **kwargs)
 
-    def do_HEAD(self) -> None:
-        log.debug(f"client {self.client_address[0]}, method {self.command}, path '{self.path}', headers {self.headers}, request_version {self.request_version}")
-        return super().do_HEAD()
-    
-    def do_POST(self) -> None:
-        log.debug(f"client {self.client_address[0]}, method {self.command}, path '{self.path}', headers {self.headers}, request_version {self.request_version}")
-        return super().do_POST()
-    
-    def do_PUT(self) -> None:
-        log.debug(f"client {self.client_address[0]}, method {self.command}, path '{self.path}', headers {self.headers}, request_version {self.request_version}")
-        return super().do_PUT()
-    
-    def do_DELETE(self) -> None:
-        log.debug(f"client {self.client_address[0]}, method {self.command}, path '{self.path}', headers {self.headers}, request_version {self.request_version}")
-        return super().do_DELETE()
-    
-    def do_GET(self) -> None:
+    def hitRateLimit(self):
         client_ip = self.client_address[0]
-        log.debug(f"client {client_ip}, method {self.command}, path '{self.path}', headers {self.headers}, request_version {self.request_version}")
-
         # rate limit check, send 429 if the client is trying to make too many requests
         if not self.rateLimiter.hit(self.rateLimit, "global", client_ip):
             self.send_error(429, f"Rate limit exceeded. Go away.")
             log.warn(f"client ip {client_ip} exceeded the rate limit, requested path '{self.path}'")
-            return
-        
+            return True
+        return False
+    
+    def redirectSharedDataUrlToAutozip(self):
+        filename = self.path[1:]
+        if filename == self.autoZipPath:
+            zipFileNameNoExt = self.autoZipPath.split(".")[0]
+            autoZipFile = list(filter(lambda x: x.name.startswith(zipFileNameNoExt), self.zipFiles))[0]
+            #self.send_response_only(302)
+            self.send_response_only(301)
+            self.send_header("Location", f"/{autoZipFile.name}")
+            self.end_headers()
+            return True
+        return False
+    
+    def redirectToIndex(self):
         filename = self.path[1:]
         if filename == "":
             self.send_response_only(301)
             self.send_header("Location", "/index.html")
             self.end_headers()
-            return
-
+            return True
+        return False
+    
+    def pathNotInWhitelist(self):
+        filename = self.path[1:]
         zipFileNames = [x.name for x in ThrottledHandler.zipFiles]
         if filename not in ThrottledHandler.defaultAssets and filename not in zipFileNames:
-            #self.send_error(404, "There's nothing else to see here. Go away.")
             self.send_response_only(404, "There's nothing else to see here. Go away.")
             self.end_headers()
             self.log_request(404)
-            return
-
+            return True
+        return False
+    
+    def fileDoesNotExist(self):
         file = self.directory + self.path
         if not Path(file).exists():
-            #self.send_error(404, "Didn't find a thing.")
             self.send_response_only(404, "Didn't find a thing.")
             self.end_headers()
             self.log_request(404)
             log.warn(f"file '{file}' not found, but is listed as default asset, make sure its still there.")
-            return
+            return True
+        return False
+    
+    def do_HEAD(self) -> None:
+        if self.redirectSharedDataUrlToAutozip(): return
+        if self.pathNotInWhitelist(): return
+        if self.fileDoesNotExist(): return
         
+        self.send_response_only(200, "OK")
+        self.end_headers()
+        self.log_request(200)
+
+    def do_GET(self) -> None:
+        if self.redirectToIndex(): return
+        if self.redirectSharedDataUrlToAutozip(): return
+        if self.hitRateLimit(): return
+        if self.pathNotInWhitelist(): return
+        if self.fileDoesNotExist(): return
+
+        file = self.directory + self.path
         try:
             return super().do_GET()
         except Exception as ex:

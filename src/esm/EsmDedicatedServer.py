@@ -3,11 +3,12 @@ import time
 import logging
 import psutil
 import re
+import requests
 from functools import cached_property
 from pathlib import Path, PurePath
 from datetime import datetime
 from esm.ConfigModels import MainConfig
-from esm.exceptions import AdminRequiredException
+from esm.exceptions import AdminRequiredException, SafetyException
 from esm.EsmConfigService import EsmConfigService
 from esm.EsmEpmRemoteClientService import EsmEpmRemoteClientService
 from esm.EsmRamdiskManager import EsmRamdiskManager
@@ -56,6 +57,8 @@ class EsmDedicatedServer:
             self.ramdiskManager.existsRamdisk()
         if checkForDiskSpace:
             self.assertEnoughFreeDiskspace()
+
+        self.assertSharedDataURLIsAvailable()
 
         if (self.config.server.startMode == StartMode.DIRECT):
             log.debug(f"startMode is {StartMode.DIRECT}")
@@ -322,3 +325,29 @@ class EsmDedicatedServer:
             raise AdminRequiredException("Space on the drive is running out, will not start up the server to prevent savegame corruption")
         return True
     
+    def assertSharedDataURLIsAvailable(self):
+        """
+        make sure the shared data url is available, raise an error if not because this will break the game
+        """
+        if self.config.dedicatedConfig.GameConfig.SharedDataURL is not None:
+            url = self.config.dedicatedConfig.GameConfig.SharedDataURL
+            if not re.match(pattern="_?https?://", string=url):
+                raise AdminRequiredException(f"The shared data url {url} must start with (_)http:// or (_)https:// - the invalid URL could break the game clients. Will not start the server.")
+            if url.startswith("_"):
+                url = url[1:]
+            if self.isUrlAvailable(url):
+                log.info(f"There is a valid shared data url configured at '{url}' and it is available.")
+                return True
+            else:
+                raise AdminRequiredException(f"The configured shared data url '{url}' is not reachable. Either remove the SharedDataURL from the config, use the shareddata-server-tool or make sure the url is available.")
+        else:
+            log.debug(f"The shared data url {url} is not configured, everything is fine then.")
+
+    def isUrlAvailable(self, url):
+        try:
+            response = requests.head(url, timeout=10, allow_redirects=True)
+            if response.status_code == 200:
+                return True
+        except Exception as ex:
+            return False
+        return False

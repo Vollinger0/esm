@@ -23,6 +23,7 @@ Its meant to run fully automated, so you only need to configure it once, then se
 - everything is logged in console and logfiles, so you can always see what the scripts do, did and what happened when.
 - freely configurable in-game announcer for a few actions
 - special downloadserver as tool, that creates and serves the shared data folder as downloadable zip, see performance section
+- shared data tool that will automate the SharedDataURL feature by creating the zip automatically and offering it via the esm downloadserver
 
 ### Game maintenance / performance
 - wipe tool for wiping playfields with no player or player-owned terrain placeables or structures.
