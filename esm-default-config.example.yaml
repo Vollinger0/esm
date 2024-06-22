@@ -77,7 +77,7 @@ downloadtool:   # configuration for the shared data download tool
   autoZipName: SharedData.zip                                 # The filename of the zip file for the auto download of the SharedDataURL feature postfixed with _yyyymmdd_hhmmss so the client recognizes this as a new file on recreation.
   useCustomCacheFolderName: false                             # if true, the custom folder name will be used, if false, the folder name will be generated with following pattern '{gamename}_{serverip}_{uniquegameid}'
   customCacheFolderName: DediGame_127.0.0.1_123456789         # name of the folder included in the zip file, which will look something like 'DediGame_127.0.0.1_12346789', depending on gamename, server ip and unique game id
-  manualZipName: shareddata_copy_to_empyrion_saves_cache.zip  # The filename of the zip file that will be provided as manual download
+  manualZipName: copy_shareddata_to_empyrion_saves_cache.zip  # The filename of the zip file that will be provided as manual download
   timeToAddToModificationTimestamps: 43200                    # how much time should be added to the modification timestamps of the files in the cache folder, so the game recognizes them as up to date. Should be 12 hours (default) or more.
   wwwroot: wwwroot                                            # folder to use as wwwroot, where the download will be served from
   tempFolder: temp                                            # temporary folder for creating the downloadable zip
