@@ -90,7 +90,7 @@ class EsmSharedDataServer:
 
             # check if the configuration of the dedicated yaml (we will not make any changes to it) has the auto zip url configured properly
             self.checkDedicatedYamlHasAutoZipUrl(sharedDataUrl)
-            log.warn(f"The dedicated yaml has been updated to point to the shared data tool, make sure to restart the server to make it take effect!")
+            log.warn(f"The dedicated yaml has been updated to point to the shared data tool, make sure to restart the server for it to take effect!")
         
         log.info(f"Starting download server for {len(zipFiles)} zip files (excluding default assets).")
         def NoOp(*args):
@@ -106,7 +106,8 @@ class EsmSharedDataServer:
             
             if self.config.downloadtool.useSharedDataURLFeature:
                 self.configService.rollbackDedicatedYaml()
-                log.warn(f"The dedicated yaml has been rolled back to its original state, make sure to restart the server for it take effect!")
+                log.warn(f"The dedicated yaml has been rolled back to its original state, make sure to restart the server for it to take effect!")
+                
 
     def prepareZipFiles(self) -> List[ZipFile]:
         """
