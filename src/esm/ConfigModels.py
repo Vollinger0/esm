@@ -144,7 +144,7 @@ class DownloadToolConfig(BaseModel):
     rateLimit: str = Field("10 per minute", description="rate limit of max allowed requests per ip address per time unit, e.g. '10 per minute' or '10 per hour'")
 
     useSharedDataURLFeature: bool = Field(False, description="if true, a zip for the SharedDataURL feature will be created, served and the dedicated yaml will be automatically edited.")
-    autoZipName: str = Field("SharedData.zip", description="The url path of the zip file for the auto download for the SharedDataURL feature redirecting to the actual file which will have that name postfixed with _yyyymmdd_hhmmss so the client recognize this as a new file.")
+    autoZipName: str = Field("SharedData.zip", description="The filename of the zip file for the auto download of the SharedDataURL feature postfixed with _yyyymmdd_hhmmss so the client recognizes this as a new file on recreation.")
 
     useCustomCacheFolderName: bool = Field(False, description="if true, the custom folder name will be used, if false, the folder name will be generated with following pattern '{gamename}_{serverip}_{uniquegameid}'")
     customCacheFolderName: str = Field("DediGame_127.0.0.1_123456789", description="name of the folder included in the zip file, which will look something like 'DediGame_127.0.0.1_12346789', depending on gamename, server ip and unique game id")

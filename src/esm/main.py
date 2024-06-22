@@ -398,8 +398,8 @@ def toolClearDiscovered(dblocation, nodryrun, territory, showterritories, listfi
 def toolSharedDataServer():
     """This will start a webserver to serve the shared data of the configured scenario as a downloadable zip.\n
     \n    
-    The tool will recreate the zip every time it is started, the server will provide a help at (/) and the download at the configured path.\n
-    Make sure to configure the "cacheFolder" property in the configuration, since this needs to be similar to what the game clients would create.\n
+    The tool will recreate the zip every time it is started, the server will provide instructions at (/) and the download at the configured path.\n
+    Make sure to enable the "useSharedDataURLFeature" property in the configuration, if you want to use that feature with it.\n
     This can be started completely separate from the main server and will run in the background until you stop it via CTRL+C.\n
     \n
     """

@@ -222,8 +222,8 @@ class EsmSharedDataServer:
 
     def createSharedDataZipFiles(self, pathToScenarioFolder: Path) -> List[ZipFile]:
         # just using something smaller for debugging
-        #pathToSharedDataFolder = pathToScenarioFolder.joinpath("SharedData")
-        pathToSharedDataFolder = pathToScenarioFolder.joinpath("SharedData/Content/Extras")
+        pathToSharedDataFolder = pathToScenarioFolder.joinpath("SharedData")
+        #pathToSharedDataFolder = pathToScenarioFolder.joinpath("SharedData/Content/Extras")
 
         if not pathToSharedDataFolder.exists():
             log.warning(f"Path to the shared data in the games scenario folder '{pathToSharedDataFolder}' does not exist. Please check the configuration.")

@@ -73,7 +73,8 @@ downloadtool:   # configuration for the shared data download tool
   maxGlobalBandwith: 50000000                                 # max bandwith to use for the downloads globally in bytes, e.g. 50 MB/s
   maxClientBandwith: 30000000                                 # max bandwith to use for the download per client in bytes, e.g. 30 MB/s
   rateLimit: 10 per minute                                    # rate limit of max allowed requests per ip address per time unit, e.g. '10 per minute' or '10 per hour'
-  autoZipName: SharedData.zip                                 # The filename of the zip file for the auto download.
+  useSharedDataURLFeature: false                              # if true, a zip for the SharedDataURL feature will be created, served and the dedicated yaml will be automatically edited.
+  autoZipName: SharedData.zip                                 # The filename of the zip file for the auto download of the SharedDataURL feature postfixed with _yyyymmdd_hhmmss so the client recognizes this as a new file on recreation.
   useCustomCacheFolderName: false                             # if true, the custom folder name will be used, if false, the folder name will be generated with following pattern '{gamename}_{serverip}_{uniquegameid}'
   customCacheFolderName: DediGame_127.0.0.1_123456789         # name of the folder included in the zip file, which will look something like 'DediGame_127.0.0.1_12346789', depending on gamename, server ip and unique game id
   manualZipName: shareddata_copy_to_empyrion_saves_cache.zip  # The filename of the zip file that will be provided as manual download
