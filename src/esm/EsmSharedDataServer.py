@@ -140,10 +140,11 @@ class EsmSharedDataServer:
             # check if there are auto zip files, if so, add the latest
             filePattern = f"{wwwroot.resolve()}/{self.config.downloadtool.autoZipName.split(".")[0]}*.zip"
             files = glob.glob(pathname=filePattern)
-            path = Path(max(files, key=os.path.getmtime))
-            if path.exists():
-                log.info(f"Found auto shared data zip file '{path.name}'")
-                zipFiles.append(ZipFile(name=path.name, path=path, size=path.stat().st_size))
+            if len(files) > 0:
+                path = Path(max(files, key=os.path.getmtime))
+                if path.exists():
+                    log.info(f"Found auto shared data zip file '{path.name}'")
+                    zipFiles.append(ZipFile(name=path.name, path=path, size=path.stat().st_size))
 
         return zipFiles
 
