@@ -44,6 +44,6 @@ This tool logs in its own logfile.
 
 ### Recommendation
 I would recommend to use the shareddata-server at the beginning of a season, or on *big* scenario changes **only**. Turn it off when there are only minor changes. This will ensure that minor changes do NOT trigger a redownload of the whole file for all players, and still offers new players a quick enough way to get onto the server. For small changes, the old way (file-by-file sync trough the gameserver) is still good enough and faster.
-Remember that when you turn it off, all your players will have to redownload the newly created file.
+Remember that when you turn it on, all your players will have to redownload the newly created file.
 
 #### copyright by Vollinger 2023-2024
