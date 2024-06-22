@@ -782,8 +782,11 @@ class EsmMain:
 
         self.wipeService.wipeTool(systemAndPlayfieldNames, territory, wipetype, cleardiscoveredby, minage, dbLocationPath, dryrun)
 
-    def startSharedDataServer(self):
+    def startSharedDataServer(self, resume=False):
         """
         starts the shared data server
         """
-        self.sharedDataServer.start()
+        if resume:
+            self.sharedDataServer.resume()
+        else:
+            self.sharedDataServer.start()

@@ -1,6 +1,8 @@
 # TODOS
 
 ## WIP
+- [ ] find out if there is *any* information the client requests on the shared data server to see how we can implement it
+- [ ] resume mode / create mode for the shared data server to be able to control if we actually want to recreate the zip.
 
 ## later
 - [ ] add support for the tool to run along with the shared-data-server, without having to start it separatedly

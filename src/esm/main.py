@@ -395,7 +395,8 @@ def toolClearDiscovered(dblocation, nodryrun, territory, showterritories, listfi
 
 
 @cli.command(name="tool-shareddata-server", short_help="starts a webserver to serve the shared data as a downloadable zip")
-def toolSharedDataServer():
+@click.option('--resume', is_flag=True, help="if set, just resume the server, do not recreate data or change the configuration.")
+def toolSharedDataServer(resume=False):
     """This will start a webserver to serve the shared data of the configured scenario as a downloadable zip.\n
     \n    
     The tool will recreate the zip every time it is started, the server will provide instructions at (/) and the download at the configured path.\n
@@ -406,7 +407,7 @@ def toolSharedDataServer():
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)
         esm.setUpLogging(caller="esm-shareddata-server", streamLogLevel=EsmLogger.streamLogLevel, fileLogLevel=EsmLogger.fileLogLevel)
-        esm.startSharedDataServer()
+        esm.startSharedDataServer(resume)
 
 
 @cli.command(name="terminate-galaxy", short_help="creates a singularity to destroy everything")

@@ -329,21 +329,24 @@ class EsmDedicatedServer:
         """
         make sure the shared data url is available, raise an error if not because this will break the game
         """
-        if self.config.dedicatedConfig.GameConfig.SharedDataURL is not None:
-            url = self.config.dedicatedConfig.GameConfig.SharedDataURL
+        url = self.config.dedicatedConfig.GameConfig.SharedDataURL
+        if url is not None:
             if not re.match(pattern="_?https?://", string=url):
-                raise AdminRequiredException(f"The shared data url {url} must start with (_)http:// or (_)https:// - the invalid URL could break the game clients. Will not start the server.")
+                raise AdminRequiredException(f"The shared data url {url} must start with (_)http:// or (_)https:// - an invalid URL could break the game clients. Will not start the server.")
             if url.startswith("_"):
                 url = url[1:]
             if self.isUrlAvailable(url):
                 log.info(f"There is a valid shared data url configured at '{url}' and it is available.")
                 return True
             else:
-                raise AdminRequiredException(f"The configured shared data url '{url}' is not reachable. Either remove the SharedDataURL from the config, use the shareddata-server-tool or make sure the url is available.")
+                raise AdminRequiredException(f"The configured shared data url '{url}' is not reachable. Make sure the url is correct and reachable, use the shareddata-server-tool or remove the SharedDataURL from the config.")
         else:
-            log.debug(f"The shared data url {url} is not configured, everything is fine then.")
+            log.debug(f"The shared data url is not configured, everything is fine.")
 
     def isUrlAvailable(self, url):
+        """
+        check that a given url responds with a valid status code (following redirects, if there are any)
+        """
         try:
             response = requests.head(url, timeout=10, allow_redirects=True)
             if response.status_code == 200:
