@@ -22,7 +22,7 @@ Its meant to run fully automated, so you only need to configure it once, then se
 - almost all features, limits, timeouts and paths are configurable
 - everything is logged in console and logfiles, so you can always see what the scripts do, did and what happened when.
 - freely configurable in-game announcer for a few actions
-- special downloadserver as tool, that creates and serves the shared data folder as manually downloadable zip, see [performance section](readme_performance.md)
+- special downloadserver as tool, that creates and serves the shared data folder as manually downloadable zip, see [performance section](readme_performance.md) or the ...
 - [shareddata-server tool](readme_shareddata.md) that will automate the SharedDataURL feature by creating the zip automatically and serving it via the esm downloadserver
 
 ### Game maintenance / performance
