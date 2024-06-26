@@ -42,6 +42,14 @@ jobs:
         run: |
           gh release create v${{ github.ref_name }} dist/esm-${{ github.ref_name }}.zip
 
+      - name: Commit version changes to main branch
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          git add pyproject.toml
+          git commit -m "Update version number for next development iteration"
+          git push origin main
+
         # uses: softprops/action-gh-release@v1
         # with:
         #   files: dist/esm-${{ github.ref_name }}.zip

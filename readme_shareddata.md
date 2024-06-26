@@ -26,6 +26,10 @@ The shared-data-tool will serve another zip file of the shared data with a chang
 ### If you use this feature, make sure to have the shared-data-tool server started when serving the game and make sure to restart the game server whenever you started or stopped the data-tool.**
 ESM will check this for you on server start and will **ABORT** the server start if there is a shared data url configured that is **not** reachable to avoid having an invalid configuration.
 
+You can disable the automatic configuration in the dedicated yaml by setting `autoEditDedicatedYaml` to false in the config.
+You can override the automatic hostip and port generation by setting your own `customExternalHostNameAndPort`, which should look something like: 'https://my-server.com:12345'
+You can override the generation of the whole url and have esm set your own custom url by setting `customSharedDataURL`, which should look something like: 'https://my-server.com:54321/SharedData.zip'
+
 Since the webserver will run on the same server as the game and probably be publicly available, it has a sophisticated configuration to limit the bandwith/connection aswell as the global bandwith used. It also includes several security measures like a rate limiter and an internal whitelist for paths.
 If your server connection supports e.g. 100 MB/s, you can limit the webserver to not use more than e.g. 50MB/s, to make sure the running gameserver network throughput is not affected and the game doesn't lag out the players due to the downloads. If you so desire, you can also limit the bandwith per connection, to make sure that nobody can occupy the whole bandwith. Although this shouldn't take more than 10 seconds, since shared data can't possibly be bigger than 500 MB (current scenario size limit). You can also rate-limit the amount of requests per minute per IP, to avoid simple DoS-attacks (default: 10/m). Check the `esm-default-config.example.yaml` for all configuration options, especially configure the port that is publicly available for your server, since the game clients of your players will need to connect to that.
 
