@@ -37,6 +37,8 @@
 - [ ] add a AI-powered chatbot, chatgpt-like that roleplays as a spacefaring hamster that reacts to player chat?
 
 ## done
+- [x] add option to disable auto-editing of dedicated yaml in shared data tool
+- [x] add option to override the host and port when aut-editing the dedicated yaml in the shared data tool
 - [x] resume mode / create mode for the shared data server to be able to control if we actually want to recreate the zip.
 - [-] find out if there is *any* information the client requests on the shared data server to see how we can implement it => nothing. its useless.
 - [x] maybe the shared data tool could remove the shareddataurl property when it is shut down to make sure the server doesn't use it when its off.

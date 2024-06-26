@@ -142,8 +142,11 @@ class DownloadToolConfig(BaseModel):
     maxGlobalBandwith: int = Field(50*1000*1000, description="max bandwith to use for the downloads globally in bytes, e.g. 50 MB/s")
     maxClientBandwith: int = Field(30*1000*1000, description="max bandwith to use for the download per client in bytes, e.g. 30 MB/s")
     rateLimit: str = Field("10 per minute", description="rate limit of max allowed requests per ip address per time unit, e.g. '10 per minute' or '10 per hour'")
+    customExternalHostNameAndPort: str = Field("", description="if set, this will be used as the host instead of the automatically generated host-part of the url. must be something like: 'https://my-server.com:12345'. The path/name of the files will be appended.")
 
     useSharedDataURLFeature: bool = Field(False, description="if true, a zip for the SharedDataURL feature will be created, served and the dedicated yaml will be automatically edited.")
+    autoEditDedicatedYaml: bool = Field(True, description="set to false if you do not want the dedicated yaml to be edited automatically")
+    customSharedDataURL: str = Field("", description="if set, this will be used as the shared data url instead of the automatically generated one. Make sure it is correct!")
     autoZipName: str = Field("SharedData.zip", description="The filename of the zip file for the auto download of the SharedDataURL feature postfixed with _yyyymmdd_hhmmss so the client recognizes this as a new file on recreation.")
 
     useCustomCacheFolderName: bool = Field(False, description="if true, the custom folder name will be used, if false, the folder name will be generated with following pattern '{gamename}_{serverip}_{uniquegameid}'")

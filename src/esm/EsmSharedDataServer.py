@@ -55,7 +55,7 @@ class EsmSharedDataServer:
         just resume the shared data server, do not recreate the files nor change configuration
         """
         zipFiles = self.findZipFiles()
-        if len(zipFiles) != 2:
+        if len(zipFiles) < 1 or len(zipFiles) > 2:
             raise RequirementsNotFulfilledError(f"Expected 2 zip files in the wwwroot folder, found {len(zipFiles)}. Aborting resume since files might be missing, start the server without the resume option to regenerate the data.")
         self.startServer(zipFiles)
 
@@ -68,8 +68,8 @@ class EsmSharedDataServer:
         log.info(f"Server configured to allow max {humanize.naturalsize(self.config.downloadtool.maxGlobalBandwith, gnu=False)}/s in total network bandwidth.")
         log.info(f"Server configured to allow max {humanize.naturalsize(self.config.downloadtool.maxClientBandwith, gnu=False)}/s network bandwith per connection.")
 
-        myHostIp = Tools.getOwnIp(self.config)
-        servingUrlRoot = f"http://{myHostIp}:{self.config.downloadtool.serverPort}"
+        servingUrlRoot = self.getServingUrlRoot()
+        log.debug(f"Server root url is set to: '{servingUrlRoot}'")
         
         manualZipFile = Tools.findZipFileByName(zipFiles, startsWith=self.config.downloadtool.manualZipName)
         if manualZipFile:
@@ -79,18 +79,22 @@ class EsmSharedDataServer:
         if self.config.downloadtool.useSharedDataURLFeature:
             autoZipFile = Tools.findZipFileByName(zipFiles, startsWith=self.config.downloadtool.autoZipName.split(".")[0])
             
-            sharedDataUrl = f"{servingUrlRoot}/{autoZipFile.name}"
+            sharedDataUrl = self.getSharedDataURL(servingUrlRoot, autoZipFile)
 
             log.info(f"Shared data zip file for server is at: '{sharedDataUrl}'")
+            log.warn(f"Using this SharedDataURL feature is dangerous! Make sure the URL above will be reachable for all your players, or it might break the game! Read the readme_shareddata.md for more information.")
 
-            self.configService.backupDedicatedYaml()
-            # actually alter the dedicated.yaml, changing or adding the shareddataurl to what we just created
-            sharedDataUrl = f"_{sharedDataUrl}"
-            self.configService.changeSharedDataUrl(sharedDataUrl)
+            if self.config.downloadtool.autoEditDedicatedYaml:
+                self.configService.backupDedicatedYaml()
+                # actually alter the dedicated.yaml, changing or adding the shareddataurl to what we just created
+                sharedDataUrl = f"_{sharedDataUrl}"
+                self.configService.changeSharedDataUrl(sharedDataUrl)
 
-            # check if the configuration of the dedicated yaml (we will not make any changes to it) has the auto zip url configured properly
-            self.checkDedicatedYamlHasAutoZipUrl(sharedDataUrl)
-            log.warn(f"The dedicated yaml has been updated to point to the shared data tool, make sure to restart the server for it to take effect!")
+                # check if the configuration of the dedicated yaml (we will not make any changes to it) has the auto zip url configured properly
+                self.checkDedicatedYamlHasAutoZipUrl(sharedDataUrl)
+                log.warn(f"The dedicated yaml has been updated to point to the shared data tool, make sure to restart the server for it to take effect!")
+            else:
+                log.warn(f"You turned off the autoEditDedicatedYaml feature. The dedicated yaml will NOT be updated automatically, make sure it the correct url! Otherwise it might break the game!")
         
         log.info(f"Starting download server for {len(zipFiles)} zip files (excluding default assets).")
         def NoOp(*args):
@@ -104,10 +108,24 @@ class EsmSharedDataServer:
         finally:
             log.info(f"SharedData server stopped serving. Total downloads: {EsmHttpThrottledHandler.globalZipDownloads}")
             
-            if self.config.downloadtool.useSharedDataURLFeature:
+            if self.config.downloadtool.useSharedDataURLFeature and self.config.downloadtool.autoEditDedicatedYaml:
                 self.configService.rollbackDedicatedYaml()
                 log.warn(f"The dedicated yaml has been rolled back to its original state, make sure to restart the server for it to take effect!")
-                
+
+    def getSharedDataURL(self, servingUrlRoot, autoZipFile: ZipFile):
+        if len(self.config.downloadtool.customSharedDataURL) > 1:
+            log.warn(f"Server configured to use a custom shared data url: '{self.config.downloadtool.customSharedDataURL}', make sure it is reachable for all your players, or it might break the game!")
+            return self.config.downloadtool.customSharedDataURL
+        else:
+            return f"{servingUrlRoot}/{autoZipFile.name}"
+
+    def getServingUrlRoot(self):
+        if len(self.config.downloadtool.customExternalHostNameAndPort) > 1:
+            log.debug(f"Server configured to use a custom external host name and port: '{self.config.downloadtool.customExternalHostNameAndPort}'")
+            return self.config.downloadtool.customExternalHostNameAndPort
+        else:
+            myHostIp = Tools.getOwnIp(self.config)
+            return f"http://{myHostIp}:{self.config.downloadtool.serverPort}"
 
     def prepareZipFiles(self) -> List[ZipFile]:
         """
