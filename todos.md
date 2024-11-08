@@ -4,6 +4,7 @@
 
 ## later
 - [ ] read the territory config from the galaxyconfig.ecf ourselves. Search for "Child Territory" - Blocks.
+- [ ] backup additional should support globs and a few placeholders, e.g. {savegamename}
 - [ ] wipe-tool --show* options should work without instance-check, also in dryrun it should work with --dblocation (to get some stats from backups)
 - [ ] wipe-tool: find a way to also remove wiped playfields from the player registries to avoid teleportation bugs (since the bug is still not fixed)
 - [+] fix all FS-modifying tests to use the test fixture of the usually existing ramdisk (R:)
