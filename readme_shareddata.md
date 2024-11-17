@@ -15,14 +15,16 @@ Be aware though, it has some drawbacks:
 ### IF THE CONTENT OF THE ZIPFILE AND THE SERVER SCENARIO DATA ARE NOT IDENTICAL IT WILL BREAK THE GAME ON THE CLIENTS
 ### If the URL did NOT change even though the file did, the game clients will NOT download the file AT ALL AND BREAK THE GAME FOR THE CLIENTS
 ### IF the url is not reachable for some reason, the game clients will NOT download the file AND BREAK THE GAME FOR THE CLIENTS
-### If the zip file does not have the required structure it will get ignored and break the game on the clients.
+### If the zip file does not have the required structure it will get ignored and break the game on the clients
 ### You have to recreate that file on EVERY game or scenario change, no matter if its only a change in a little file or not
 
 ESM will completely automate this for you to minimize those errors. You only have to set enable the flag `useSharedDataURLFeature` in the esm configuration.
 The shared-data-tool will serve another zip file of the shared data with a changing filename, since its url needs to be changed every time the file is recreated. It will look like this `SharedData_20240621_235959.zip`. The configuration for the SharedDataURL will be **automatically** changed while the tool is running (the dedicated yaml is edited), and changed back when the tool is stopped. The change will look like this:
-```
+
+```yaml
   SharedDataURL: _http://123.456.789.123:12345/SharedData_20240621_235959.zip
 ```
+
 ### If you use this feature, make sure to have the shared-data-tool server started when serving the game and make sure to restart the game server whenever you started or stopped the data-tool.**
 ESM will check this for you on server start and will **ABORT** the server start if there is a shared data url configured that is **not** reachable to avoid having an invalid configuration.
 
@@ -30,8 +32,10 @@ You can disable the automatic configuration in the dedicated yaml by setting `au
 You can override the automatic hostip and port generation by setting your own `customExternalHostNameAndPort`, which should look something like: 'https://my-server.com:12345'
 You can override the generation of the whole url and have esm set your own custom url by setting `customSharedDataURL`, which should look something like: 'https://my-server.com:54321/SharedData.zip'
 
-Since the webserver will run on the same server as the game and probably be publicly available, it has a sophisticated configuration to limit the bandwith/connection aswell as the global bandwith used. It also includes several security measures like a rate limiter and an internal whitelist for paths.
+Since the webserver will run on the same server as the game and probably be publicly available, it has a sophisticated configuration to limit the bandwith/connection aswell as the global bandwith used. It also includes several security measures like a rate limiter and an internal whitelist for paths so only the files created by the tool are served.
 If your server connection supports e.g. 100 MB/s, you can limit the webserver to not use more than e.g. 50MB/s, to make sure the running gameserver network throughput is not affected and the game doesn't lag out the players due to the downloads. If you so desire, you can also limit the bandwith per connection, to make sure that nobody can occupy the whole bandwith. Although this shouldn't take more than 10 seconds, since shared data can't possibly be bigger than 500 MB (current scenario size limit). You can also rate-limit the amount of requests per minute per IP, to avoid simple DoS-attacks (default: 10/m). Check the `esm-default-config.example.yaml` for all configuration options, especially configure the port that is publicly available for your server, since the game clients of your players will need to connect to that.
+
+**IMPORTANT**: your server bandwith is most probably more than enough to support the default 50 MB/s, since the game itself uses and is limited to use only a tiny amount (afaik less than 10 MB/s aka 80 Mbit/s) - in doubt configure it to whatever you want with `maxGlobalBandwith`.
 
 The tool serves both zips and a landing page generated from the `index.template.html` with the instructions on how to use the manual shared data zip. You can freely edit the template to your liking, following placeholders will be replaced when the tools is started:
 - "$SHAREDDATAZIPFILENAME" - with the name of the manual zipfile according to the configuration

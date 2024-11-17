@@ -9,8 +9,8 @@ If you already have a running empyrion game server and even an existing savegame
 
 1. just unpack the zip to a folder of your choice, e.g. `D:\Servers\Tools\esm`
 2. create a copy of [esm-custom-config.example.yaml](esm-custom-config.example.yaml) as `esm-custom-config.yaml`
-2. open a windows console/terminal, cd into that directory and call `esm -v check-requirements`
-3. if you see colored output with timestamps, you succeeded.
+3. open a windows console/terminal, cd into that directory and call `esm -v check-requirements`
+4. if you see colored output with timestamps, you succeeded.
 
 ### Configure ESM
 
@@ -22,7 +22,7 @@ If you already have a running empyrion game server and even an existing savegame
 
 ### Install Empyrion Dedicated Server
 
-If you already have a installed and working dedicated server, you can skip this step.
+If you already have an installed and working dedicated server, you can skip this step.
 
 - call `esm game-install`. This will download and install the game using steamcmd, this might take a bit.
 - go to your installation `_CommonRedist\vcredist\2019\` and install the c++ redistributable for your OS, probably `Microsoft Visual C++ 2019 x64.cmd`
@@ -59,11 +59,11 @@ If you are NOT using a ramdisk (and disabled it in the config), skip this sectio
 - start eah
 - start server
 
-**PROFIT**
+  **PROFIT**
 
 ## Install/Update Scenario
 
-Esm provides a special tool that ensures that scenario updates stay minimal to avoid players having to download files that didn't change.
+ESM provides a special tool that ensures that scenario updates stay minimal to avoid players having to download files that didn't change.
 
 - download the scenario from the workshop, copy it to a separate folder on the server, e.g. `D:\Servers\Scenarios\ReforgedEden`
 - configure exactly that path in your custom config at `updates -> scenariosource`

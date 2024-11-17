@@ -95,7 +95,8 @@ You can stop the server with either `esm server-stop`, EAH or clicking the 'save
 
 ## filesystem structure (default)
 This is how the file system tree looks like, when it is set up after ramdisk-install, ramdisk-setup and a few create-backup runs (default configuration, only important bits are shown)
-```
+
+```text
 D:\Server\Empyrion (as an example for your Empyrion game install directory)
 ├───Saves
 │   ├───Games
@@ -147,7 +148,7 @@ The ramdisk setup keeps a mirror of the savegame on the HDD, it also keeps the t
 - the ramdisk-setup command will not run properly if in the "Autostart" folder of your windows user, due to how windows handles that "need admin privileges" popup on startup.
 - the delete-all sometimes will fail to unmount the ramdrive. In that case start osfmount yourself and unmount it yourself.
 
-## FAQ:
+## FAQ
 Q: Trying to start the server in EAH, there are a few consoles popping up and say something like "script is already running, will wait 10 seconds to retry.".\
 A: ESM makes sure it runs only once per configuration. If you have a running instance, stop that first or wait until it finishes doing what it is doing. If you run multiple instances of it on the same server, you need to change the bindingPort in the configuration.
 

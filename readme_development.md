@@ -27,6 +27,10 @@ Alternatively, you can enable the virtual environment, like below, or create one
 - execute a `pip freeze | sort -u >> requirements.txt`
   - check the computed requirements, clean up as necessary. In doubt, start with a fresh venv to check if all is there.
 
+### creating new example configuration file
+- `python generate-default-config.py`
+This will create a configuration file with all defaults and example values defined in the config models (`ConfigModels.py`). This file is also auto-generated when creating a new distribution.
+
 ### creating new binary distribution
 
 Make sure you are in the current env of the script, then execute:
