@@ -1,10 +1,11 @@
 # TODOS
 
 ## WIP
+- [ ] integrate haimster-connector as new tool, optionally running along with the server?
 
 ## later
 - [ ] read the territory config from the galaxyconfig.ecf ourselves. Search for "Child Territory" - Blocks.
-- [ ] backup additional should support globs and a few placeholders, e.g. {savegamename}
+- [ ] backup additional should support globbing
 - [ ] wipe-tool --show* options should work without instance-check, also in dryrun it should work with --dblocation (to get some stats from backups)
 - [ ] wipe-tool: find a way to also remove wiped playfields from the player registries to avoid teleportation bugs (since the bug is still not fixed)
 - [+] fix all FS-modifying tests to use the test fixture of the usually existing ramdisk (R:)
@@ -19,7 +20,8 @@
 - [ ] add support for the tool to run along with the shared-data-server, without having to start it separatedly
   - for this, we have to ensure the shared data zip is only created when there were relevant changes in the shared data, otherwise every restart would lead to redownloads.
   - we would need to compare if there are changes and what size the changes are (to avoid having to redownload everything when only a single file changed)
-  - a configurable treshold for change size in MB at what point it makes sense to enable the shareddataurl or keep the old method.
+  - see change detector from hAImster or the "dirhash" library
+  - a configurable treshold for change size in MB at what point it makes sense to enable the shareddataurl or keep the old method?
 - [+] GUI!
 - [+] create separate windows-gui thingy that resides in the taskbar or similar and provides a shortcut to the cli tool.
 - [ ] ask notoats to create a downloadable release of his contained exe, so i can add it as 3rd party requirement
