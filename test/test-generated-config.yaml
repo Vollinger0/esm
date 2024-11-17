@@ -63,6 +63,11 @@ communication:  # configuration for the in-game communication
   synceventname: '[0fa336]Hamster-News'   # the name to be used when announcing a sync on the server, may contain bb-code for colors and such
   synceventmessageprefix: '[aaaaaa]'      # this string will be prepended to all sync event messages, you can use this to set a bb-color code
   synceventsfile: hamster_sync_lines.csv  # should contain the path to a csv file with two columns, each containing the first and second sentence. The first will be used when starting a sync, the second when its finished.
+  haimsterEnabled: false                  # enables haimster integration, which requires a running haimster server
+  haimsterHost: http://localhost:8000     # the url to the haimster server
+  playerNameCacheTime: 300                # time in seconds to cache player names for, since they need to be retrieved from the database
+  incomingMessageHostIp: 0.0.0.0          # the host url to bind our http server to to receive messages from haimster. This ip and port must be configured on haimster side aswell.
+  incomingMessageHostPort: 9000           # the port to bind to to receive messages from haimster. This ip and port must be configured on haimster side aswell.
 robocopy:
   encoding: ansi   # depending on the shell used, it may be necessary to change this to ansi, utf-8, cp1252 or something. This will be passed to subprocess.run(...encoding=...)
   options:         # options for the different robocopy operations

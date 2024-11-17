@@ -1,18 +1,20 @@
 # TODOS
 
 ## WIP
-- [ ] integrate haimster-connector as new tool, optionally running along with the server?
+- [+] integrate haimster-connector as new tool, optionally running along with the server?
+- [+] add an AI-powered chatbot, chatgpt-like that roleplays as a spacefaring hamster that reacts to player chat?
 
 ## later
+- [ ] tool to extract chatlogs from the DB
 - [ ] read the territory config from the galaxyconfig.ecf ourselves. Search for "Child Territory" - Blocks.
 - [ ] backup additional should support globbing
 - [ ] wipe-tool --show* options should work without instance-check, also in dryrun it should work with --dblocation (to get some stats from backups)
 - [ ] wipe-tool: find a way to also remove wiped playfields from the player registries to avoid teleportation bugs (since the bug is still not fixed)
-- [+] fix all FS-modifying tests to use the test fixture of the usually existing ramdisk (R:)
-- [ ] implement allowMultpleServerInstances switch? Once enabled, do not check for instances of the game before starting, do not start if startmode is set to direct, etc.
 - [ ] fix purge-tools: these need to also delete related data in the database! Probably not difficult to finish implementing, but a PITA to test.
+- [ ] implement allowMultpleServerInstances switch? Once enabled, do not check for instances of the game before starting, do not start if startmode is set to direct, etc.
 
 ## optional
+- [+] fix all FS-modifying tests to use the test fixture of the usually existing ramdisk (R:) - or use mocks!
 - [ ] offer some kind of better interactive mode for different stuff
   - [ ] add fzf-like selection, also replace user prompts with that.
   - [ ] interactive mode for wipe galaxy tool?
@@ -26,7 +28,7 @@
 - [+] create separate windows-gui thingy that resides in the taskbar or similar and provides a shortcut to the cli tool.
 - [ ] ask notoats to create a downloadable release of his contained exe, so i can add it as 3rd party requirement
 - [ ] provide full installation package with install bat, that installs esm, the tools (osfmount, peazip, emprc, etc.)?
-- [ ] implement warning/talkback via tickets for when an admin is required (e.g. low disk space, etc.), e.g. as an extra tool, so it can just be planned in EAH, or as delayed task after a startup (e.g. 5 minutes after the server started)
+- [ ] implement warning/talkback via tickets for when an admin is required (e.g. low disk space, etc.), e.g. as an extra tool, so it can just be planned in EAH, or as delayed task after a startup (e.g. 5 minutes after the server started) - alternatively just a discord bot.
 - [ ] add switch to backup-tool to make backups EWA-compatible
 - [ ] provide tool to fix item icons as good as possible in EWA, current process:
    1. open item list in eah, CTRL+A, CTRL+C and copy into text file? Or find out how the item list file in epf got created
@@ -39,7 +41,6 @@
    1. find customicon name
    1. save customicon as itemid for EWA.
 - [ ] add cb:shield:$id function to be able to get a ships shield values?
-- [ ] add a AI-powered chatbot, chatgpt-like that roleplays as a spacefaring hamster that reacts to player chat?
 
 ## done
 - [x] add option to disable auto-editing of dedicated yaml in shared data tool

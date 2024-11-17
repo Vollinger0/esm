@@ -13,7 +13,11 @@ class TestTools:
     @classmethod
     def ramdiskAvailable(*args):
         """
-        does skip the test if the ramdisk is not available at the driveletter R:
+        returns True if the ramdisk is available at the driveletter R:
+        use this like this:
+            @unittest.skipUnless(TestTools.ramdiskAvailable(), "needs the ramdrive to be mounted at r")
+
+        to skip the test if the ramdisk is not available at the driveletter R:
         since we usually have that mounted while developing this, just use it.
         """
         result = Path(TestTools.TESTRAMDRIVELETTER).exists()

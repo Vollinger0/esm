@@ -4,6 +4,7 @@ import shutil
 import subprocess
 from PyInstaller.utils.hooks import copy_metadata
 from esm import __main__ as info
+from esm.EsmConfigService import EsmConfigService
 
 version = info.getPackageVersion()
 print(f"esm version: {version}")
@@ -11,15 +12,8 @@ print(f"esm version: {version}")
 # install the esm module so dist will pick up the current state
 subprocess.run("pip install -e .", shell=True)
 
-
-print(f"create a new esm-default-config.example.yaml from default config model")
-from esm.ConfigModels import MainConfig
-from easyconfig import create_app_config
-configFilePath = Path("esm-default-config.example.yaml")
-if configFilePath.exists(): configFilePath.unlink()
-newModel = MainConfig.model_validate({'server': {'dedicatedYaml': "REQUIRED"}, "paths": {"install": "REQUIRED"}})
-config = create_app_config(newModel)
-config.load_config_file(configFilePath)
+# create a new default config file
+EsmConfigService.createDefaultConfigFile()
 
 print ("Proceeding with pyinstaller spec")
 # define the files to copy to the dist additionally

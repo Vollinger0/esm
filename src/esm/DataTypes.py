@@ -1,5 +1,6 @@
 from enum import Enum
 from pathlib import Path
+from pydantic import BaseModel
 
 class Territory:
     """
@@ -131,3 +132,11 @@ class ZipFile:
         self.size = size
         self.downloads = downloads
         self.wwwrootPath = wwwrootPath
+
+class ChatMessage(BaseModel):
+    """
+    data type for a chat message, pydantic model
+    """
+    timestamp: float
+    speaker: str
+    message: str

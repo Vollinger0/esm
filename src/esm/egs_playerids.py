@@ -1,9 +1,11 @@
 import sqlite3
 import logging
 from typing import Dict
+from warnings import deprecated
 
 log = logging.getLogger(__name__)
 
+@deprecated("partly implemented in databasewrapper already")
 class PlayerInformationProvider:
     """
         class that will read the egs database and retrieve

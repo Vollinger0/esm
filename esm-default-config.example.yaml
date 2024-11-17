@@ -23,15 +23,23 @@ backups:
   marker: esm_this_is_the_latest_backup                                                                                                 # filename used for the marker that marks as backup as being the latest
   staticBackupPeaZipOptions: a -tzip -mtp=0 -mm=Deflate64 -mmt=on -mx1 -mfb=32 -mpass=1 -sccUTF-8 -mcu=on -mem=AES256 -bb0 -bse0 -bsp2  # make sure to use the fastest compression options
   minDiskSpaceForStaticBackup: 2G                                                                                                       # if disk space on the drive with the backups has less free space than this, do not create a backup. gnu notation
-  additionalBackupPaths: []                                                                                                             # list of full paths to source files or directories to backup additionally. Those will all end up in the folder 'Additional' in the backup
+  additionalBackupPaths:                                                                                                                # list of full paths to source files or directories to backup additionally. Those will all end up in the folder 'Additional' in the backup
+    - D:/some/path/to/backup
+    - D:/some/other/path/to/backup
 updates:
   scenariosource: D:/Servers/Scenarios   # source directory with the scenario folders that will be used to copy to the servers scenario folder
-  additional: []                         # additional stuff to copy when calling the esm game-update command, every line has to look like e.g. { src: 'foo', dst: 'bar' }
+  additional:                            # additional stuff to copy when calling the esm game-update command, every line has to look like e.g. { src: 'foo', dst: 'bar' }
+    - src: D:/some/source/path
+      dst: D:/some/target/path
+    - src: D:/another/source/path
+      dst: D:/another/target/path
 deletes:
   backupGameLogs: true   # backup all game logs on deleteall command
   backupEahLogs: true    # backup all eah logs on deleteall command?
   backupEsmLogs: true    # backup all esm logs on deleteall command?
-  additionalDeletes: []  # additional paths of stuff to delete when using the 'deleteall' command
+  additionalDeletes:     # additional paths of stuff to delete when using the 'deleteall' command
+    - D:/some/path/to/delete
+    - D:/some/other/path/to/delete
 paths:
   install: REQUIRED                                                                   # the games main installation location
   osfmount: D:/Servers/Tools/OSFMount/osfmount.com                                    # path to osfmount executable needed to mount the ram drive
@@ -63,6 +71,11 @@ communication:  # configuration for the in-game communication
   synceventname: '[0fa336]Hamster-News'   # the name to be used when announcing a sync on the server, may contain bb-code for colors and such
   synceventmessageprefix: '[aaaaaa]'      # this string will be prepended to all sync event messages, you can use this to set a bb-color code
   synceventsfile: hamster_sync_lines.csv  # should contain the path to a csv file with two columns, each containing the first and second sentence. The first will be used when starting a sync, the second when its finished.
+  haimsterEnabled: false                  # enables haimster integration, which requires a running haimster server
+  haimsterHost: http://localhost:8000     # the url to the haimster server
+  playerNameCacheTime: 300                # time in seconds to cache player names for, since they need to be retrieved from the database
+  incomingMessageHostIp: 0.0.0.0          # the host url to bind our http server to to receive messages from haimster. This ip and port must be configured on haimster side aswell.
+  incomingMessageHostPort: 9000           # the port to bind to to receive messages from haimster. This ip and port must be configured on haimster side aswell.
 robocopy:
   encoding: ansi   # depending on the shell used, it may be necessary to change this to ansi, utf-8, cp1252 or something. This will be passed to subprocess.run(...encoding=...)
   options:         # options for the different robocopy operations

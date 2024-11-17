@@ -45,7 +45,7 @@ class ConfigBackups(BaseModel):
     marker: str = Field("esm_this_is_the_latest_backup", description="filename used for the marker that marks as backup as being the latest")
     staticBackupPeaZipOptions: str = Field("a -tzip -mtp=0 -mm=Deflate64 -mmt=on -mx1 -mfb=32 -mpass=1 -sccUTF-8 -mcu=on -mem=AES256 -bb0 -bse0 -bsp2", description="make sure to use the fastest compression options")
     minDiskSpaceForStaticBackup: str = Field("2G", pattern=FILESIZEPATTERN, description="if disk space on the drive with the backups has less free space than this, do not create a backup. gnu notation")
-    additionalBackupPaths: List[Path] = Field([], description="list of full paths to source files or directories to backup additionally. Those will all end up in the folder 'Additional' in the backup")
+    additionalBackupPaths: List[str] = Field([], description="list of full paths to source files or directories to backup additionally. Those will all end up in the folder 'Additional' in the backup")
 
 class FileOps(BaseModel):
     """ represents a file operation for the update-command with file path patterns for src and dst """
@@ -64,7 +64,7 @@ class ConfigDeletes(BaseModel):
     backupGameLogs: bool = Field(True, description="backup all game logs on deleteall command")
     backupEahLogs: bool = Field(True, description="backup all eah logs on deleteall command?")
     backupEsmLogs: bool = Field(True, description="backup all esm logs on deleteall command?")
-    additionalDeletes: List[Path] = Field([], description="additional paths of stuff to delete when using the 'deleteall' command")
+    additionalDeletes: List[str] = Field([], description="additional paths of stuff to delete when using the 'deleteall' command")
 
 class ConfigPaths(BaseModel):
     install: Path = Field(..., description="the games main installation location")
@@ -100,6 +100,12 @@ class ConfigCommunication(BaseModel):
     synceventname: str = Field("[0fa336]Hamster-News", description="the name to be used when announcing a sync on the server, may contain bb-code for colors and such")
     synceventmessageprefix: str = Field("[aaaaaa]", description="this string will be prepended to all sync event messages, you can use this to set a bb-color code")
     synceventsfile: str = Field("hamster_sync_lines.csv", description="should contain the path to a csv file with two columns, each containing the first and second sentence. The first will be used when starting a sync, the second when its finished.")
+
+    haimsterEnabled: bool = Field(False, description="enables haimster integration, which requires a running haimster server")
+    haimsterHost: str = Field("http://localhost:8000", description="the url to the haimster server")
+    playerNameCacheTime: int = Field(300, description="time in seconds to cache player names for, since they need to be retrieved from the database")
+    incomingMessageHostIp: str = Field("0.0.0.0", description="the host url to bind our http server to to receive messages from haimster. This ip and port must be configured on haimster side aswell.")
+    incomingMessageHostPort: int = Field(9000, description="the port to bind to to receive messages from haimster. This ip and port must be configured on haimster side aswell.")
 
 class RobocopyOptions(BaseModel):
     moveoptions: str = Field("/MOVE /E /np /ns /nc /nfl /ndl /mt /r:10 /w:10 /unicode", alias="move")
@@ -173,3 +179,46 @@ class MainConfig(AppBaseModel, AppConfigMixin):
     dedicatedConfig: Optional[DediConfig] = Field(None)
     context: Optional[dict] = {}
     downloadtool: DownloadToolConfig = Field(DownloadToolConfig(), description="configuration for the shared data download tool")
+
+
+    @staticmethod
+    def getExampleConfig():    
+        """
+            returns the whole config with default values and some example additions
+        """
+        return MainConfig.model_validate(
+            {
+                "server": 
+                    {
+                        'dedicatedYaml': "REQUIRED"
+                    }, 
+                "paths": 
+                    {
+                        "install": "REQUIRED"
+                    },
+                "backups": 
+                    {   
+                        "additionalBackupPaths": 
+                            [
+                                    "D:/some/path/to/backup",
+                                    "D:/some/other/path/to/backup"
+                            ]
+                    },
+                "updates": 
+                    {   
+                        "additional": 
+                            [
+                                    {"src": "D:/some/source/path", "dst": "D:/some/target/path"},
+                                    {"src": "D:/another/source/path", "dst": "D:/another/target/path"},
+                            ]
+                    },
+                "deletes": 
+                    {   
+                        "additionalDeletes": 
+                            [
+                                    "D:/some/path/to/delete",
+                                    "D:/some/other/path/to/delete"
+                            ]
+                    }
+            }
+        )

@@ -1,8 +1,9 @@
-from functools import cached_property
 import logging
 import csv
-from pathlib import Path
 import random
+
+from functools import cached_property
+from pathlib import Path
 from esm.ConfigModels import MainConfig
 from esm.EsmConfigService import EsmConfigService
 from esm.EsmEpmRemoteClientService import EsmEpmRemoteClientService
@@ -13,7 +14,7 @@ log = logging.getLogger(__name__)
 @Service
 class EsmCommunicationService:
     """
-    provides methods to for server chat communication
+    provides methods for server chat communication
     """
     @cached_property
     def config(self) -> MainConfig:
@@ -81,4 +82,3 @@ class EsmCommunicationService:
                 else:
                     log.warning(f"{syncEventsFilePath} contains an invalid line at line {index} - it contains {len(row)} columns. Will ignore that line.")
         return data
-    

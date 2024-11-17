@@ -1,11 +1,14 @@
 import logging
 from pathlib import Path
 import unittest
+from unittest.mock import patch
 
 from pydantic import ValidationError
+from esm.ConfigModels import MainConfig
 from esm.EsmConfigService import EsmConfigService
 from esm.exceptions import AdminRequiredException
 from esm.ServiceRegistry import ServiceRegistry
+from TestTools import TestTools
 
 log = logging.getLogger(__name__)
 
@@ -24,7 +27,9 @@ class test_EsmConfigService(unittest.TestCase):
             self.assertEqual(config.foo.bar, "foo")
         self.assertEqual(config.server.dedicatedYaml, Path("esm-dedicated.yaml"))
 
-    def test_loadsCustomPath(self):
+    @unittest.skipUnless(TestTools.ramdiskAvailable(), "needs the ramdrive to be mounted at r")
+    @patch("esm.EsmConfigService.EsmConfigService.loadDedicatedYaml", return_value=None)
+    def test_loadsCustomPath(self, mock_loadDedicatedYaml):
         cs = EsmConfigService()
         config = cs.getConfig()
         self.assertEqual(config.server.dedicatedYaml, Path("esm-dedicated.yaml"))
@@ -35,18 +40,20 @@ class test_EsmConfigService(unittest.TestCase):
         self.assertEqual(config.backups.amount, 4)
         self.assertEqual(config.ramdisk.drive, "T:")
 
-    def test_loadFromRegistry(self):
+    @unittest.skipUnless(TestTools.ramdiskAvailable(), "needs the ramdrive to be mounted at r")
+    @patch("esm.EsmConfigService.EsmConfigService.loadDedicatedYaml", return_value=None)
+    def test_loadFromRegistry(self, mock_loadDedicatedYaml):
         instance = EsmConfigService()
         instance.setConfigFilePath(Path("test/esm-test-config.yaml"), True)
         ServiceRegistry.register(instance)
         cs = ServiceRegistry.get(EsmConfigService)
-        config = cs.getConfig()
+        config: MainConfig = cs.getConfig()
         self.assertEqual(config.backups.amount, 4)
         self.assertEqual(config.ramdisk.drive, "T:")
 
     def test_loadingConfigReadsDedicatedYaml(self):
         cs = EsmConfigService()
-        config = cs.getConfig()
+        config: MainConfig = cs.getConfig()
 
         self.assertEqual(config.dedicatedConfig.GameConfig.GameName, "EsmDediGame")
         self.assertEqual(config.dedicatedConfig.ServerConfig.AdminConfigFile, "adminconfig.yaml")

@@ -68,7 +68,7 @@ class EsmEpmRemoteClientService:
             return epmRC
         raise RequirementsNotFulfilledError(f"epm remote client not found in the configured path at {epmRC}. Please make sure it exists and the configuration points to it.")
 
-    def epmrcExecute(self, commands: [str], payload=None, quietMode=True):
+    def epmrcExecute(self, commands: List[str], payload=None, quietMode=True):
         """
             execute epm remote client
         """
@@ -100,7 +100,8 @@ class EsmEpmRemoteClientService:
         Unluckily, this is currently only a server message.
         """
         # use the epmremoteclient and send a 'say "message"'
-        return self.epmrcExecute(["run"], f"say '{message}'", quietMode)
+        safeMessage = message.replace("'", "").replace('"', '')
+        return self.epmrcExecute(["run"], f"say '{safeMessage}'", quietMode)
     
     def sendAnnouncement(self, message, priority: Priority=Priority.INFO, time: int=5000, quietMode=True):
         """

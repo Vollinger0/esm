@@ -1,7 +1,7 @@
 import logging
 import os
-from typing import List
 import yaml
+from typing import List
 from functools import cached_property
 from pathlib import Path
 from esm.ConfigModels import DediConfig, MainConfig
@@ -31,6 +31,22 @@ class EsmConfigService:
         cs.setConfigFilePath(customConfigFilePath, searchDedicatedYamlLocal)
         ServiceRegistry.register(cs)
         return cs.config
+
+    @staticmethod
+    def createDefaultConfigFile(filename: str = "esm-default-config.example.yaml"):
+        """
+            Creates a new config yaml from our config model with all the default values
+        """
+        log.info(f"create a new {filename} from default config model")
+        from easyconfig import create_app_config
+        from easyconfig.yaml import yaml_rt
+        yaml_rt.indent(mapping=2, sequence=4, offset=2)
+        configFilePath = Path(filename)
+        if configFilePath.exists(): configFilePath.unlink()
+        newModel = MainConfig.getExampleConfig()
+        config = create_app_config(newModel)
+        config.load_config_file(configFilePath)
+        log.info(f"created file {filename}")
 
     @cached_property
     def config(self) -> MainConfig:
@@ -66,8 +82,8 @@ class EsmConfigService:
                 log.error(f"Could not read dedicated.yaml from path '{dedicatedYamlPath}'. Are you sure the path is correct?")
                 raise AdminRequiredException(f"Could not read dedicated.yaml from path '{dedicatedYamlPath}'. Are you sure the path is correct?")
         else:
-            log.error(f"Could not find install dir at  '{mainConfig.paths.install}'. Are you sure the config is correct?")
-            raise AdminRequiredException(f"Could not find install dir at  '{mainConfig.paths.install}'. Are you sure the config is correct?")
+            log.error(f"Could not find install dir at '{mainConfig.paths.install}'. Are you sure the config is correct?")
+            raise AdminRequiredException(f"Could not find install dir at '{mainConfig.paths.install}'. Are you sure the config is correct?")
         
     def backupDedicatedYaml(self):
         """

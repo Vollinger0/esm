@@ -17,6 +17,12 @@ ramdisk:
 
 communication:
   announceSyncProbability: 0.1
+
+  haimsterEnabled: True                  # enables haimster integration, which requires a running haimster server
+  haimsterHost: http://localhost:8000     # the url to the haimster server
+  playerNameCacheTime: 300                # time in seconds to cache player names for, since they need to be retrieved from the database
+  incomingMessageHostIp: 0.0.0.0          # the host url to bind our http server to to receive messages from haimster. This ip and port must be configured on haimster side aswell.
+  incomingMessageHostPort: 9000           # the port to bind to to receive messages from haimster. This ip and port must be configured on haimster side aswell.
   
 backups:
   additionalBackupPaths: # list of full paths to source files or directories to backup additionally. Those will all end up in the folder "Additional" in the backup.
