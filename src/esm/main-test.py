@@ -1,5 +1,7 @@
 from pathlib import Path
+import signal
 from threading import Thread
+import threading
 import time
 import logging
 from esm.EsmMain import EsmMain
@@ -132,10 +134,17 @@ log.debug(f"Logging to: {esm.logFile}")
 #testClearDiscoveredBy()
 #testcleanupSharedFolder()
 #esm.sharedDataServer.start()
-esm.sharedDataServer.resume()
+#esm.sharedDataServer.resume()
 #esm.updateScenario(dryrun=False)
 #esm.config.context['logFile'] = Path("./esm-test.log")
 #esm.deleteService.backupAllLogs()
 #esm.dedicatedServer.assertSharedDataURLIsAvailable()
+
+# def sendSigIntAfter20Secs():
+#     time.sleep(20)
+#     signal.raise_signal(signal.SIGINT)
+# threading.Thread(target=sendSigIntAfter20Secs).start()
+
+esm.startHaimsterConnectorAndWait()
 
 log.info(f"Script finished successfully. Check the logfile ({esm.logFile}) if you missed something. Bye!")

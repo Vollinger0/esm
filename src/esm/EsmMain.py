@@ -2,10 +2,12 @@ from functools import cached_property
 import logging
 from pathlib import Path
 import socket
+import threading
 import time
 import sys
 from typing import List
 from esm import Tools
+from esm.EsmHaimsterConnector import EsmHaimsterConnector
 from esm.EsmSharedDataServer import EsmSharedDataServer
 from esm.exceptions import AdminRequiredException, ExitCodes, RequirementsNotFulfilledError, ServerNeedsToBeStopped, UserAbortedException, WrongParameterError
 from esm.ConfigModels import MainConfig
@@ -13,7 +15,7 @@ from esm.DataTypes import Territory, WipeType
 from esm.EsmLogger import EsmLogger
 from esm.FsTools import FsTools
 from esm.Tools import Timer, askUser, mergeDicts, monkeyPatchAllFSFunctionsForDebugMode
-from esm.EsmEpmRemoteClientService import EsmEpmRemoteClientService
+from esm.EsmEmpRemoteClientService import EsmEmpRemoteClientService
 from esm.EsmConfigService import EsmConfigService
 from esm.EsmBackupService import EsmBackupService
 from esm.EsmDeleteService import EsmDeleteService
@@ -64,6 +66,10 @@ class EsmMain:
     @cached_property
     def sharedDataServer(self) -> EsmSharedDataServer:
         return ServiceRegistry.get(EsmSharedDataServer)
+    
+    @cached_property
+    def haimsterConnector(self) -> EsmHaimsterConnector:
+        return ServiceRegistry.get(EsmHaimsterConnector)
     
     @cached_property
     def configService(self) -> EsmConfigService:
@@ -138,14 +144,23 @@ class EsmMain:
         Will start the server (and the ramdisk synchronizer, if ramdisk is enabled). Function returns once the server has been started.
         """
         if self.dedicatedServer.isRunning():
-            log.warning("A server is already running!")
+            log.warning("A server is already running! You may want to use the server resume operation to connect back to it.")
             raise ServerNeedsToBeStopped("A server is already running!")
 
         self.startSynchronizer()
         
         # start the server
         log.info(f"Starting the dedicated server")
-        return self.dedicatedServer.startServer()
+        serverProcess = self.dedicatedServer.startServer()
+
+        # run the following statement in a separate thread, but wait 60 seconds to do so
+        # this is to make sure that the server has started before we start the haimster connector
+        def startHaimsterConnectorDelayed():
+            time.sleep(60)
+            self.startHaimsterConnector()
+        threading.Thread(target=startHaimsterConnectorDelayed, daemon=True).start()
+
+        return serverProcess
 
     def startSynchronizer(self):
         """
@@ -219,10 +234,14 @@ class EsmMain:
         if not self.dedicatedServer.isRunning():
             log.warning("No running gameserver found.")
             return
+        
+        log.info(f"Running server found")
         # we found a server, then start synchronizer if enabled
         self.startSynchronizer()
+
+        self.startHaimsterConnector()
         
-        log.info(f"Running server found. Waiting until it shut down or stopped existing.")
+        log.info(f"Waiting until it shut down or stopped existing.")
         self.waitForEnd()
 
         log.info(f"Server shut down. Executing shutdown tasks.")
@@ -692,9 +711,9 @@ class EsmMain:
         except RequirementsNotFulfilledError as ex:
             log.error(f"{ex}")
 
-        erc = ServiceRegistry.get(EsmEpmRemoteClientService)
+        emprc = ServiceRegistry.get(EsmEmpRemoteClientService)
         try:
-            path = erc.checkAndGetEpmRemoteClientPath()
+            path = emprc.checkAndGetEmpRemoteClientPath()
             log.info(f"'{path}' found")
         except RequirementsNotFulfilledError as ex:
             log.error(f"{ex}")
@@ -790,3 +809,19 @@ class EsmMain:
             self.sharedDataServer.resume()
         else:
             self.sharedDataServer.start()
+
+    def startHaimsterConnector(self):
+        """
+            starts the haimster connector (in a separate thread)
+        """
+        if self.config.communication.haimsterEnabled:
+            return self.haimsterConnector.initialize()
+
+    def startHaimsterConnectorAndWait(self):
+        """
+            Starts the haimster connector (in a separate thread) and waits for it to exit, ignoring the configuration flag
+            This can be used if you want to start the haimster connector in a separate process with a tool call
+        """
+        shouldExit = self.haimsterConnector.initialize()
+        while not shouldExit.is_set():
+            time.sleep(1)

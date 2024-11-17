@@ -56,7 +56,7 @@ paths:
   # the following are only used to call, so we can use the real ones.
   osfmount: 'D:\Servers\Tools\OSFMount\osfmount.com'
   peazip: 'D:\Servers\Tools\PeaZip\res\bin\7z\7z.exe'
-  epmremoteclient: 'D:\Servers\Tools\\EmpyrionPrime.RemoteClient.Console.exe'
+  empremoteclient: 'D:\Servers\Tools\\EmpyrionPrime.RemoteClient.Console.exe'
   steamcmd: 'D:\Servers\Tools\steamcmd\steamcmd.exe'
 
 foldernames:

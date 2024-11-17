@@ -73,9 +73,9 @@
 - [-] game-install should have the option to install the scenario? or...
 - [x] use pyinstaller to create a distributable program without any installation overhead: <https://pyinstaller.org/>
 - [x] update scenario should provide a sync function so that only the real changes are copied, to avoid data-redownloads.
-- [x] add more epmclient functions, especially the sync event announcements.
+- [x] add more empclient functions, especially the sync event announcements.
 - [x] implement warning/talkback to server chat for syncs, backups probably even random stuff with funny hamster sentences.
-- [x] make epmrc client log the return codes properly
+- [x] make emprc client log the return codes properly
 - [x] make sure the async-able commands do not check the binding port.
 - [x] integrity check: checks if things fit together (e.g. dedicated.yaml config), our own config when running multiple instances, etc.
   - or adapt config to dedicated.yaml, especially when paths change. probably as a sanity check implementation
@@ -98,7 +98,7 @@
 - [x] feature: add the ability to delete the discovered by flag to the wipe tool
 - [x] tool: deletes the "discovered by" flags for given systems/playfields (potentially also for wipes/purges)
 - [x] add some for spinner or similar when server is running, to see if the console-suspend-bug has hit again
-- [x] implement server-callback with epmremoteclient
+- [x] implement server-callback with empremoteclient
 - [x] re-mount option for when ramdisk size has to be updated or ramdisk is down for some reason.
 - [x] print out wipetype descriptions on help too.
 - [x] custom dblocation may not be given in conjunction with nodryrun.

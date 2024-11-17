@@ -9,6 +9,7 @@ from typing import Dict, List
 from esm.ConfigModels import MainConfig
 from esm.DataTypes import Entity, EntityType, Playfield, SolarSystem
 from esm.EsmConfigService import EsmConfigService
+from esm.EsmFileSystem import EsmFileSystem
 from esm.ServiceRegistry import ServiceRegistry
 
 log = logging.getLogger(__name__)
@@ -32,8 +33,15 @@ class EsmDatabaseWrapper:
     def config(self) -> MainConfig:
         return ServiceRegistry.get(EsmConfigService).config
     
-    def __init__(self, gameDbPath = None, readOnly=True) -> None:
+    @cached_property
+    def fileSystem(self) -> EsmFileSystem:
+        return ServiceRegistry.get(EsmFileSystem)
+    
+    def __init__(self, gameDbPath: Path = None, readOnly=True) -> None:
         self.readOnly = readOnly
+        if gameDbPath is None:
+            # use global db from config
+            gameDbPath = self.fileSystem.getAbsolutePathTo("saves.games.savegame.globaldb")
         self.gameDbPath = gameDbPath
         self.setGameDbPath(gameDbPath)
     

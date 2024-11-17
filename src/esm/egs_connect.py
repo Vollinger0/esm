@@ -44,7 +44,7 @@ class EgsChatMessageEvent(BaseModel):
 
 class EgsChatHandler:
     """
-        class that handles the communication with egs via the epmrc tool
+        class that handles the communication with egs via the emprc tool
     """
     def __init__(self, exe_path: str):
         self._exePath = exe_path
@@ -111,7 +111,7 @@ class EgsChatHandler:
 
     def _postChatmessage(self, message: ChatMessage):
         """
-            actually sends a message via epmrc
+            actually sends a message via emprc
         """
         if message.speaker == "hAImster":
             log.info(f"Received message from hAImster: {message.message}")

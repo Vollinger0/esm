@@ -1,10 +1,7 @@
 from functools import cached_property
 import json
 import logging
-import csv
-from pathlib import Path
 import queue
-import random
 import subprocess
 import threading
 import time
@@ -14,7 +11,7 @@ from pydantic import BaseModel
 from esm.ConfigModels import MainConfig
 from esm.DataTypes import ChatMessage
 from esm.EsmConfigService import EsmConfigService
-from esm.EsmEpmRemoteClientService import EsmEpmRemoteClientService
+from esm.EsmEmpRemoteClientService import EsmEmpRemoteClientService
 from esm.ServiceRegistry import Service, ServiceRegistry
 
 log = logging.getLogger(__name__)
@@ -43,10 +40,11 @@ class EgsChatMessageEvent(BaseModel):
     SeqNum: int # seems to be always 201 for some reason
     Data: EgsChatData
 
+
 @Service
 class EsmGameChatService:
     """
-        class that handles the communication with egs via the epmrc tool
+        class that handles the communication with egs via the emprc tool
     """
     _incomingMessages = queue.Queue()
     _outgoingMessages = queue.Queue()
@@ -60,8 +58,8 @@ class EsmGameChatService:
         return ServiceRegistry.get(EsmConfigService).config
     
     @cached_property
-    def epmClient(self) -> EsmEpmRemoteClientService:
-        return ServiceRegistry.get(EsmEpmRemoteClientService)
+    def emprcClient(self) -> EsmEmpRemoteClientService:
+        return ServiceRegistry.get(EsmEmpRemoteClientService)
 
     def initialize(self):
         log.info("Initializing chat service")
@@ -72,32 +70,71 @@ class EsmGameChatService:
         """Stops both processes and their threads"""
         log.info("Shutting down chat service")
         self._shouldStop = True
-        
+
         if self._readerProcess:
             self._readerProcess.terminate()
-        
+
     def _startEventReader(self):
-        """Starts the reader process and begins capturing output"""
-        epmrcPath = self.epmClient.checkAndGetEpmRemoteClientPath().absolute()
-        self._readerProcess = subprocess.Popen(
-            args=[epmrcPath, "listen", "-q", "-o", "json"],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.STDOUT,
-            text=True,
-            bufsize=1,
-            universal_newlines=True
-        )
+        """
+            Starts the emprc event reader process and begins capturing output in a separate worker thread
+            If emprc can not be started, this will keep restarting it until it stops failing
+        """
+        def _startEmpRcListeningProcess():
+            emprcPath = self.emprcClient.checkAndGetEmpRemoteClientPath().absolute()
+            return subprocess.Popen(
+                args=[emprcPath, "listen", "-q", "-o", "json"],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                text=True,
+                bufsize=1,
+                universal_newlines=True,
+            )
+
         def _eventReaderThread():
-            while not self._shouldStop and self._readerProcess.poll() is None:
-                line = self._readerProcess.stdout.readline()
-                if line:
-                    message = self._parseEvent(line)
-                    if message:
-                        self._incomingMessages.put(message)
-            if self._readerProcess.poll() is None:
+            log.debug("Starting emprc event reader thread")
+            retryDelay=10
+            while not self._shouldStop:
+                try:
+                    self._readerProcess = _startEmpRcListeningProcess()
+                    while not self._shouldStop and self._readerProcess.poll() is None:
+                        line = self._readerProcess.stdout.readline()
+                        if line:
+                            log.debug(f"Received message: {line}")
+                            message = self._parseEvent(line)
+                            if message:
+                                self._incomingMessages.put(message)
+                    # Process has ended - check if it was due to an error
+                    exitCode = self._readerProcess.poll()
+                    if exitCode is not None and exitCode != 0:
+                        raise subprocess.SubprocessError(f"Process failed with exit code {exitCode}, could not listen to egs events via emprc")
+                except (subprocess.SubprocessError, IOError) as e:
+                    log.error(e)
+                    if self._shouldStop:
+                        break
+                    log.info(f"Attempting to connect with emprc again in {retryDelay} seconds...")
+                    # Clean up the failed process if it's still running
+                    if hasattr(self, '_readerProcess') and self._readerProcess.poll() is None:
+                        try:
+                            self._readerProcess.terminate()
+                            self._readerProcess.wait(timeout=5)
+                        except (subprocess.TimeoutExpired, Exception) as term_error:
+                            log.error(f"Error terminating process: {str(term_error)}")
+                            try:
+                                self._readerProcess.kill()
+                            except Exception as kill_error:
+                                log.error(f"Error killing process: {str(kill_error)}")
+                    
+                    # Wait before retrying
+                    time.sleep(retryDelay)
+                    continue
+                    
+            # Clean up when stopping
+            if hasattr(self, '_readerProcess') and self._readerProcess.poll() is None:
                 self._readerProcess.terminate()
-                
-        self._eventReaderThread = threading.Thread(target=_eventReaderThread, daemon=True).start()
+            log.debug("EGS emprc event reader thread stopped")
+
+        self._eventReaderThread = threading.Thread(target=_eventReaderThread, daemon=True)
+        self._eventReaderThread.start()         
     
     def _parseEvent(self, line: str) -> Optional[EgsChatMessageEvent]:
         """
@@ -128,13 +165,13 @@ class EsmGameChatService:
 
     def _postChatmessage(self, message: ChatMessage):
         """
-            actually sends a message via epmrc
+            actually sends a message via emprc
         """
         if message.speaker == "hAImster":
             log.info(f"Received message from hAImster: {message.message}")
-            self.epmClient.sendServerChat(f"{message.speaker}: {message.message}")
+            self.emprcClient.sendServerChat(f"{message.speaker}: {message.message}")
         else:
-            self.epmClient.sendMessage(message.speaker, message.message)
+            self.emprcClient.sendMessage(senderName=message.speaker, message=message.message)
   
     def sendMessage(self, speaker: str, message: str):
         """Adds a message to the outgoing queue"""

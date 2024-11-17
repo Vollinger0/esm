@@ -8,9 +8,9 @@ from functools import cached_property
 from pathlib import Path, PurePath
 from datetime import datetime
 from esm.ConfigModels import MainConfig
-from esm.exceptions import AdminRequiredException, SafetyException
+from esm.exceptions import AdminRequiredException
 from esm.EsmConfigService import EsmConfigService
-from esm.EsmEpmRemoteClientService import EsmEpmRemoteClientService
+from esm.EsmEmpRemoteClientService import EsmEmpRemoteClientService
 from esm.EsmRamdiskManager import EsmRamdiskManager
 from esm.FsTools import FsTools
 from esm.ServiceRegistry import Service, ServiceRegistry
@@ -40,8 +40,8 @@ class EsmDedicatedServer:
         return ServiceRegistry.get(EsmRamdiskManager)
 
     @cached_property
-    def epmClient(self) -> EsmEpmRemoteClientService:
-        return ServiceRegistry.get(EsmEpmRemoteClientService)
+    def emprcClient(self) -> EsmEmpRemoteClientService:
+        return ServiceRegistry.get(EsmEmpRemoteClientService)
     
     def __init__(self):
         self.gfxMode = self.config.server.gfxMode
@@ -242,7 +242,7 @@ class EsmDedicatedServer:
     
     def sendExitRetryAndWait(self, stoptimeout=0, additionalTimeout=120, interval=5):
         """
-        sends a "saveandexit $stoptimeout" to the server via epmremoteclient, then checks every $interval seconds if it actually stopped
+        sends a "saveandexit $stoptimeout" to the server via empremoteclient, then checks every $interval seconds if it actually stopped
         and retries doing until the stoptimeout*60+additionalTimeout is reached, in which case it raises a TimeOutError
         returns True when successful
         """
@@ -256,7 +256,7 @@ class EsmDedicatedServer:
                 if waitedTime > 0:
                     # don't show this the first time
                     log.debug(f"server didn't stop yet, retrying after {waitedTime} seconds")
-                self.epmClient.sendExit(stoptimeout)
+                self.emprcClient.sendExit(stoptimeout)
                 time.sleep(interval)
                 waitedTime = waitedTime + interval
             else:

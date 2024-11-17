@@ -1,13 +1,13 @@
+import logging
+import subprocess
 from enum import Enum
 from functools import cached_property
-import logging
 from pathlib import Path
-import subprocess
 from typing import List
+
 from esm.ConfigModels import MainConfig
 from esm.exceptions import RequirementsNotFulfilledError
 from esm.EsmConfigService import EsmConfigService
-
 from esm.ServiceRegistry import Service, ServiceRegistry
 from esm.Tools import byteArrayToString
 
@@ -29,9 +29,9 @@ class SenderType(Enum):
 
 class Channel(Enum):
     Global = "Global"               # global channel, just works
-    Faction = "Faction"             # needs recipient-id, check epmrc help
-    Alliance = "Alliance"           # needs recipient-id, check epmrc help
-    SinglePlayer = "SinglePlayer"   # needs recipient-id, check epmrc help
+    Faction = "Faction"             # needs recipient-id, check emprc help
+    Alliance = "Alliance"           # needs recipient-id, check emprc help
+    SinglePlayer = "SinglePlayer"   # needs recipient-id, check emprc help
     Server = "Server"               # server channel, doesn't work? - probably should not be used 
 
 class ErrorCodes(Enum):
@@ -52,7 +52,7 @@ class ErrorCodes(Enum):
 
 
 @Service
-class EsmEpmRemoteClientService:
+class EsmEmpRemoteClientService:
     """
     service that provides easy way to talk with the server
 
@@ -62,55 +62,64 @@ class EsmEpmRemoteClientService:
     def config(self) -> MainConfig:
         return ServiceRegistry.get(EsmConfigService).config
 
-    def checkAndGetEpmRemoteClientPath(self):
-        epmRC = self.config.paths.epmremoteclient
-        if Path(epmRC).exists():
-            return epmRC
-        raise RequirementsNotFulfilledError(f"epm remote client not found in the configured path at {epmRC}. Please make sure it exists and the configuration points to it.")
+    def checkAndGetEmpRemoteClientPath(self) -> Path:
+        empRC = Path(self.config.paths.empremoteclient)
+        if empRC.exists():
+            return empRC
+        raise RequirementsNotFulfilledError(f"emp remote client not found in the configured path at {empRC}. Please make sure it exists and the configuration points to it.")
 
-    def epmrcExecute(self, commands: List[str], payload=None, quietMode=True):
+    def emprcExecute(self, commands: List[str], payload=None, quietMode=True, doLog: bool=True) -> subprocess.CompletedProcess:
         """
-            execute epm remote client
+            execute emp remote client
         """
-        epmrc = self.checkAndGetEpmRemoteClientPath()
-        cmdLine = [epmrc] + commands
+        emprc = self.checkAndGetEmpRemoteClientPath()
+        cmdLine = [emprc.absolute()] + commands
         if quietMode and not self.config.general.debugMode:
             cmdLine = cmdLine + ["-q"]
         if payload != None:
             cmdLine = cmdLine + [payload]
-        log.debug(f"calling epm client with: {cmdLine}")
+        log.debug(f"calling emp client with: {cmdLine}")
         process = subprocess.run(cmdLine)
         log.debug(f"process returned: {process}")
-        # this returns when epmrc ends, not the server!
+        # this returns when emprc ends, not the server!
         if process.returncode > 0:
             errorCode = ErrorCodes.byNumber(process.returncode)
             stdout = byteArrayToString(process.stdout).strip()
             stderr = byteArrayToString(process.stderr).strip()
-            if len(stdout)>0 or len(stderr)>0:
-                log.error(f"error {errorCode} executing the epm client: stdout: {stdout}, stderr: {stderr}")
-            else:
-                log.error(f"error {errorCode} executing the epm client, but no output was provided")
+            if doLog:
+                if len(stdout)>0 or len(stderr)>0:
+                    log.error(f"error {errorCode} executing the emp client: stdout: {stdout}, stderr: {stderr}")
+                else:
+                    log.error(f"error {errorCode} executing the emp client, but no output was provided")
         return process
     
-    def sendServerChat(self, message, quietMode=True):
+    def sendServerChat(self, message, quietMode=True) -> subprocess.CompletedProcess:
         """
-        sends a "say 'message'" to the server chat via the epmremoteclient and returns immediately. 
+        sends a "say 'message'" to the server chat via the empremoteclient and returns immediately. 
         returns the completed process of the remote client.4
 
         Unluckily, this is currently only a server message.
         """
-        # use the epmremoteclient and send a 'say "message"'
+        # use the empremoteclient and send a 'say "message"'
         safeMessage = message.replace("'", "").replace('"', '')
-        return self.epmrcExecute(["run"], f"say '{safeMessage}'", quietMode)
+        process = self.emprcExecute(["run"], f"say '{safeMessage}'", quietMode, doLog=False)
+        if process.returncode > 0:
+            log.error(f"Could not send message {message} due to emprc failing with error '{ErrorCodes.byNumber(process.returncode)}'")
+        return process
     
-    def sendAnnouncement(self, message, priority: Priority=Priority.INFO, time: int=5000, quietMode=True):
+    
+    def sendAnnouncement(self, message, priority: Priority=Priority.INFO, time: int=5000, quietMode=True) -> subprocess.CompletedProcess:
         """
         announce something on the server, using the provided message and priority and time of the message to stay visible (in ms?)
         This displays the message banner in the top middle of the player view, see the class Priority for details
         """
         # request InGameMessageAllPlayers "{ \"msg\": \"alert from test.bat prio: %%i\", \"prio\": 0, \"time\": 3000 }"
         payload = "{"+f'"msg": "{message}", "prio": {str(priority.value)}, "time": {str(time)}'+"}"
-        return self.epmrcExecute(commands=["request", "InGameMessageAllPlayers"], payload=payload, quietMode=quietMode)
+        process = self.emprcExecute(commands=["request", "InGameMessageAllPlayers"], payload=payload, quietMode=quietMode, doLog=False)
+        if process.returncode > 0:
+            log.error(f"Could not send message {message} due to emprc failing with error '{ErrorCodes.byNumber(process.returncode)}'")
+        return process
+    
     
     def sendMessage(self, message, senderName=None, quietMode=True, channel: Channel=Channel.Global, senderType: SenderType=SenderType.ServerInfo):
         """
@@ -128,13 +137,16 @@ class EsmEpmRemoteClientService:
         if channel:
             commands = commands + ["--channel", channel.value]
         commands = commands + [message]
-        return self.epmrcExecute(commands=commands, quietMode=quietMode)
+        process = self.emprcExecute(commands=commands, quietMode=quietMode, doLog=False)
+        if process.returncode > 0:
+            log.error(f"Could not send message '{message}' due to emprc failing with error '{ErrorCodes.byNumber(process.returncode)}'")
+        return process
 
-    def sendExit(self, timeout=0):
+    def sendExit(self, timeout=0) -> subprocess.CompletedProcess:
         """
-        sends a "saveandexit $timeout" to the server via the epmremoteclient and returns immediately. 
+        sends a "saveandexit $timeout" to the server via the empremoteclient and returns immediately. 
         You need to check if the server stopped successfully via the other methods
         returns the completed process of the remote client.
         """
-        # use the epmremoteclient and send a 'saveandexit x' where x is the timeout in minutes. a 0 will stop it immediately.
-        return self.epmrcExecute(commands=["run"], payload=f"saveandexit {timeout}")
+        # use the empremoteclient and send a 'saveandexit x' where x is the timeout in minutes. a 0 will stop it immediately.
+        return self.emprcExecute(commands=["run"], payload=f"saveandexit {timeout}")

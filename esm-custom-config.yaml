@@ -2,7 +2,7 @@ paths:
   install: 'D:\Servers\Empyrion\'
   osfmount: 'D:\Servers\Tools\OSFMount\osfmount.com'
   peazip: 'D:\Servers\Tools\PeaZip\res\bin\7z\7z.exe'
-  epmremoteclient: 'D:\Servers\Tools\esm\emprc\EmpyrionPrime.RemoteClient.Console.exe'
+  empremoteclient: 'D:\Servers\Tools\esm\emprc\EmpyrionPrime.RemoteClient.Console.exe'
   eah: 'D:\Servers\Empyrion\DedicatedServer\EmpyrionAdminHelper'
   steamcmd: 'D:\Servers\Tools\steamcmd\steamcmd.exe'
 
@@ -19,7 +19,7 @@ communication:
   announceSyncProbability: 0.1
 
   haimsterEnabled: True                  # enables haimster integration, which requires a running haimster server
-  haimsterHost: http://localhost:8000     # the url to the haimster server
+  haimsterHost: http://192.168.1.102:8000     # the url to the haimster server
   playerNameCacheTime: 300                # time in seconds to cache player names for, since they need to be retrieved from the database
   incomingMessageHostIp: 0.0.0.0          # the host url to bind our http server to to receive messages from haimster. This ip and port must be configured on haimster side aswell.
   incomingMessageHostPort: 9000           # the port to bind to to receive messages from haimster. This ip and port must be configured on haimster side aswell.

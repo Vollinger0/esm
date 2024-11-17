@@ -70,7 +70,7 @@ class ConfigPaths(BaseModel):
     install: Path = Field(..., description="the games main installation location")
     osfmount: Path = Field("D:/Servers/Tools/OSFMount/osfmount.com", description="path to osfmount executable needed to mount the ram drive")
     peazip: Path = Field("D:/Servers/Tools/PeaZip/res/bin/7z/7z.exe", description="path to peazip used for the static backups")
-    epmremoteclient: Path = Field("D:/Servers/Tools/esm/emprc/EmpyrionPrime.RemoteClient.Console.exe", description="path to emprc, used to send commands to the server")
+    empremoteclient: Path = Field("D:/Servers/Tools/esm/emprc/EmpyrionPrime.RemoteClient.Console.exe", description="path to emprc, used to send commands to the server")
     eah: Path = Field("D:/Servers/Empyrion/DedicatedServer/EmpyrionAdminHelper", description="path to EAH, for backing up its data")
     steamcmd: Path = Field("D:/Servers/Tools/steamcmd/steamcmd.exe", description="path to steamcmd for installs and updates of the game server")
 

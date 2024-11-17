@@ -21,7 +21,7 @@ class EsmLogger:
         # use rich stream handler for stdout, will reuse the global console object, since logging can't handle spinners and animations.
         # this will make for a very colorful terminal output... a bit too much for my taste, but better than plain white.
         streamHandler = RichHandler(show_path=False, console=EsmLogger.console)
-        streamHandler.setFormatter(logging.Formatter(fmt="%(message)s", datefmt=dateformat))
+        streamHandler.setFormatter(logging.Formatter(fmt="%(thread)d %(message)s", datefmt=dateformat))
         streamHandler.setLevel(streamLogLevel)
         EsmLogger.streamLogLevel = streamLogLevel
         handlers.append(streamHandler)
@@ -31,7 +31,7 @@ class EsmLogger:
             fileLoggingHandler = logging.FileHandler(logFile)
             fileLoggingHandler.setLevel(fileLogLevel)
             EsmLogger.fileLogLevel = fileLogLevel
-            fileLoggingHandler.setFormatter(logging.Formatter(fmt="[%(asctime)s] %(process)d %(levelname)s %(message)s", datefmt=dateformat))
+            fileLoggingHandler.setFormatter(logging.Formatter(fmt="[%(asctime)s] %(process)d %(thread)d %(levelname)s %(message)s", datefmt=dateformat))
             handlers.append(fileLoggingHandler)
 
         logging.basicConfig(

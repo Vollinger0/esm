@@ -1,17 +1,20 @@
-from functools import cached_property
-from http.client import HTTPException
 import logging
 import queue
 import threading
 import time
+import uvicorn
+import requests
+from functools import cached_property
+from http.client import HTTPException
+from fastapi import FastAPI
 from typing import Dict
 
-import requests
 from esm.ConfigModels import MainConfig
 from esm.DataTypes import ChatMessage
 from esm.EsmConfigService import EsmConfigService
 from esm.EsmDatabaseWrapper import EsmDatabaseWrapper
 from esm.EsmGameChatService import EgsChatMessageEvent, EsmGameChatService
+from esm.EsmLogger import EsmLogger
 from esm.ServiceRegistry import Service, ServiceRegistry
 
 log = logging.getLogger(__name__)
@@ -28,8 +31,13 @@ class EsmHaimsterConnector:
     _outgoingResponsesQueue = queue.Queue()
     _outgoingChatResponseHandlerThread: threading.Thread = None
     _outgoingChatResponseHandlerShouldStop: threading.Event = threading.Event()
-    _allPlayers: Dict[int, str]
-    _allPlayersLastUpdate: float
+    _allPlayers: Dict[int, str] = {}
+    _allPlayersLastUpdate: float = None
+
+    _fastApiApp = FastAPI()
+    _httpServer: uvicorn.Server = None
+    _httpServerWorker: threading.Thread = None
+    _shouldExit = threading.Event()
 
     @cached_property
     def config(self) -> MainConfig:
@@ -39,27 +47,77 @@ class EsmHaimsterConnector:
     def esmGameChatService(self) -> EsmGameChatService:
         return ServiceRegistry.get(EsmGameChatService)
     
-    @cached_property
-    def esmDatabaseWrapper(self) -> EsmDatabaseWrapper:
-        return ServiceRegistry.get(EsmDatabaseWrapper)
-
     def initialize(self):
+        """
+            initializes and starts the connector. 
+            returns an even that you can set to force the connector to shut down (or just use the shutdown() method)
+        """
         if not self.config.communication.haimsterEnabled:
             return
         log.info("Initializing haimster connector")
         self.esmGameChatService.initialize()
         self._startIncomingChatMessageHandler()
         self._startOutgoingChatResponseHandler()
+        self._startHttpServer()
         self.sendOutgoingChatResponse(ChatMessage(speaker="hAImster", message="connected!", timestamp=time.time()))
 
+        # register fastapi routes
+        @self._fastApiApp.post("/outgoingmessage")
+        async def sendResponse(message: ChatMessage):
+            self.sendOutgoingChatResponse(message)
+            return {"status": "success"}
+        
+        return self._shouldExit
+        
+    def _startHttpServer(self):
+        """
+            Starts the FastAPI server in a background thread
+        """
+        host = self.config.communication.incomingMessageHostIp
+        port = self.config.communication.incomingMessageHostPort
+        def runHttpServer():
+            config = uvicorn.Config(
+                app=self._fastApiApp,
+                host=host,
+                port=port,
+                loop="auto",
+                log_config=None
+            )
+            self._httpServer = uvicorn.Server(config)
+            #self._httpServer.install_signal_handlers = lambda: None
+            self._httpServer.run()
+
+        self._httpServerWorker = threading.Thread(target=runHttpServer, daemon=True)
+        self._httpServerWorker.start()
+        log.info(f"HTTP server for haimster messages started on http://{host}:{port}")
+
+
+    def _shutdownHttpServer(self):
+        """
+            Clean shutdown of the game server and HTTP server
+        """
+        self._shouldExit.set()
+        log.info("HTTP server for haimster messages shutting down...")
+        if self._httpServerWorker and self._httpServerWorker.is_alive():
+            log.info("Shutting down HTTP server...")
+            self._httpServer.shutdown()
+            self._httpServerWorker.join()
+ 
+
     def shutdown(self):
+        """
+            stop any threads and services belonging to the connector
+        """
         if not self.config.communication.haimsterEnabled:
             return
         log.info("Shutting down haimster connector")
+        self._shutdownHttpServer()
         self.sendOutgoingChatResponse(ChatMessage(speaker="hAImster", message="disconnecting...", timestamp=time.time()))
         self._incomingChatMessageHandlerShouldStop.set()
         self._outgoingChatResponseHandlerShouldStop.set()
         self.esmGameChatService.shutdown()
+        log.info("haimster connector shut down")
+
 
     def _startIncomingChatMessageHandler(self):
         """
@@ -102,7 +160,7 @@ class EsmHaimsterConnector:
             chatMessage = ChatMessage(speaker=playerName, message=message.Data.msg, timestamp=time.time())
             self._sendToHaimster(chatMessage)
         except Exception as e:
-            log.error(f"Error sending chat message to haimster: {str(e)}")
+            log.error(f"Error sending chat message to haimster: {str(e)}", e)
 
     def _sendToHaimster(self, message: ChatMessage):
         """
@@ -115,9 +173,9 @@ class EsmHaimsterConnector:
                 json={"speaker": message.speaker, "message": message.message, "timestamp": message.timestamp}
             )
             if response.status_code != 200 and response.status_code != 204:
-                raise HTTPException(status_code=response.status_code, detail="Chatbot server error")
+                raise HTTPException(f"Could not send message to haimster: {response.status_code}")
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"Error communicating with chatbot server: {str(e)}")
+            raise HTTPException(f"Error communicating with chatbot server: {str(e)}", e)
         
     def _getPlayerName(self, playerId: int):
         """
@@ -125,7 +183,9 @@ class EsmHaimsterConnector:
             the results will be cached for the configured cache time
         """
         cacheTime = self.config.communication.playerNameCacheTime
-        if self._allPlayersLastUpdate and self._allPlayersLastUpdate < time.time() - cacheTime:
-            self._allPlayers = self.esmDatabaseWrapper.retrieveAllPlayerEntities()
+        if len(self._allPlayers) < 1 or time.time() - self._allPlayersLastUpdate > cacheTime:
+            dbWrapper = EsmDatabaseWrapper()
+            self._allPlayers = dbWrapper.retrieveAllPlayerEntities()
             self._allPlayersLastUpdate = time.time()
+            dbWrapper.closeDbConnection()
         return self._allPlayers.get(playerId, f"Player_{playerId}")

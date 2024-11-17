@@ -52,7 +52,10 @@ click.rich_click.COMMAND_GROUPS = {
         },
         {
             "name": "Tools commands",
-            "commands": ["tool-wipe", "tool-cleanup-removed-entities", "tool-cleanup-shared", "tool-clear-discovered", "tool-shareddata-server"],
+            "commands": ["tool-wipe", "tool-cleanup-removed-entities", "tool-cleanup-shared", "tool-clear-discovered", 
+                         "tool-shareddata-server",
+                         "tool-haimster-connector"
+                         ],
         },
         {
             "name": "Experimental - use with caution!",
@@ -409,6 +412,21 @@ def toolSharedDataServer(resume):
         esm = ServiceRegistry.get(EsmMain)
         esm.setUpLogging(caller="esm-shareddata-server", streamLogLevel=EsmLogger.streamLogLevel, fileLogLevel=EsmLogger.fileLogLevel)
         esm.startSharedDataServer(resume)
+
+
+@cli.command(name="tool-haimster-connector", short_help="starts the haimster connector as separate tool")
+#@click.option('--resume', is_flag=True, help="if set, just resume the server, do not recreate data or change the configuration.")
+def toolHaimsterConnector():
+    """This will start the haimster connector that will connect haimster with the games chat.\n
+    \n    
+    This can be started completely separate from the main server and will run in the background until you stop it via CTRL+C.\n
+    
+    Of course, this requires the server and haimster to be running, so you need to start them first.\n
+    \n
+    """
+    with LogContext():
+        esm = ServiceRegistry.get(EsmMain)
+        esm.startHaimsterConnectorAndWait()
 
 
 @cli.command(name="terminate-galaxy", short_help="creates a singularity to destroy everything")
