@@ -5,7 +5,7 @@ import logging
 from pathlib import Path
 import sqlite3
 import time
-from typing import List
+from typing import Dict, List
 from esm.ConfigModels import MainConfig
 from esm.DataTypes import Entity, EntityType, Playfield, SolarSystem
 from esm.EsmConfigService import EsmConfigService
@@ -14,7 +14,13 @@ from esm.ServiceRegistry import ServiceRegistry
 log = logging.getLogger(__name__)
 
 class EsmDatabaseWrapper:
+    """
+        wrapper for the game database, will manage connections, cursors and provide
+        a ton of functions to query the database already
 
+        Make sure to close the db connection after writing to the db, if you date to use the write mode.
+        Also, writing should NEVER be done while something else is writing to it (the game, e.g.)
+    """
     gameDbPath: str
     dbConnectString: str = None
     dbConnection: sqlite3.Connection = None
@@ -377,3 +383,66 @@ class EsmDatabaseWrapper:
         olderPlayfields = self.retrievePFsUnvisitedSince(maximumGametick)
         log.debug(f"found {len(olderPlayfields)} playfields unvisited since {stoptime}")
         return olderPlayfields
+    
+    def retrieveAllPlayerEntities(self) -> Dict[int, str]:
+        """
+        Retrieve all entities of type 1 (Players) from the Entities table and return them as an ID-name map.
+        Args:
+            database_path (str): Path to the SQLite database file
+        Returns:
+            Dict[int, str]: Dictionary mapping entity IDs to their names
+        """
+        entity_map = {}
+        try:
+            cursor = self.getGameDbCursor()
+            cursor.execute("SELECT entityId, name FROM Entities WHERE etype = 1")
+            results = cursor.fetchall()
+            entity_map = {entity_id: name for entity_id, name in results}
+        except sqlite3.Error as e:
+            print(f"Database error: {e}")
+        except Exception as e:
+            print(f"Error: {e}")
+        return entity_map
+    
+    def createChatlog(self):
+        """
+            create a chatlog from the game's database chat, this should not probably only be used when the game is stopped
+        """
+        # This is a query to get the chatlog from the DB 
+        #
+        # SELECT distinct
+        #     --cm.cmid,
+        #     --cm.gametime,
+        #     --ll.playerid,
+        #     (REPLACE(COALESCE(ll.playername, cm.sendername), ' ', '_') || ':') as speaker,
+        #     cm.text
+        # FROM 
+        #     ChatMessages cm
+        # LEFT JOIN 
+        #     Entities e ON cm.senderentityid = e.entityid
+        # LEFT JOIN 
+        #     LoginLogoff ll ON e.entityid = ll.entityid
+        # WHERE
+        #     not (cm.sendername ISNULL and ll.playername ISNULL) AND
+        #     cm.recentityid ISNULL AND
+        #     cm.recfacid = 0 AND
+        #     cm.channel = 0 AND
+        #     cm.sendertype != 3 AND
+        #     ll.playerid NOTNULL
+        #
+        cursor = self.getGameDbCursor()
+
+        # this will get all the chat messages, with the player names and gametimes added
+        cursor.execute("""
+                       select distinct cm.gametime, ll.playerid, ll.playername, cm.sendername, cm.text
+                       from ChatMessages cm
+                       left join Entities e on cm.senderentityid = e.entityid
+                       left join LoginLogoff ll on e.entityid = ll.entityid
+                       where not (cm.sendername is null and ll.playername is null) and cm.recentityid is null and cm.recfacid = 0 and cm.channel = 0 and cm.sendertype != 3 and ll.playerid is not null
+                       order by cm.gametime asc
+                       """)
+        rows = cursor.fetchall()
+        #for gametime, playerid, playername, sendername, text in rows:
+        # TODO: if ll.playername is not set, use cm.sendername
+        # TODO: need to calculate the timestamps out of the gameticks
+        

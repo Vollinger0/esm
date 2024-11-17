@@ -79,3 +79,12 @@ class test_EsmDatabaseWrapper(unittest.TestCase):
 
         pfIds = db.retrieveNonRemovedEntities()
         self.assertEqual(len(pfIds), 213)
+
+    def test_retrieve_PlayerNames(self):
+        dbPath = Path(f"./test/test.db").resolve()
+        db = EsmDatabaseWrapper(dbPath)
+
+        playerEntities = db.retrieveAllPlayerEntities()
+        self.assertEqual(len(playerEntities), 6)
+        log.debug(f"playerEntities: {playerEntities}")
+        self.assertEqual(playerEntities.get(16142), "Vollinger")
