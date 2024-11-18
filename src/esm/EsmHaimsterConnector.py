@@ -1,3 +1,4 @@
+import asyncio
 import logging
 import queue
 import threading
@@ -23,13 +24,16 @@ logging.getLogger("uvicorn").setLevel(logging.WARNING)
 @Service
 class EsmHaimsterConnector:
     """
-        class that handles the communication with haimster
+        Service that handles the communication with haimster and the egs ingame chat via the EsmGameChatService.
+
         It will ask the EsmGameChatService for incoming chat messages and send them to haimster
-        It will watch a queue of responses from haimster and send them to the EsmGameChatService
+        It will listen to an http endpoint for outgoing responses from haimster and send them to the EsmGameChatService
+
+        It uses queues and worker threads internally for serial processing and control
     """
     _incomingChatMessageHandlerThread: threading.Thread = None
     _incomingChatMessageHandlerShouldStop: threading.Event = threading.Event()
-    _outgoingResponsesQueue = queue.Queue()
+    _outgoingChatResponsesQueue = queue.Queue()
     _outgoingChatResponseHandlerThread: threading.Thread = None
     _outgoingChatResponseHandlerShouldStop: threading.Event = threading.Event()
     _allPlayers: Dict[int, str] = {}
@@ -53,8 +57,6 @@ class EsmHaimsterConnector:
             initializes and starts the connector. 
             returns an even that you can set to force the connector to shut down (or just use the shutdown() method)
         """
-        if not self.config.communication.haimsterEnabled:
-            return
         log.info("Initializing haimster connector")
         self.esmGameChatService.initialize()
         self._startIncomingChatMessageHandler()
@@ -81,11 +83,9 @@ class EsmHaimsterConnector:
                 app=self._fastApiApp,
                 host=host,
                 port=port,
-                loop="auto",
-                log_config=None
+                #log_config=None
             )
             self._httpServer = uvicorn.Server(config)
-            #self._httpServer.install_signal_handlers = lambda: None
             self._httpServer.run()
 
         self._httpServerWorker = threading.Thread(target=runHttpServer, daemon=True)
@@ -95,22 +95,22 @@ class EsmHaimsterConnector:
 
     def _shutdownHttpServer(self):
         """
-            Clean shutdown of the game server and HTTP server
+            Clean shutdown of the worker threads and HTTP server
         """
         self._shouldExit.set()
         log.info("HTTP server for haimster messages shutting down...")
         if self._httpServerWorker and self._httpServerWorker.is_alive():
             log.info("Shutting down HTTP server...")
-            self._httpServer.shutdown()
-            self._httpServerWorker.join()
+            # for some reason, the shutdown method on the uvicorn server doesn't work properly
+            self._httpServer.should_exit = True
+            # in doubt, wait for the worker thread to finish, but not for too long
+            self._httpServerWorker.join(timeout=5)
  
 
     def shutdown(self):
         """
             stop any threads and services belonging to the connector
         """
-        if not self.config.communication.haimsterEnabled:
-            return
         log.info("Shutting down haimster connector")
         self._shutdownHttpServer()
         self.sendOutgoingChatResponse(ChatMessage(speaker="hAImster", message="disconnecting...", timestamp=time.time()))
@@ -141,7 +141,7 @@ class EsmHaimsterConnector:
         def _outgoingChatResponseHandler():
             while not self._outgoingChatResponseHandlerShouldStop.is_set():
                 try:
-                    response = self._outgoingResponsesQueue.get(timeout=1)
+                    response = self._outgoingChatResponsesQueue.get(timeout=1)
                     if response:
                         self._sendOutgoingChatResponseToEgsChat(response)
                 except queue.Empty:
@@ -152,7 +152,7 @@ class EsmHaimsterConnector:
         self.esmGameChatService.sendMessage(speaker=response.speaker, message=response.message)
 
     def sendOutgoingChatResponse(self, response: ChatMessage):
-        self._outgoingResponsesQueue.put(response)
+        self._outgoingChatResponsesQueue.put(response)
         
     def _sendIncomingChatMessageToHaimster(self, message: EgsChatMessageEvent):
         try:

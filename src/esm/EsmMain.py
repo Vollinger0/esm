@@ -660,14 +660,14 @@ class EsmMain:
                 return
             except OSError as ex:
                 if timeLeft > 1:
-                    log.warning(f"Port {port} probably already bound, is the script already running? Will wait {interval} seconds to retry. Time left for tries: {timeLeft}")
+                    log.warning(f"Port {port} probably already bound, is esm already running? Will wait {interval} seconds to retry. Time left for tries: {timeLeft}")
                     time.sleep(interval)
                     timeLeft = timeLeft - interval
                 elif timeLeft == 0:
-                    log.error(f"Giving up on waiting. You will have to check yourself why there is another script running.")
+                    log.error(f"Giving up on waiting. You will have to check yourself why there is another esm instance running.")
                     timeLeft = -1
                     if raiseException:
-                        raise AdminRequiredException(f"Giving up on waiting. You will have to check yourself why there is another script running.")
+                        raise AdminRequiredException(f"Giving up on waiting. You will have to check yourself why there is another esm instance running.")
                     sys.exit(ExitCodes.INSTANCE_RUNNING_GAVE_UP)
                 else:
                     log.debug(f"If you need to use another port for this application, set it in the config.")

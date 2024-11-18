@@ -44,7 +44,9 @@ class EgsChatMessageEvent(BaseModel):
 @Service
 class EsmGameChatService:
     """
-        class that handles the communication with egs via the emprc tool
+        class that handles the ingame chat communication with egs via the emprc tool
+        it will do so using queues and separate threads handling the reading and writing
+        but provides two simple methods for interaction with the chat.
     """
     _incomingMessages = queue.Queue()
     _outgoingMessages = queue.Queue()
