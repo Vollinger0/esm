@@ -3,6 +3,7 @@ import logging
 from pathlib import Path
 import random
 import signal
+from typing import List
 import rich_click as click
 import sys
 from esm.EsmLogger import EsmLogger
@@ -51,15 +52,23 @@ click.rich_click.COMMAND_GROUPS = {
             "commands": ["game-install", "game-update", "scenario-update", "delete-all"],
         },
         {
-            "name": "Tools commands",
-            "commands": ["tool-wipe", "tool-cleanup-removed-entities", "tool-cleanup-shared", "tool-clear-discovered", 
-                         "tool-shareddata-server",
-                         "tool-haimster-connector"
-                         ],
+            "name": "Tool commands",
+            "commands": [
+                "tool-wipe", 
+                "tool-cleanup-removed-entities", 
+                "tool-cleanup-shared", 
+                "tool-clear-discovered", 
+                "tool-shareddata-server",
+                "tool-haimster-connector",
+                "tool-export-chatlog"
+            ],
         },
         {
             "name": "Experimental - use with caution!",
-            "commands": ["tool-purge-wiped-playfields", "tool-purge-empty-playfields"]
+            "commands": [
+                "tool-purge-wiped-playfields", 
+                "tool-purge-empty-playfields"
+            ]
         }
     ]
 } 
@@ -101,7 +110,7 @@ def showVersion():
     log.info(f"Version is {version}")
 
 
-@cli.command(name="ramdisk-install", short_help="prepares the file system for ramdisk setup")
+@cli.command(name="ramdisk-install", short_help="prepares the file system for ramdisk setup, creates a new savegame if necessary")
 def ramdiskInstall():
     """Prepares the file structure to be used with a ramdisk by moving the savegame to the gamesmirror folder. This will also help you create a new savegame if none exists."""
     with LogContext():
@@ -110,7 +119,7 @@ def ramdiskInstall():
         esm.ramdiskInstall()
 
 
-@cli.command(name="ramdisk-setup", short_help="sets up the ramdisk by mounting the ramdisk and copying the savegame to it")
+@cli.command(name="ramdisk-setup", short_help="sets up the ramdisk by mounting the ramdisk and copying the existing savegame to it")
 def ramdiskSetup():
     """Sets up the ramdisk - this will actually mount it and copy the savegame mirror to it. Use this after a server reboot before starting the server.\n
     \n
@@ -122,7 +131,7 @@ def ramdiskSetup():
         esm.ramdiskSetup()
 
 
-@cli.command(name="ramdisk-remount", short_help="unmounts the ramdisk and calls ramdisk-setup again to mount it")
+@cli.command(name="ramdisk-remount", short_help="unmounts the ramdisk and calls ramdisk-setup to mount it again")
 def ramdiskRemount():
     """Unmounts the ramdisk and sets it up again. This can be useful if you changed the ramdisk size in the configuration and want to apply those changes.\n
     \n
@@ -134,7 +143,7 @@ def ramdiskRemount():
         esm.ramdiskRemount()
 
 
-@cli.command(name="ramdisk-uninstall", short_help="reverts the changes done by ramdisk-install.")
+@cli.command(name="ramdisk-uninstall", short_help="reverts the changes done by ramdisk-install")
 @click.option("--force", is_flag=True, default=False, help="force uninstall even if the configuration says to use a ramdisk")
 def ramdiskUninstall(force):
     """Reverts the changes done by ramdisk-install, moving the savegame back to its original location. Use this if you don't want to run the game on a ramdisk any more.\n
@@ -147,9 +156,13 @@ def ramdiskUninstall(force):
         esm.ramdiskUninstall(force=force)
 
 
-@cli.command(name="server-start", short_help="starts the server (and the synchronizer, if needed). Returns when the server shuts down")
+@cli.command(name="server-start", short_help="starts the server (included the configured helpers). Returns when the server shuts down")
 def startServer():
-    """Starts up the server. If ramdisk usage is enabled, this will automatically start the ram2mirror synchronizer thread too. The script will return when the server shut down.\n
+    """Starts up the server along with all configured esm helpers, like ram synchronizer, haimsterconnector, etc.\n
+    \n
+    If ramdisk usage is enabled, this will automatically start the ram2mirror synchronizer thread. The script will return when the server shut down.\n
+    \n
+    If haimster connector is enabled, this will automatically start the haimster connector thread.\n
     \n
     Stopping this script with CTRL+C will *NOT* shut down the server. If you want to do that do that either via other means or use the server-stop command in a new console.\n
     """
@@ -174,9 +187,9 @@ def stopServer():
             log.error(f"Could not stop server. Is it running at all? {ex}")
 
 
-@cli.command(name="server-resume", short_help="resumes execution of the script if the gameserver is still running. Will start the synchronizer if required.")
+@cli.command(name="server-resume", short_help="resumes execution of esm if the gameserver is still running. Will start the additional helpers if required, as described in server-start")
 def resumeServer():
-    """Looks for a running server and restarts inner processes accordingly (e.g. the ram synchronizer). Will end when the server shuts down, just like server-start."""
+    """Looks for a running server and restarts inner helpers accordingly (e.g. the ram synchronizer). Will end when the server shuts down, just like server-start."""
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)
         esm.checkAndWaitForOtherInstances()
@@ -189,17 +202,17 @@ def resumeServer():
             EsmLogger.console.log("Resume failed")
 
 
-@cli.command(name="backup-create", short_help="creates a fast rolling backup")
+@cli.command(name="backup-create", short_help="creates a fast rolling backup from the savegame mirror")
 def createBackup():
-    """Creates a new rolling mirror backup from the savegame mirror, can be done while the server is running if it is in ramdisk mode."""
+    """Creates a new rolling mirror backup of the savegame mirror, can be done while the server is running if it is in ramdisk mode."""
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)
         esm.createBackup()
 
 
-@cli.command(name="backup-static-create", short_help="creates a static zipped backup")
+@cli.command(name="backup-static-create", short_help="creates a static zipped backup from the latest rolling backup")
 def createStaticBackup():
-    """Creates a new static and zipped backup of the latest rolling backup. Can be done while the server is running if it is in ramdisk mode."""
+    """Creates a new static and zipped backup of the latest rolling backup. Can be done while the server is running whether it is running in ramdisk mode or not."""
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)
         esm.createStaticBackup()
@@ -240,12 +253,15 @@ def updateScenario(source, nodryrun):
     Since steam does not allow for anonymous downloads, you'll need to get the scenario and copy it to the scenario source folder yourself.\n
     Alternatively, you may define the scenario source path with the --source param\n
     \n
+    [yellow bold]If you are using the shared data tool, you might want to restart it to recreate the zip after this[/]\n
+    \n
     [red bold]The server may not be running for this.[/]\n
     """
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)
         esm.checkAndWaitForOtherInstances()
         esm.updateScenario(source, not nodryrun)
+
 
 @cli.command(name="delete-all", short_help="deletes everything related to the currently configured savegame interactively")
 @click.option("--doit", is_flag=True, help="must be set to actually do anything.")
@@ -395,6 +411,27 @@ def toolClearDiscovered(dblocation, nodryrun, territory, showterritories, listfi
             checkTerritoryParameter(territory, esm)
         
         esm.clearDiscovered(dblocation=dblocation, dryrun=not nodryrun, territoryName=territory, inputFile=listfile, inputNames=names)
+
+
+@cli.command(name="tool-export-chatlog", short_help="exports the chatlog of a game to a file")
+@click.option('--dblocation', metavar='<file>', help="location of database file to be used. Defaults to use the current savegames database")
+@click.option('--filename', metavar='<path>', default="chatlog.json", show_default=True, help="the filename to write the chatlog to. The extension will be adjusted according to the file format specified")
+@click.option('--format', default="json", type=click.Choice(["json","text"]), show_default=True, help=f"the format to use for the export")
+@click.option('--excludenames', '-e', multiple=True, type=str, help="a list of sender names to exclude from the chatlog")
+@click.option('--includenames', '-i', multiple=True, type=str, help="a list of sender names to include from the chatlog")
+def toolExportChatlog(dblocation, filename, format, excludenames, includenames):
+    """
+        Exports the chat log for current or given database to a the file system, with the specified filename and format\n
+        \n
+        --includenames and --excludenames mutually exclusive and case sensitive\n
+        You can pass a list of names like this: -e "name1" -e "name2" etc.\n
+        \n
+    """
+    with LogContext():
+        esm = ServiceRegistry.get(EsmMain)
+        if len(excludenames) > 0 and len(includenames) > 0:
+            raise WrongParameterError(f"Either --excludenames or --includenames can be used, but not both at the same time.")
+        esm.exportChatLog(dblocation=dblocation, filename=filename, format=format, excludeNames=list(excludenames), includeNames=list(includenames))
 
 
 @cli.command(name="tool-shareddata-server", short_help="starts a webserver to serve the shared data as a downloadable zip")

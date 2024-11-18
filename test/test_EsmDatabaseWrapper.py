@@ -86,5 +86,13 @@ class test_EsmDatabaseWrapper(unittest.TestCase):
 
         playerEntities = db.retrieveAllPlayerEntities()
         self.assertEqual(len(playerEntities), 6)
-        log.debug(f"playerEntities: {playerEntities}")
         self.assertEqual(playerEntities.get(16142), "Vollinger")
+
+    def test_export_chatlog(self):
+        dbPath = Path(f"./test/test.db").resolve()
+        db = EsmDatabaseWrapper(dbPath)
+        chatlog = db.retrieveFullChatlog()
+        self.assertEqual(len(chatlog), 16)
+        self.assertEqual(chatlog[10]['timestamp'], 1696969083.644768)
+        self.assertEqual(chatlog[10]['speaker'], "Vollinger")
+        self.assertEqual(chatlog[10]['message'], "cb:restart")

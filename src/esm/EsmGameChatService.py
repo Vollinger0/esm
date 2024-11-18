@@ -1,16 +1,19 @@
+from datetime import datetime
 from functools import cached_property
 import json
 import logging
+from pathlib import Path
 import queue
 import subprocess
 import threading
 import time
-from typing import Optional, Union
+from typing import List, Optional, Union
 
 from pydantic import BaseModel
 from esm.ConfigModels import MainConfig
 from esm.DataTypes import ChatMessage
 from esm.EsmConfigService import EsmConfigService
+from esm.EsmDatabaseWrapper import EsmDatabaseWrapper
 from esm.EsmEmpRemoteClientService import EsmEmpRemoteClientService
 from esm.ServiceRegistry import Service, ServiceRegistry
 
@@ -188,3 +191,41 @@ class EsmGameChatService:
             return self._incomingMessages.get(block=block, timeout=timeout)
         except queue.Empty:
             return None
+        
+    def exportChatLog(self, dbFilePath: Path=None, filename: str="chatlog.json", format: str="json", excludeNames: List[str] = [], includeNames: List[str] = []):
+        """
+            Exports the chat log for current or given database to a the file system, with the specified format
+        """
+        dbWrapper = EsmDatabaseWrapper(dbFilePath)
+        chatlog = dbWrapper.retrieveFullChatlog()
+        filenamePath = Path(Path(filename).stem + "." + format)
+        cleanChatLog = list()
+        if len(includeNames) > 0:
+            for message in chatlog:
+                if message['speaker'] in includeNames:
+                    cleanChatLog.append(message)
+        else:
+            # also always exclude the sync event announcer
+            excludeNames.append(self.config.communication.synceventname)
+            for message in chatlog:
+                if message['speaker'] not in excludeNames:
+                    cleanChatLog.append(message)
+
+        if format == "json":
+            with open(filenamePath, "w") as f:
+                for message in cleanChatLog:
+                    time = datetime.fromtimestamp(message['timestamp']).isoformat(timespec='seconds')
+                    speaker = message['speaker']
+                    message = message['message']
+                    line = {"time": time, "speaker": speaker, "message": message}
+                    f.write(f"{json.dumps(line)}\n")
+        elif format == "text":
+            with open(filenamePath, "w") as f:
+                for message in cleanChatLog:
+                    timestamp = datetime.fromtimestamp(message['timestamp']).isoformat(timespec='seconds')
+                    f.write(f"{timestamp} {message['speaker']}: {message['message']}\n")
+        else:
+            raise ValueError(f"Unsupported format specification for download: {format}")
+        dbWrapper.closeDbConnection()
+        log.info(f"Chat log exported to '{filenamePath.absolute()}'")
+        return filenamePath.absolute()

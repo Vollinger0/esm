@@ -108,12 +108,6 @@ esm = EsmMain(caller="esm-test", customConfigFilePath=Path("esm-custom-config.ya
 log.debug(f"Script {__file__} started")
 log.debug(f"Logging to: {esm.logFile}")
 
-
-"""wipetool called with params: {'self': <esm.EsmWipeService.EsmWipeService object at 0x0000021443715310>, 'systemAndPlayfieldNames': None, 'territory':    
-                             None, 'purge': False, 'wipetype': <WipeType.ALL: <esm.DataTypes.WipeTypeInfo object at 0x00000214417BC320>>, 'purgeleavetemplates': False,
-                             'purgeleaveentities': False, 'nocleardiscoveredby': False, 'minimumage': 30, 'dbLocationPath': 'D:\\Servers\\20230708_survival_Anvils6_global.db.org',   
-                             'nodryrun': False, 'force': False, 'database': <esm.EsmDatabaseWrapper.EsmDatabaseWrapper object at 0x0000021443752BD0>}
-"""
 #esm.wipeTool(dbLocationPath=Path("../20230708_survival_Anvils6_global.db.org").resolve(), nodryrun=False, territoryName="GALAXY", minimumage=30)
 #wipeTool(dblocation = "D:\\Servers\\20230708_survival_Anvils6_global.db.org", nodryrun=False, territoryName="GALAXY", minimumage=30)
 
@@ -144,7 +138,8 @@ log.debug(f"Logging to: {esm.logFile}")
 #     time.sleep(20)
 #     signal.raise_signal(signal.SIGINT)
 # threading.Thread(target=sendSigIntAfter20Secs).start()
+#esm.startHaimsterConnectorAndWait()
 
-esm.startHaimsterConnectorAndWait()
+#esm.exportChatLog()
 
 log.info(f"Script finished successfully. Check the logfile ({esm.logFile}) if you missed something. Bye!")

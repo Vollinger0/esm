@@ -21,3 +21,5 @@ wwwroot/*.zip
 wwwroot/index.html
 esm-custom-config_test.yaml
 /.pytest_cache
+/chatlog.json
+/chatlog.text

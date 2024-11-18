@@ -4,6 +4,7 @@ import functools
 import logging
 from pathlib import Path
 import sqlite3
+import sys
 import time
 from typing import Dict, List
 from esm.ConfigModels import MainConfig
@@ -72,9 +73,8 @@ class EsmDatabaseWrapper:
     
     def getGameDbConnection(self) -> sqlite3.Connection:
         if not self.dbConnection:
-            log.debug(f"Opening game database at '{self.gameDbPath}'")
             dbConnectString = self.getGameDbString()
-            log.debug(f"using database connect string '{dbConnectString}'")
+            log.info(f"Opening game database at '{dbConnectString}'")
             self.dbConnection = sqlite3.connect(dbConnectString, uri=True)
             self.connectTime = time.time()
         return self.dbConnection
@@ -412,9 +412,9 @@ class EsmDatabaseWrapper:
             print(f"Error: {e}")
         return entity_map
     
-    def createChatlog(self):
+    def retrieveFullChatlog(self):
         """
-            create a chatlog from the game's database chat, this should not probably only be used when the game is stopped
+            create a chatlog from the game's database chat, this should probably only be used when the game is stopped
         """
         # This is a query to get the chatlog from the DB 
         #
@@ -446,11 +446,66 @@ class EsmDatabaseWrapper:
                        from ChatMessages cm
                        left join Entities e on cm.senderentityid = e.entityid
                        left join LoginLogoff ll on e.entityid = ll.entityid
-                       where not (cm.sendername is null and ll.playername is null) and cm.recentityid is null and cm.recfacid = 0 and cm.channel = 0 and cm.sendertype != 3 and ll.playerid is not null
+                       where cm.channel = 0
                        order by cm.gametime asc
                        """)
         rows = cursor.fetchall()
-        #for gametime, playerid, playername, sendername, text in rows:
-        # TODO: if ll.playername is not set, use cm.sendername
-        # TODO: need to calculate the timestamps out of the gameticks
-        
+        chatLog = []
+        for gametime, playerid, playername, sendername, text in rows:
+            # need to calculate the timestamps out of the gameticks
+            timestamp = self.getTimeStampFromGameTick(gametime)
+            # if ll.playername is not set, use cm.sendername
+            speaker = playername if playername is not None else sendername if sendername is not None else "(unknown)"
+            message = text
+            line = {"timestamp": timestamp, "speaker": speaker, "message": message}
+            chatLog.append(line)
+        return chatLog
+    
+    
+    def getTimeStampFromGameTick(self, gametick: int) -> float:
+        """
+            returns the timestamp that corresponds to a given gametick
+            this will check the entries in the ServerStartStop table, calculate
+            the average gametick per time slice and then use that to calculate the timestamp
+        """
+        # get time slices from the ServerStartStop table
+        serverStartStopSlices = self.getServerStartStopSlices()
+        # find the slice that contains the given gametick
+        for slice in serverStartStopSlices:
+            if gametick >= slice["startticks"] and gametick <= slice["stopticks"]:
+                # calculate the average seconds per gametick
+                secondsPerGameTick = (slice["stoptime"] - slice["starttime"]).total_seconds() / (slice["stopticks"] - slice["startticks"])
+                # calculate the timestamp
+                timestamp = slice["starttime"] + timedelta(seconds=(gametick - slice["startticks"]) * secondsPerGameTick)
+                return timestamp.timestamp()
+    
+    @functools.lru_cache    
+    def getServerStartStopSlices(self):
+        """
+            return the server start stop slices
+        """
+        cursor = self.getGameDbCursor()
+        cursor.execute("""
+                       select sid, startticks, stopticks, starttime, stoptime
+                       from ServerStartStop
+                       order by sid asc
+                       """)
+        rows = cursor.fetchall()
+        serverStartStopSlices = []
+        index = -1
+        for sid, startticks, stopticks, starttime, stoptime in rows:
+            index += 1
+            if stoptime is None:
+                # this probably means the server crashed, and stopticks and stoptime are null. We'll have to copy the values from the next entry (if there is one), assuming this kinda when the server stopped.
+                if index < len(rows) - 1:
+                    nextSid, nextStartticks, nextStopticks, nextStarttime, nextStoptime = rows[index + 1]
+                    stopticks = nextStartticks
+                    stoptime = nextStarttime
+                else:
+                    # if there is no next entry, we'll just use the current time and max integer for the stopticks
+                    stopticks = sys.maxsize
+                    stoptime = datetime.now().strftime('%Y-%m-%d %H:%M:%S') # we could use the file last modification date ... but its getting too complicated now ;)
+            startdatetime = datetime.strptime(starttime, '%Y-%m-%d %H:%M:%S')
+            stopdatetime = datetime.strptime(stoptime, '%Y-%m-%d %H:%M:%S')
+            serverStartStopSlices.append({"sid": sid, "startticks": int(startticks), "stopticks": int(stopticks), "starttime": startdatetime, "stoptime": stopdatetime})
+        return serverStartStopSlices

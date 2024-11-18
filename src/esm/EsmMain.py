@@ -7,6 +7,7 @@ import time
 import sys
 from typing import List
 from esm import Tools
+from esm.EsmGameChatService import EsmGameChatService
 from esm.EsmHaimsterConnector import EsmHaimsterConnector
 from esm.EsmSharedDataServer import EsmSharedDataServer
 from esm.exceptions import AdminRequiredException, ExitCodes, RequirementsNotFulfilledError, ServerNeedsToBeStopped, UserAbortedException, WrongParameterError
@@ -74,6 +75,10 @@ class EsmMain:
     @cached_property
     def configService(self) -> EsmConfigService:
         return ServiceRegistry.get(EsmConfigService)
+    
+    @cached_property
+    def gameChatService(self) -> EsmGameChatService:
+        return ServiceRegistry.get(EsmGameChatService)
     
     @cached_property
     def config(self) -> MainConfig:
@@ -826,3 +831,10 @@ class EsmMain:
         shouldExit = self.haimsterConnector.initialize()
         while not shouldExit.is_set():
             time.sleep(1)
+
+    def exportChatLog(self, dblocation: str=None, filename: str="chatlog.json", format: str="json", excludeNames: List[str] = [], includeNames: List[str] = []):
+        """
+            exports the chat log from given database to filename with given format.
+        """
+        dbLocationPath = self.getDBLocationPath(dblocation)
+        self.gameChatService.exportChatLog(dbLocationPath, filename, format, excludeNames, includeNames)

@@ -4,7 +4,6 @@
 
 ## later
 - [ ] integrate haimster as tool, maybe aswell run integrated?
-- [ ] tool to export chatlogs from the DB
 - [ ] read the territory config from the galaxyconfig.ecf ourselves. Search for "Child Territory" - Blocks.
 - [ ] backup additional should support globbing
 - [ ] wipe-tool --show* options should work without instance-check, also in dryrun it should work with --dblocation (to get some stats from backups)
@@ -42,6 +41,7 @@
 - [ ] add cb:shield:$id function to be able to get a ships shield values?
 
 ## done
+- [x] tool to export chatlogs from the DB
 - [x] integrate haimster-connector as new tool, optionally running along with the server?
 - [x] add an AI-powered chatbot, chatgpt-like that roleplays as a spacefaring hamster that reacts to player chat?
 - [x] add option to disable auto-editing of dedicated yaml in shared data tool
