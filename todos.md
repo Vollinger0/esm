@@ -1,11 +1,10 @@
 # TODOS
 
 ## WIP
-- [+] integrate haimster-connector as new tool, optionally running along with the server?
-- [+] add an AI-powered chatbot, chatgpt-like that roleplays as a spacefaring hamster that reacts to player chat?
 
 ## later
-- [ ] tool to extract chatlogs from the DB
+- [ ] integrate haimster as tool, maybe aswell run integrated?
+- [ ] tool to export chatlogs from the DB
 - [ ] read the territory config from the galaxyconfig.ecf ourselves. Search for "Child Territory" - Blocks.
 - [ ] backup additional should support globbing
 - [ ] wipe-tool --show* options should work without instance-check, also in dryrun it should work with --dblocation (to get some stats from backups)
@@ -32,7 +31,7 @@
 - [ ] add switch to backup-tool to make backups EWA-compatible
 - [ ] provide tool to fix item icons as good as possible in EWA, current process:
    1. open item list in eah, CTRL+A, CTRL+C and copy into text file? Or find out how the item list file in epf got created
-   - info from notoats: should be trivial to convert to python
+      - info from notoats: should be trivial to convert to python
       blocksmap.dat: https://gist.github.com/NotOats/36b6192b4703d55aa5ce334388ff1990
       my old ECF file reader: https://gist.github.com/NotOats/a585298736c70930c89545c4c56aeae9
       just load the item list from ECF files ("BlocksConfig.ecf", "ItemsConfig.ecf") and overwrite with blocksmap.dat entries
@@ -43,6 +42,8 @@
 - [ ] add cb:shield:$id function to be able to get a ships shield values?
 
 ## done
+- [x] integrate haimster-connector as new tool, optionally running along with the server?
+- [x] add an AI-powered chatbot, chatgpt-like that roleplays as a spacefaring hamster that reacts to player chat?
 - [x] add option to disable auto-editing of dedicated yaml in shared data tool
 - [x] add option to override the host and port when aut-editing the dedicated yaml in the shared data tool
 - [x] resume mode / create mode for the shared data server to be able to control if we actually want to recreate the zip.
@@ -51,8 +52,8 @@
 - [-] use http redirects to work around the issue of having to edit the dedicated yaml? It follows, but doesn't care.
 - [x] add support for the new shareddata-url feature once it is released and we know how it works
 - [x] read the id of the savegame data folder name for the savegame tool from the main dedicated log, once the game has started once.
-  * see logfile and search for the "UniqueId" when the game logs something like: 23-01:04:31.793 18_04 -LOG- Mode=currentQuery, GameSeed=8979695, UniqueId=931593376, EntityId=1001
-  * it may be necessary to find the proper logfile first though, since the logs are not related to the savegame
+  - see logfile and search for the "UniqueId" when the game logs something like: 23-01:04:31.793 18_04 -LOG- Mode=currentQuery, GameSeed=8979695, UniqueId=931593376, EntityId=1001
+  - it may be necessary to find the proper logfile first though, since the logs are not related to the savegame
 - [x] add some more placeholders for the html-template, e.g. one for the password from the dedicated.yaml
 - [x] bug: delete-all does not back up the esm logs properly
 - [x] fix shared data download: files in the zip have to have their modification timestamp increased by at least 12 hours, since the game assumes anything else to be outdated for some reason.
