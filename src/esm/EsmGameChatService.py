@@ -1,3 +1,4 @@
+import unidecode
 from datetime import datetime
 from functools import cached_property
 import json
@@ -199,33 +200,44 @@ class EsmGameChatService:
         dbWrapper = EsmDatabaseWrapper(dbFilePath)
         chatlog = dbWrapper.retrieveFullChatlog()
         filenamePath = Path(Path(filename).stem + "." + format)
-        cleanChatLog = list()
+
+        # filter out any names furst
+        filteredChatLog = list()
         if len(includeNames) > 0:
             for message in chatlog:
                 if message['speaker'] in includeNames:
-                    cleanChatLog.append(message)
+                    filteredChatLog.append(message)
         else:
             # also always exclude the sync event announcer
             excludeNames.append(self.config.communication.synceventname)
             for message in chatlog:
                 if message['speaker'] not in excludeNames:
-                    cleanChatLog.append(message)
+                    filteredChatLog.append(message)
+           
+        # sanitize & convert fields
+        sanitizedChatLog = list()
+        for chatMessage in filteredChatLog:
+            time = datetime.fromtimestamp(chatMessage['timestamp']).isoformat(timespec='seconds')
+            speaker = self.cleanString(chatMessage['speaker'])
+            message = self.cleanString(chatMessage['message'])
+            sanitizedChatLog.append({"time": time, "speaker": speaker, "message": message})
 
-        if format == "json":
-            with open(filenamePath, "w") as f:
-                for message in cleanChatLog:
-                    time = datetime.fromtimestamp(message['timestamp']).isoformat(timespec='seconds')
-                    speaker = message['speaker']
-                    message = message['message']
-                    line = {"time": time, "speaker": speaker, "message": message}
+        # write to file
+        with open(filenamePath, "w") as f:
+            if format == "json":
+                for chatMessage in sanitizedChatLog:
+                    line = {"time": chatMessage['time'], "speaker": chatMessage['speaker'], "message": chatMessage['message']}
                     f.write(f"{json.dumps(line)}\n")
-        elif format == "text":
-            with open(filenamePath, "w") as f:
-                for message in cleanChatLog:
-                    timestamp = datetime.fromtimestamp(message['timestamp']).isoformat(timespec='seconds')
-                    f.write(f"{timestamp} {message['speaker']}: {message['message']}\n")
-        else:
-            raise ValueError(f"Unsupported format specification for download: {format}")
+            elif format == "text":
+                for chatMessage in sanitizedChatLog:
+                    f.write(f"{chatMessage['time']} {chatMessage['speaker']}: {chatMessage['message']}\n")
+            else:
+                raise ValueError(f"Unsupported format specification for download: {format}")
         dbWrapper.closeDbConnection()
         log.info(f"Chat log exported to '{filenamePath.absolute()}'")
         return filenamePath.absolute()
+
+    def cleanString(self, string: str) -> str:
+        string = unidecode.unidecode(string)
+        string = ''.join(char for char in string if ord(char) >= 32 and ord(char) != 127)
+        return string
