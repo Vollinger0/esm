@@ -65,6 +65,7 @@ communication:  # configuration for the in-game communication
   synceventsfile: hamster_sync_lines.csv  # should contain the path to a csv file with two columns, each containing the first and second sentence. The first will be used when starting a sync, the second when its finished.
   haimsterEnabled: false                  # enables haimster integration, which requires a running haimster server
   haimsterHost: http://localhost:8000     # the url to the haimster server
+  haimsterStartupDelay: 60                # how many seconds to wait after a server start before starting the haimster connector, since it needs a running server
   playerNameCacheTime: 300                # time in seconds to cache player names for, since they need to be retrieved from the database
   incomingMessageHostIp: 0.0.0.0          # the host url to bind our http server to to receive messages from haimster. This ip and port must be configured on haimster side aswell.
   incomingMessageHostPort: 9000           # the port to bind to to receive messages from haimster. This ip and port must be configured on haimster side aswell.
