@@ -18,6 +18,7 @@ from esm.EsmLogger import EsmLogger
 from esm.ServiceRegistry import Service, ServiceRegistry
 
 log = logging.getLogger(__name__)
+logging.getLogger("uvicorn").setLevel(logging.WARNING)
 
 @Service
 class EsmHaimsterConnector:

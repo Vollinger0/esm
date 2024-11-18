@@ -82,7 +82,7 @@ class EsmSharedDataServer:
             sharedDataUrl = self.getSharedDataURL(servingUrlRoot, autoZipFile)
 
             log.info(f"Shared data zip file for server is at: '{sharedDataUrl}'")
-            log.warn(f"Using this SharedDataURL feature is dangerous! Make sure the URL above will be reachable for all your players, or it might break the game! Read the readme_shareddata.md for more information.")
+            log.warning(f"Using this SharedDataURL feature is dangerous! Make sure the URL above will be reachable for all your players, or it might break the game! Read the readme_shareddata.md for more information.")
 
             if self.config.downloadtool.autoEditDedicatedYaml:
                 self.configService.backupDedicatedYaml()
@@ -92,9 +92,9 @@ class EsmSharedDataServer:
 
                 # check if the configuration of the dedicated yaml (we will not make any changes to it) has the auto zip url configured properly
                 self.checkDedicatedYamlHasAutoZipUrl(sharedDataUrl)
-                log.warn(f"The dedicated yaml has been updated to point to the shared data tool, make sure to restart the server for it to take effect!")
+                log.warning(f"The dedicated yaml has been updated to point to the shared data tool, make sure to restart the server for it to take effect!")
             else:
-                log.warn(f"You turned off the autoEditDedicatedYaml feature. The dedicated yaml will NOT be updated automatically, make sure it the correct url! Otherwise it might break the game!")
+                log.warning(f"You turned off the autoEditDedicatedYaml feature. The dedicated yaml will NOT be updated automatically, make sure it the correct url! Otherwise it might break the game!")
         
         log.info(f"Starting download server for {len(zipFiles)} zip files (excluding default assets).")
         def NoOp(*args):
@@ -110,11 +110,11 @@ class EsmSharedDataServer:
             
             if self.config.downloadtool.useSharedDataURLFeature and self.config.downloadtool.autoEditDedicatedYaml:
                 self.configService.rollbackDedicatedYaml()
-                log.warn(f"The dedicated yaml has been rolled back to its original state, make sure to restart the server for it to take effect!")
+                log.warning(f"The dedicated yaml has been rolled back to its original state, make sure to restart the server for it to take effect!")
 
     def getSharedDataURL(self, servingUrlRoot, autoZipFile: ZipFile):
         if len(self.config.downloadtool.customSharedDataURL) > 1:
-            log.warn(f"Server configured to use a custom shared data url: '{self.config.downloadtool.customSharedDataURL}', make sure it is reachable for all your players, or it might break the game!")
+            log.warning(f"Server configured to use a custom shared data url: '{self.config.downloadtool.customSharedDataURL}', make sure it is reachable for all your players, or it might break the game!")
             return self.config.downloadtool.customSharedDataURL
         else:
             return f"{servingUrlRoot}/{autoZipFile.name}"
@@ -173,7 +173,7 @@ class EsmSharedDataServer:
         """
         if not self.config.downloadtool.useSharedDataURLFeature and self.config.dedicatedConfig.GameConfig.SharedDataURL is not None:
             if self.config.dedicatedConfig.GameConfig.SharedDataURL.startswith(f"_http://{Tools.getOwnIp(self.config)}:"):
-                log.warn(f"The SharedDataURL seems to point to the shared data tool, but the useSharedDataURLFeature toggle is set to false. Please check the configuration of the downloadtool.")
+                log.warning(f"The SharedDataURL seems to point to the shared data tool, but the useSharedDataURLFeature toggle is set to false. Please check the configuration of the downloadtool.")
 
     def checkDedicatedYamlHasAutoZipUrl(self, expectedConfiguration):
         """
@@ -183,7 +183,7 @@ class EsmSharedDataServer:
             log.debug(f"The dedicated yaml has the correct SharedDataURL configuration: '{self.config.dedicatedConfig.GameConfig.SharedDataURL}'.")
         else:
             dedicatedYamlPath = Path(self.config.paths.install).joinpath(self.config.server.dedicatedYaml).resolve()
-            log.warn(f"The dedicated yaml '{dedicatedYamlPath}' has an incorrect SharedDataURL configuration: '{self.config.dedicatedConfig.GameConfig.SharedDataURL}'. Expected: '{expectedConfiguration}'")
+            log.warning(f"The dedicated yaml '{dedicatedYamlPath}' has an incorrect SharedDataURL configuration: '{self.config.dedicatedConfig.GameConfig.SharedDataURL}'. Expected: '{expectedConfiguration}'")
     
     def replaceInTemplate(self, content: str, placeholder, value):
         if value:
@@ -267,7 +267,7 @@ class EsmSharedDataServer:
                             # extract unique game id from logline, which is the number after the 'UniqueId=' string
                             uniqueGameId = re.search(r"UniqueId=(\d+)", line).group(1)
                             return uniqueGameId
-        log.debug(f"Did not find unique game id in any of the {logFilePattern} files in '{logFileDirectoryPath}'. You may need to start the server at least once so esm can find out the id.")
+        log.warning(f"Did not find unique game id in any of the {logFilePattern} files in '{logFileDirectoryPath}'. You may need to start the server at least once so esm can find out the id.")
         return None
     
     def getUniqueGameId(self):

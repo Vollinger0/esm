@@ -153,10 +153,9 @@ class EsmMain:
         log.info(f"Starting the dedicated server")
         serverProcess = self.dedicatedServer.startServer()
 
-        # run the following statement in a separate thread, but wait 60 seconds to do so
-        # this is to make sure that the server has started before we start the haimster connector
+        # start the haimster connector after the server has started. this is to make sure that the server has started before
         def startHaimsterConnectorDelayed():
-            time.sleep(60)
+            time.sleep(self.config.communication.haimsterStartupDelay)
             self.startHaimsterConnector()
         threading.Thread(target=startHaimsterConnectorDelayed, daemon=True).start()
 
@@ -812,9 +811,10 @@ class EsmMain:
 
     def startHaimsterConnector(self):
         """
-            starts the haimster connector (in a separate thread)
+            starts the haimster connector (in a separate thread) and returns immediately
         """
         if self.config.communication.haimsterEnabled:
+            self.openSocket(port=self.config.communication.incomingMessageHostPort, interval=5, tries=10, raiseException=True)
             return self.haimsterConnector.initialize()
 
     def startHaimsterConnectorAndWait(self):
@@ -822,6 +822,7 @@ class EsmMain:
             Starts the haimster connector (in a separate thread) and waits for it to exit, ignoring the configuration flag
             This can be used if you want to start the haimster connector in a separate process with a tool call
         """
+        self.openSocket(port=self.config.communication.incomingMessageHostPort, interval=5, tries=10, raiseException=True)
         shouldExit = self.haimsterConnector.initialize()
         while not shouldExit.is_set():
             time.sleep(1)

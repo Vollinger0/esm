@@ -415,17 +415,20 @@ def toolSharedDataServer(resume):
 
 
 @cli.command(name="tool-haimster-connector", short_help="starts the haimster connector as separate tool")
-#@click.option('--resume', is_flag=True, help="if set, just resume the server, do not recreate data or change the configuration.")
 def toolHaimsterConnector():
     """This will start the haimster connector that will connect haimster with the games chat.\n
-    \n    
+    \n
+    Obviously, this tool start ignores the toggle for the haimster integration in the configuration settings.
     This can be started completely separate from the main server and will run in the background until you stop it via CTRL+C.\n
     
     Of course, this requires the server and haimster to be running, so you need to start them first.\n
+
+    Be aware that, if the server shuts down or is otherwise unreachable, the tool will keep trying to communicate and may fail eventually.\n
     \n
     """
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)
+        esm.setUpLogging(caller="esm-haimster-connector", streamLogLevel=EsmLogger.streamLogLevel, fileLogLevel=EsmLogger.fileLogLevel)
         esm.startHaimsterConnectorAndWait()
 
 
