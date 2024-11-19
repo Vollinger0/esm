@@ -41,6 +41,7 @@
 - [ ] add cb:shield:$id function to be able to get a ships shield values?
 
 ## done
+- [x] BUG: remove bogus duplicates from the chatlog in the export tool
 - [x] tool to export chatlogs from the DB
 - [x] integrate haimster-connector as new tool, optionally running along with the server?
 - [x] add an AI-powered chatbot, chatgpt-like that roleplays as a spacefaring hamster that reacts to player chat?

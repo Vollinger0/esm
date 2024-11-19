@@ -415,43 +415,80 @@ class EsmDatabaseWrapper:
     def retrieveFullChatlog(self):
         """
             create a chatlog from the game's database chat, this should probably only be used when the game is stopped
+            
+            some infos on that chatmessage table:
+            * channel == 0: global chat, the rest is not important for the public chatlog :)
+            * if sendertype == 4 && sendername is set => message from an admin, probably from discord or EAH
+            * if sendertype == 3, server messages and hamster news => can be filtered out!
+            * if sendertype == 2 && sendername is set => message from admin, probably EWA
+            * if sendertype == 1 => normal chat.
+
+            The query is very sophisticated, since it filters out potential duplicate messages from players with different
+            entity ids (and names). Obviously the game messes up and uses the same entities for different players sometimes
+            which lead to a mess in simple joins over the chat table, so we have to filter them out here.
         """
-        # This is a query to get the chatlog from the DB 
-        #
-        # SELECT distinct
-        #     --cm.cmid,
-        #     --cm.gametime,
-        #     --ll.playerid,
-        #     (REPLACE(COALESCE(ll.playername, cm.sendername), ' ', '_') || ':') as speaker,
-        #     cm.text
-        # FROM 
-        #     ChatMessages cm
-        # LEFT JOIN 
-        #     Entities e ON cm.senderentityid = e.entityid
-        # LEFT JOIN 
-        #     LoginLogoff ll ON e.entityid = ll.entityid
-        # WHERE
-        #     not (cm.sendername ISNULL and ll.playername ISNULL) AND
-        #     cm.recentityid ISNULL AND
-        #     cm.recfacid = 0 AND
-        #     cm.channel = 0 AND
-        #     cm.sendertype != 3 AND
-        #     ll.playerid NOTNULL
-        #
+        # WITH RankedLogoff AS (
+        # SELECT 
+        #     cm.cmid, 
+        #     cm.gametime, 
+        #     ll.playerid, 
+        #     cm.senderentityid, 
+        #     ll.playername, 
+        #     cm.text, 
+        #     cm.sendertype,
+        #     cm.sendername,
+        #     cm.channel, 
+        #     ROW_NUMBER() OVER (PARTITION BY cm.cmid ORDER BY cm.gametime ASC, ll.playername ASC) AS RowNum
+        # FROM ChatMessages cm
+        # LEFT JOIN Entities e ON cm.senderentityid = e.entityid
+        # LEFT JOIN LoginLogoff ll ON e.entityid = ll.entityid
+        # WHERE cm.channel = 0 
+        # AND (
+        #     (cm.sendertype = 4 AND cm.sendername is not null)
+        #     OR (cm.sendertype = 2 AND cm.sendername is not null)
+        #     OR cm.sendertype = 1
+        #     )
+        # )
+        # SELECT 
+        #     cmid, gametime, playerid, senderentityid, playername, text, sendertype, sendername, channel
+        # FROM RankedLogoff
+        # WHERE RowNum = 1
+        # ORDER BY gametime ASC;
         cursor = self.getGameDbCursor()
 
         # this will get all the chat messages, with the player names and gametimes added
         cursor.execute("""
-                       select distinct cm.gametime, ll.playerid, ll.playername, cm.sendername, cm.text
-                       from ChatMessages cm
-                       left join Entities e on cm.senderentityid = e.entityid
-                       left join LoginLogoff ll on e.entityid = ll.entityid
-                       where cm.channel = 0
-                       order by cm.gametime asc
-                       """)
+            WITH RankedLogoff AS (
+            SELECT 
+                cm.cmid, 
+                cm.gametime, 
+                ll.playerid, 
+                cm.senderentityid, 
+                ll.playername, 
+                cm.text, 
+                cm.sendertype,
+                cm.sendername,
+                cm.channel, 
+                ROW_NUMBER() OVER (PARTITION BY cm.cmid ORDER BY cm.gametime ASC, ll.playername ASC) AS RowNum
+            FROM ChatMessages cm
+            LEFT JOIN Entities e ON cm.senderentityid = e.entityid
+            LEFT JOIN LoginLogoff ll ON e.entityid = ll.entityid
+            WHERE cm.channel = 0 
+            AND (
+                (cm.sendertype = 4 AND cm.sendername is not null)
+                OR (cm.sendertype = 2 AND cm.sendername is not null)
+                OR cm.sendertype = 1
+                )
+            )
+            SELECT 
+                cmid, gametime, playerid, senderentityid, playername, text, sendertype, sendername, channel
+            FROM RankedLogoff
+            WHERE RowNum = 1
+            ORDER BY gametime ASC;
+        """)
         rows = cursor.fetchall()
         chatLog = []
-        for gametime, playerid, playername, sendername, text in rows:
+        for cmid, gametime, playerid, senderentityid, playername, text, sendertype, sendername, channel in rows:
             # need to calculate the timestamps out of the gameticks
             timestamp = self.getTimeStampFromGameTick(gametime)
             # if ll.playername is not set, use cm.sendername

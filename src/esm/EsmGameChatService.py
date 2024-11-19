@@ -209,7 +209,7 @@ class EsmGameChatService:
                     filteredChatLog.append(message)
         else:
             # also always exclude the sync event announcer
-            excludeNames.append(self.config.communication.synceventname)
+            #excludeNames.append(self.config.communication.synceventname)
             for message in chatlog:
                 if message['speaker'] not in excludeNames:
                     filteredChatLog.append(message)
