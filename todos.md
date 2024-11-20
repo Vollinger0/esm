@@ -1,8 +1,12 @@
 # TODOS
 
 ## WIP
+- [ ] BUG: connector should not forward chat messages from the server tab!
+- [ ] how can the haimster chat messages be made visible in discord, EWA, EAH?
+      * check the server logs, player chat appears as Player/Global while our messages appear as ServerInfo/Global. Maybe this is it?
 
 ## later
+- [ ] BUG started connector server doesn't log into our esm logger properly
 - [ ] integrate haimster as tool, maybe aswell run integrated?
 - [ ] read the territory config from the galaxyconfig.ecf ourselves. Search for "Child Territory" - Blocks.
 - [ ] backup additional should support globbing
@@ -41,6 +45,7 @@
 - [ ] add cb:shield:$id function to be able to get a ships shield values?
 
 ## done
+- [x] updating list of playernames should depend on player events => even less calls to DB
 - [x] BUG: remove bogus duplicates from the chatlog in the export tool
 - [x] tool to export chatlogs from the DB
 - [x] integrate haimster-connector as new tool, optionally running along with the server?

@@ -104,7 +104,6 @@ class ConfigCommunication(BaseModel):
     haimsterEnabled: bool = Field(False, description="enables haimster integration, which requires a running haimster server")
     haimsterHost: str = Field("http://localhost:8000", description="the url to the haimster server")
     haimsterStartupDelay: int = Field(60, description="how many seconds to wait after a server start before starting the haimster connector, since it needs a running server")
-    playerNameCacheTime: int = Field(300, description="time in seconds to cache player names for, since they need to be retrieved from the database")
     incomingMessageHostIp: str = Field("0.0.0.0", description="the host url to bind our http server to to receive messages from haimster. This ip and port must be configured on haimster side aswell.")
     incomingMessageHostPort: int = Field(9000, description="the port to bind to to receive messages from haimster. This ip and port must be configured on haimster side aswell.")
 

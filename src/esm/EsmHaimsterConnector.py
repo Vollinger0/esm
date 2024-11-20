@@ -5,7 +5,7 @@ import threading
 import time
 import uvicorn
 import requests
-from functools import cached_property
+from functools import cached_property, lru_cache
 from http.client import HTTPException
 from fastapi import FastAPI
 from typing import Dict
@@ -36,8 +36,6 @@ class EsmHaimsterConnector:
     _outgoingChatResponsesQueue = queue.Queue()
     _outgoingChatResponseHandlerThread: threading.Thread = None
     _outgoingChatResponseHandlerShouldStop: threading.Event = threading.Event()
-    _allPlayers: Dict[int, str] = {}
-    _allPlayersLastUpdate: float = None
 
     _fastApiApp = FastAPI()
     _httpServer: uvicorn.Server = None
@@ -177,16 +175,17 @@ class EsmHaimsterConnector:
                 raise HTTPException(f"Could not send message to haimster: {response.status_code}")
         except Exception as e:
             raise HTTPException(f"Error communicating with chatbot server: {str(e)}", e)
-        
+    
+    @lru_cache
     def _getPlayerName(self, playerId: int):
         """
             returns the playername for the given playerId, if not found, returns "Player_{playerId}"
-            the results will be cached for the configured cache time
+            the results will be cached in self._allPlayers
         """
-        cacheTime = self.config.communication.playerNameCacheTime
-        if len(self._allPlayers) < 1 or time.time() - self._allPlayersLastUpdate > cacheTime:
-            dbWrapper = EsmDatabaseWrapper()
-            self._allPlayers = dbWrapper.retrieveAllPlayerEntities()
-            self._allPlayersLastUpdate = time.time()
-            dbWrapper.closeDbConnection()
-        return self._allPlayers.get(playerId, f"Player_{playerId}")
+        dbWrapper = EsmDatabaseWrapper()
+        playerName = dbWrapper.retrievePlayerName(playerId)
+        dbWrapper.closeDbConnection()
+        if playerName is not None or playerName == "":
+            return playerName
+        else:
+            return f"Player_{playerId}"
