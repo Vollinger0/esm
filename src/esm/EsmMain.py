@@ -245,10 +245,10 @@ class EsmMain:
 
         self.startHaimsterConnector()
         
-        log.info(f"Waiting until it shut down or stopped existing.")
+        log.info(f"Waiting until game server shut down or stopped existing.")
         self.waitForEnd()
 
-        log.info(f"Server shut down. Executing shutdown tasks.")
+        log.info(f"Game server shut down. Executing shutdown tasks.")
         self.onShutdown()
 
 

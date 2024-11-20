@@ -23,6 +23,7 @@ class EsmLogger:
         # this will make for a very colorful terminal output... a bit too much for my taste, but better than plain white.
         streamHandler = RichHandler(show_path=False, console=EsmLogger.console)
         streamHandler.setFormatter(logging.Formatter(fmt="%(thread)d %(message)s", datefmt=dateformat))
+        #streamHandler.setFormatter(logging.Formatter(fmt="[%(asctime)s] %(process)d %(thread)d %(name)s %(levelname)s %(message)s", datefmt=dateformat))
         streamHandler.setLevel(streamLogLevel)
         EsmLogger.streamLogLevel = streamLogLevel
         EsmLogger.handlers.append(streamHandler)
@@ -44,3 +45,37 @@ class EsmLogger:
             logging.debug(f"Logging initialized, logging to: '{Path(logFile).resolve()}'")
         else:
             logging.debug(f"Logging initialized, logging to console only")
+
+    @staticmethod
+    def configureUvicornLogging(logLevel=None):
+        """
+        Configure Uvicorn's logging to use the same handlers as EsmLogger
+        Make sure to have set ip EsmLogger via first!
+        """
+        handlers = EsmLogger.handlers
+
+        if logLevel is None:
+            logLevel = EsmLogger.streamLogLevel
+
+        # Configure Uvicorn loggers
+        uvicorn_loggers = [
+            'uvicorn',
+            'uvicorn.access',
+            'uvicorn.error'
+        ]
+        
+        for logger_name in uvicorn_loggers:
+            logger = logging.getLogger(logger_name)
+            
+            # Remove existing handlers
+            for handler in logger.handlers[:]:
+                logger.removeHandler(handler)
+            
+            # Add the handlers from EsmLogger
+            for handler in handlers:
+                logger.addHandler(handler)
+            
+            # Set the log level
+            logger.setLevel(logLevel)
+        
+        logging.debug("Uvicorn logging configured to use EsmLogger handlers")

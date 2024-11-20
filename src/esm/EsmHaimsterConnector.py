@@ -14,9 +14,11 @@ from esm.DataTypes import ChatMessage
 from esm.EsmConfigService import EsmConfigService
 from esm.EsmDatabaseWrapper import EsmDatabaseWrapper
 from esm.EsmGameChatService import EgsChatMessageEvent, EsmGameChatService
+from esm.EsmLogger import EsmLogger
 from esm.ServiceRegistry import Service, ServiceRegistry
 
 log = logging.getLogger(__name__)
+logging.getLogger("urllib3.connectionpool").setLevel(logging.INFO)
 
 @Service
 class EsmHaimsterConnector:
@@ -54,9 +56,18 @@ class EsmHaimsterConnector:
         """
         log.info("Initializing haimster connector")
         self.esmGameChatService.initialize()
+        
         self._startIncomingChatMessageHandler()
+        
         self._startOutgoingChatResponseHandler()
-        self._startHttpServer()
+        log.info(f"haimster host set to: {self.config.communication.haimsterHost}")
+
+        host = self.config.communication.incomingMessageHostIp
+        port = self.config.communication.incomingMessageHostPort
+        self._startHttpServer(host, port)
+        log.info(f"HTTP server container for receiving haimster messages started on http://{host}:{port}")
+
+        # send welcome message
         self.sendOutgoingChatResponse(ChatMessage(speaker="hAImster", message="connected!", timestamp=time.time()))
 
         # register fastapi routes
@@ -67,26 +78,28 @@ class EsmHaimsterConnector:
         
         return self._shouldExit
         
-    def _startHttpServer(self):
+    def _startHttpServer(self, host: str, port: int):
         """
             Starts the FastAPI server in a background thread
         """
-        host = self.config.communication.incomingMessageHostIp
-        port = self.config.communication.incomingMessageHostPort
         def runHttpServer():
             logging.getLogger("uvicorn").setLevel(logging.WARNING)
             config = uvicorn.Config(
                 app=self._fastApiApp,
                 host=host,
                 port=port,
-                log_config=None
+                log_config=None,
             )
             self._httpServer = uvicorn.Server(config)
             self._httpServer.run()
+            
+            if log.getEffectiveLevel() == logging.DEBUG:
+                EsmLogger.configureUvicornLogging(logLevel=logging.INFO)
+            else:
+                EsmLogger.configureUvicornLogging(logLevel=logging.WARNING)
 
         self._httpServerWorker = threading.Thread(target=runHttpServer, daemon=True)
         self._httpServerWorker.start()
-        log.info(f"HTTP server container for receiving haimster messages started on http://{host}:{port}")
 
 
     def _shutdownHttpServer(self):
@@ -157,7 +170,7 @@ class EsmHaimsterConnector:
             chatMessage = ChatMessage(speaker=playerName, message=message.Data.msg, timestamp=time.time())
             self._sendToHaimster(chatMessage)
         except Exception as e:
-            log.error(f"Error sending chat message to haimster: {str(e)}", e)
+            log.error(f"Error sending chat message to haimster: {str(e)}")
 
     def _sendToHaimster(self, message: ChatMessage):
         """
@@ -167,12 +180,13 @@ class EsmHaimsterConnector:
         try:
             response = requests.post(
                 url=haimsterhost +"/message",
-                json={"speaker": message.speaker, "message": message.message, "timestamp": message.timestamp}
+                json={"speaker": message.speaker, "message": message.message, "timestamp": message.timestamp},
+                timeout=5,
             )
             if response.status_code != 200 and response.status_code != 204:
-                raise HTTPException(f"Could not send message to haimster: {response.status_code}")
+                raise HTTPException(f"Could not send message to haimster, response code is: {response.status_code}")
         except Exception as e:
-            raise HTTPException(f"Error communicating with chatbot server: {str(e)}", e)
+            raise HTTPException(f"Error communicating with haimster server: {str(e)}")
     
     @lru_cache
     def _getPlayerName(self, playerId: int):
@@ -180,6 +194,10 @@ class EsmHaimsterConnector:
             returns the playername for the given playerId, if not found, returns "Player_{playerId}"
             the results will be cached in self._allPlayers
         """
+        if log.getEffectiveLevel() == logging.DEBUG:
+            logging.getLogger(f"{EsmDatabaseWrapper.__module__}.{EsmDatabaseWrapper.__name__}").setLevel(logging.INFO)
+        else:
+            logging.getLogger(f"{EsmDatabaseWrapper.__module__}.{EsmDatabaseWrapper.__name__}").setLevel(logging.WARNING)
         dbWrapper = EsmDatabaseWrapper()
         playerName = dbWrapper.retrievePlayerName(playerId)
         dbWrapper.closeDbConnection()

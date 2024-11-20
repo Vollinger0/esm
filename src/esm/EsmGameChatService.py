@@ -105,9 +105,10 @@ class EsmGameChatService:
                     while not self._shouldStop and self._readerProcess.poll() is None:
                         line = self._readerProcess.stdout.readline()
                         if line:
-                            log.debug(f"Received message: {line}")
+                            #log.debug(f"Received event: {line}")
                             message = self._parseEvent(line)
-                            if message:
+                            # we want only valid messages in global chat
+                            if message and message.Data.type == 3:
                                 self._incomingMessages.put(message)
                     # Process has ended - check if it was due to an error
                     exitCode = self._readerProcess.poll()
@@ -173,10 +174,12 @@ class EsmGameChatService:
         """
             actually sends a message via emprc
         """
+        logging.getLogger("esm.EsmEmpRemoteClientService").setLevel(logging.WARNING)
         if message.speaker == "hAImster":
-            log.info(f"Received message from hAImster: {message.message}")
+            log.info(f"Received message from hAImster: '{message.message}'")
             self.emprcClient.sendServerChat(f"{message.speaker}: {message.message}")
         else:
+            log.debug(f"Received response from hAImster: '{message.speaker}: {message.message}'")
             self.emprcClient.sendMessage(senderName=message.speaker, message=message.message)
   
     def sendMessage(self, speaker: str, message: str):

@@ -103,7 +103,7 @@ def testcleanupSharedFolder():
 ## main code start
 ######################################################
 # initialize config and logging
-esm = EsmMain(caller="esm-test", customConfigFilePath=Path("esm-custom-config.yaml"))
+esm = EsmMain(caller="esm-test", customConfigFilePath=Path("esm-custom-config.yaml"), streamLogLevel=logging.DEBUG)
 
 log.debug(f"Script {__file__} started")
 log.debug(f"Logging to: {esm.logFile}")
