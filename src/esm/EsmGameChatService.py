@@ -15,7 +15,7 @@ from esm.ConfigModels import MainConfig
 from esm.DataTypes import ChatMessage
 from esm.EsmConfigService import EsmConfigService
 from esm.EsmDatabaseWrapper import EsmDatabaseWrapper
-from esm.EsmEmpRemoteClientService import EsmEmpRemoteClientService
+from esm.EsmEmpRemoteClientService import EsmEmpRemoteClientService, SenderType
 from esm.ServiceRegistry import Service, ServiceRegistry
 
 log = logging.getLogger(__name__)
@@ -198,7 +198,7 @@ class EsmGameChatService:
             self.emprcClient.sendServerChat(f"{message.speaker}: {message.message}")
         else:
             log.debug(f"Received hAImster response: \"{message.speaker}: {message.message}\"")
-            self.emprcClient.sendMessage(senderName=message.speaker, message=message.message)
+            self.emprcClient.sendMessage(senderType=SenderType.Player, senderName=message.speaker, message=message.message)
   
     def sendMessage(self, speaker: str, message: str):
         """Adds a message to the outgoing queue"""
