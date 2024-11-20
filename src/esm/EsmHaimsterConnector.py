@@ -1,5 +1,5 @@
-import asyncio
 import logging
+import logging.config
 import queue
 import threading
 import time
@@ -8,18 +8,15 @@ import requests
 from functools import cached_property, lru_cache
 from http.client import HTTPException
 from fastapi import FastAPI
-from typing import Dict
 
 from esm.ConfigModels import MainConfig
 from esm.DataTypes import ChatMessage
 from esm.EsmConfigService import EsmConfigService
 from esm.EsmDatabaseWrapper import EsmDatabaseWrapper
 from esm.EsmGameChatService import EgsChatMessageEvent, EsmGameChatService
-from esm.EsmLogger import EsmLogger
 from esm.ServiceRegistry import Service, ServiceRegistry
 
 log = logging.getLogger(__name__)
-logging.getLogger("uvicorn").setLevel(logging.WARNING)
 
 @Service
 class EsmHaimsterConnector:
@@ -77,18 +74,19 @@ class EsmHaimsterConnector:
         host = self.config.communication.incomingMessageHostIp
         port = self.config.communication.incomingMessageHostPort
         def runHttpServer():
+            logging.getLogger("uvicorn").setLevel(logging.WARNING)
             config = uvicorn.Config(
                 app=self._fastApiApp,
                 host=host,
                 port=port,
-                #log_config=None
+                log_config=None
             )
             self._httpServer = uvicorn.Server(config)
             self._httpServer.run()
 
         self._httpServerWorker = threading.Thread(target=runHttpServer, daemon=True)
         self._httpServerWorker.start()
-        log.info(f"HTTP server for haimster messages started on http://{host}:{port}")
+        log.info(f"HTTP server container for receiving haimster messages started on http://{host}:{port}")
 
 
     def _shutdownHttpServer(self):

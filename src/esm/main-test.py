@@ -139,7 +139,8 @@ log.debug(f"Logging to: {esm.logFile}")
 #     signal.raise_signal(signal.SIGINT)
 # threading.Thread(target=sendSigIntAfter20Secs).start()
 #esm.startHaimsterConnectorAndWait()
-
 #esm.exportChatLog()
+
+esm.resumeServerAndWait()
 
 log.info(f"Script finished successfully. Check the logfile ({esm.logFile}) if you missed something. Bye!")

@@ -10,13 +10,14 @@ class EsmLogger:
     console = None # global rich console to use for logging to console
     fileLogLevel = logging.DEBUG
     streamLogLevel = logging.DEBUG
+    handlers = list()
     
     @staticmethod 
     def setUpLogging(logFile: str|Path=None, fileLogLevel=logging.DEBUG, streamLogLevel=logging.DEBUG):
         dateformat = "%Y-%m-%d %H:%M:%S"
         EsmLogger.console = Console(log_time_format=dateformat)
         
-        handlers = list()
+        EsmLogger.handlers = list()
 
         # use rich stream handler for stdout, will reuse the global console object, since logging can't handle spinners and animations.
         # this will make for a very colorful terminal output... a bit too much for my taste, but better than plain white.
@@ -24,7 +25,7 @@ class EsmLogger:
         streamHandler.setFormatter(logging.Formatter(fmt="%(thread)d %(message)s", datefmt=dateformat))
         streamHandler.setLevel(streamLogLevel)
         EsmLogger.streamLogLevel = streamLogLevel
-        handlers.append(streamHandler)
+        EsmLogger.handlers.append(streamHandler)
 
         if logFile:
             # set a nice logging line and logging level for the logfile
@@ -32,11 +33,11 @@ class EsmLogger:
             fileLoggingHandler.setLevel(fileLogLevel)
             EsmLogger.fileLogLevel = fileLogLevel
             fileLoggingHandler.setFormatter(logging.Formatter(fmt="[%(asctime)s] %(process)d %(thread)d %(levelname)s %(message)s", datefmt=dateformat))
-            handlers.append(fileLoggingHandler)
+            EsmLogger.handlers.append(fileLoggingHandler)
 
         logging.basicConfig(
             level=logging.DEBUG,
-            handlers=handlers,
+            handlers=EsmLogger.handlers,
             force=True)
         
         if logFile:
