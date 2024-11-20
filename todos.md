@@ -1,10 +1,9 @@
 # TODOS
 
 ## WIP
-- [ ] how can the haimster chat messages be made visible in discord, EWA, EAH?
-      * check the server logs, player chat appears as Player/Global while our messages appear as ServerInfo/Global. Maybe this is it?
 
 ## later
+- [+] how can the haimster chat messages be made visible in discord, EWA, EAH? -> Changed to use sendertype Player, see if that helps.
 - [ ] integrate haimster as tool, maybe aswell run integrated?
 - [ ] read the territory config from the galaxyconfig.ecf ourselves. Search for "Child Territory" - Blocks.
 - [ ] backup additional should support globbing
