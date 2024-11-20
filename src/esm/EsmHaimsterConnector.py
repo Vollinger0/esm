@@ -5,15 +5,14 @@ import threading
 import time
 import uvicorn
 import requests
-from functools import cached_property, lru_cache
+from functools import cached_property
 from http.client import HTTPException
 from fastapi import FastAPI
 
 from esm.ConfigModels import MainConfig
 from esm.DataTypes import ChatMessage
 from esm.EsmConfigService import EsmConfigService
-from esm.EsmDatabaseWrapper import EsmDatabaseWrapper
-from esm.EsmGameChatService import EgsChatMessageEvent, EsmGameChatService
+from esm.EsmGameChatService import EsmGameChatService
 from esm.EsmLogger import EsmLogger
 from esm.ServiceRegistry import Service, ServiceRegistry
 
@@ -32,7 +31,7 @@ class EsmHaimsterConnector:
     """
     _incomingChatMessageHandlerThread: threading.Thread = None
     _incomingChatMessageHandlerShouldStop: threading.Event = threading.Event()
-    _outgoingChatResponsesQueue = queue.Queue()
+    _messageQueueToEgsChat = queue.Queue()
     _outgoingChatResponseHandlerThread: threading.Thread = None
     _outgoingChatResponseHandlerShouldStop: threading.Event = threading.Event()
 
@@ -68,19 +67,19 @@ class EsmHaimsterConnector:
         log.info(f"HTTP server container for receiving haimster messages started on http://{host}:{port}")
 
         # send welcome message
-        self.sendOutgoingChatResponse(ChatMessage(speaker="hAImster", message="connected!", timestamp=time.time()))
+        self.queueChatMessageForEgsChat(ChatMessage(speaker="hAImster", message="connected!", timestamp=time.time()))
 
         # register fastapi routes
         @self._fastApiApp.post("/outgoingmessage")
         async def sendResponse(message: ChatMessage):
-            self.sendOutgoingChatResponse(message)
+            self.queueChatMessageForEgsChat(message)
             return {"status": "success"}
         
         return self._shouldExit
         
     def _startHttpServer(self, host: str, port: int):
         """
-            Starts the FastAPI server in a background thread
+            Starts the FastAPI server in a separate worker thread
         """
         def runHttpServer():
             logging.getLogger("uvicorn").setLevel(logging.WARNING)
@@ -122,7 +121,7 @@ class EsmHaimsterConnector:
         """
         log.info("Shutting down haimster connector")
         self._shutdownHttpServer()
-        self.sendOutgoingChatResponse(ChatMessage(speaker="hAImster", message="disconnecting...", timestamp=time.time()))
+        self.queueChatMessageForEgsChat(ChatMessage(speaker="hAImster", message="disconnecting...", timestamp=time.time()))
         self._incomingChatMessageHandlerShouldStop.set()
         self._outgoingChatResponseHandlerShouldStop.set()
         self.esmGameChatService.shutdown()
@@ -138,10 +137,11 @@ class EsmHaimsterConnector:
                 try:
                     message = self.esmGameChatService.getMessage(timeout=1)
                     if message:
-                        self._sendIncomingChatMessageToHaimster(message)
+                        self._sendChatMessageToHaimster(message)
                 except queue.Empty:
                     continue
         self._incomingChatMessageHandlerThread = threading.Thread(target=_incomingChatMessageHandler, daemon=True).start()
+
 
     def _startOutgoingChatResponseHandler(self):
         """
@@ -150,29 +150,29 @@ class EsmHaimsterConnector:
         def _outgoingChatResponseHandler():
             while not self._outgoingChatResponseHandlerShouldStop.is_set():
                 try:
-                    response = self._outgoingChatResponsesQueue.get(timeout=1)
+                    response = self._messageQueueToEgsChat.get(timeout=1)
                     if response:
-                        self._sendOutgoingChatResponseToEgsChat(response)
+                        self._sendChatMessageToEgsChat(response)
                 except queue.Empty:
                     continue
         self._outgoingChatResponseHandlerThread = threading.Thread(target=_outgoingChatResponseHandler, daemon=True).start()
 
-    def _sendOutgoingChatResponseToEgsChat(self, response: ChatMessage):
+
+    def _sendChatMessageToEgsChat(self, response: ChatMessage):
+        """
+            actually sened a haimster response to the game chat
+        """
         self.esmGameChatService.sendMessage(speaker=response.speaker, message=response.message)
 
-    def sendOutgoingChatResponse(self, response: ChatMessage):
-        self._outgoingChatResponsesQueue.put(response)
-        
-    def _sendIncomingChatMessageToHaimster(self, message: EgsChatMessageEvent):
-        try:
-            playerId = message.Data.playerId
-            playerName = self._getPlayerName(playerId)
-            chatMessage = ChatMessage(speaker=playerName, message=message.Data.msg, timestamp=time.time())
-            self._sendToHaimster(chatMessage)
-        except Exception as e:
-            log.error(f"Error sending chat message to haimster: {str(e)}")
 
-    def _sendToHaimster(self, message: ChatMessage):
+    def queueChatMessageForEgsChat(self, response: ChatMessage):
+        """
+            adds a haimster response to the outgoing queue
+        """
+        self._messageQueueToEgsChat.put(response)
+        
+
+    def _sendChatMessageToHaimster(self, message: ChatMessage):
         """
             sends a message to haimster
         """
@@ -186,22 +186,4 @@ class EsmHaimsterConnector:
             if response.status_code != 200 and response.status_code != 204:
                 raise HTTPException(f"Could not send message to haimster, response code is: {response.status_code}")
         except Exception as e:
-            raise HTTPException(f"Error communicating with haimster server: {str(e)}")
-    
-    @lru_cache
-    def _getPlayerName(self, playerId: int):
-        """
-            returns the playername for the given playerId, if not found, returns "Player_{playerId}"
-            the results will be cached in self._allPlayers
-        """
-        if log.getEffectiveLevel() == logging.DEBUG:
-            logging.getLogger(f"{EsmDatabaseWrapper.__module__}.{EsmDatabaseWrapper.__name__}").setLevel(logging.INFO)
-        else:
-            logging.getLogger(f"{EsmDatabaseWrapper.__module__}.{EsmDatabaseWrapper.__name__}").setLevel(logging.WARNING)
-        dbWrapper = EsmDatabaseWrapper()
-        playerName = dbWrapper.retrievePlayerName(playerId)
-        dbWrapper.closeDbConnection()
-        if playerName is not None or playerName == "":
-            return playerName
-        else:
-            return f"Player_{playerId}"
+            log.error(f"Error sending chat message to haimster: {str(e)}")

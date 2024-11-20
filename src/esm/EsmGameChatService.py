@@ -1,6 +1,6 @@
 import unidecode
 from datetime import datetime
-from functools import cached_property
+from functools import cached_property, lru_cache
 import json
 import logging
 from pathlib import Path
@@ -104,12 +104,7 @@ class EsmGameChatService:
                     self._readerProcess = _startEmpRcListeningProcess()
                     while not self._shouldStop and self._readerProcess.poll() is None:
                         line = self._readerProcess.stdout.readline()
-                        if line:
-                            #log.debug(f"Received event: {line}")
-                            message = self._parseEvent(line)
-                            # we want only valid messages in global chat
-                            if message and message.Data.type == 3:
-                                self._incomingMessages.put(message)
+                        self._processLine(line)
                     # Process has ended - check if it was due to an error
                     exitCode = self._readerProcess.poll()
                     if exitCode is not None and exitCode != 0:
@@ -143,6 +138,20 @@ class EsmGameChatService:
         self._eventReaderThread = threading.Thread(target=_eventReaderThread, daemon=True)
         self._eventReaderThread.start()         
     
+    def _processLine(self, line: str):
+        """
+            process a line from the listening emprc process
+        """
+        if line:
+            #log.debug(f"Received event: {line}")
+            message = self._parseEvent(line)
+            # we want only valid messages in global chat
+            if message and message.Data.type == 3:
+                chatMessage = self._convertToChatMessage(message)
+                log.debug(f"Received chat message: \"{chatMessage.speaker}: {chatMessage.message}\"")
+                self._incomingMessages.put(chatMessage)
+
+
     def _parseEvent(self, line: str) -> Optional[EgsChatMessageEvent]:
         """
             Tries to parse a line into an EgsChatMessageEvent, only if it is of type Event_ChatMessage
@@ -154,6 +163,15 @@ class EsmGameChatService:
         except json.JSONDecodeError:
             log.error(f"Error parsing JSON: {line}")
         return None
+    
+    def _convertToChatMessage(self, message: EgsChatMessageEvent) -> ChatMessage:
+        """
+            Converts an EgsChatMessageEvent to a ChatMessage
+        """
+        playerId = message.Data.playerId
+        playerName = self._getPlayerName(playerId)
+        chatMessage = ChatMessage(speaker=playerName, message=message.Data.msg, timestamp=time.time())
+        return chatMessage
 
     def _startChatPoster(self):
         """Starts the writer process and begins processing the outgoing message queue"""
@@ -176,10 +194,10 @@ class EsmGameChatService:
         """
         logging.getLogger("esm.EsmEmpRemoteClientService").setLevel(logging.WARNING)
         if message.speaker == "hAImster":
-            log.info(f"Received message from hAImster: '{message.message}'")
+            log.info(f"Received message from hAImster: \"{message.message}\"")
             self.emprcClient.sendServerChat(f"{message.speaker}: {message.message}")
         else:
-            log.debug(f"Received response from hAImster: '{message.speaker}: {message.message}'")
+            log.debug(f"Received hAImster response: \"{message.speaker}: {message.message}\"")
             self.emprcClient.sendMessage(senderName=message.speaker, message=message.message)
   
     def sendMessage(self, speaker: str, message: str):
@@ -187,7 +205,7 @@ class EsmGameChatService:
         message = ChatMessage(speaker=speaker, message=message, timestamp=time.time())
         self._outgoingMessages.put(message)
     
-    def getMessage(self, block: bool = True, timeout: Optional[float] = None) -> EgsChatMessageEvent:
+    def getMessage(self, block: bool = True, timeout: Optional[float] = None) -> ChatMessage:
         """
             Gets a message from the incoming queue, usually blocking - set a timeout if using in a loop
         """
@@ -244,3 +262,19 @@ class EsmGameChatService:
         string = unidecode.unidecode(string)
         string = ''.join(char for char in string if ord(char) >= 32 and ord(char) != 127)
         return string
+    
+    @lru_cache
+    def _getPlayerName(self, playerId: int):
+        """
+            returns the playername for the given playerId, if not found, returns "Player_{playerId}"
+            the results will be cached in self._allPlayers
+        """
+        logging.getLogger(f"{EsmDatabaseWrapper.__module__}").setLevel(logging.WARNING)
+
+        dbWrapper = EsmDatabaseWrapper()
+        playerName = dbWrapper.retrievePlayerName(playerId)
+        dbWrapper.closeDbConnection()
+        if playerName is not None or playerName == "":
+            return playerName
+        else:
+            return f"Player_{playerId}"

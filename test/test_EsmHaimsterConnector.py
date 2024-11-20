@@ -5,7 +5,6 @@ import unittest
 from unittest.mock import patch
 
 from esm.DataTypes import ChatMessage
-from esm.EsmGameChatService import EgsChatMessageEvent
 from esm.EsmHaimsterConnector import EsmHaimsterConnector
 from esm.EsmLogger import EsmLogger
 from esm.ServiceRegistry import ServiceRegistry
@@ -26,7 +25,7 @@ class test_EsmHaimsterConnector(unittest.TestCase):
         hc = ServiceRegistry.get(EsmHaimsterConnector)
         hc.initialize()
         time.sleep(1) # give server a bit of time to spin up
-        hc.sendOutgoingChatResponse(ChatMessage(speaker="test", message="did something!", timestamp=time.time()))
+        hc.queueChatMessageForEgsChat(ChatMessage(speaker="test", message="did something!", timestamp=time.time()))
         hc.shutdown()
 
     @patch("esm.EsmEmpRemoteClientService.EsmEmpRemoteClientService.emprcExecute", return_value=None)
