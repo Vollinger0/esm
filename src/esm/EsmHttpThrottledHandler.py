@@ -1,4 +1,5 @@
 import logging
+from typing import Dict
 import humanize
 import http.server
 import threading
@@ -7,7 +8,6 @@ from esm import Tools
 from esm.Tools import Timer
 from limits import parse, storage, strategies
 from pathlib import Path
-from typing import List
 
 log = logging.getLogger(__name__)
 
@@ -16,6 +16,7 @@ class EsmHttpThrottledHandler(http.server.SimpleHTTPRequestHandler):
     # limit requests / time window per client ip
     rateLimit = parse("10 per minute")
     rateLimiter = strategies.MovingWindowRateLimiter(storage.MemoryStorage())
+    rateLimitExceptions = []
 
     # default bandwith limits
     clientBandwidthLimit = 30*1024*1024 # default to 30MB/s
@@ -36,24 +37,31 @@ class EsmHttpThrottledHandler(http.server.SimpleHTTPRequestHandler):
     zipFiles = []
 
     # redirect definition, if set e.g. {"source": "GimmeTheSharedData", "destination": autoZipFile.name, "code": 301}
-    redirects = None
+    redirects: Dict[str, str] = None
 
     # allowed default assets for downloads
-    defaultAssets = ['index.html', 'favicon.ico', 'styles.css']
+    defaultAssets = ['/index.html', '/favicon.ico', '/styles.css']
+
+    # dynamic whitelist
+    whitelist = [] 
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=EsmHttpThrottledHandler.rootDirectory, **kwargs)
 
     def handle(self) -> None:
         """
-            wrap any errors that might occur while handling the request, we don't want stack traces
+            wrap any errors that might occur while handling the request, we don't want stack traces, unless we're in debug mode
         """
+        if log.getEffectiveLevel() == logging.DEBUG:
+            return super().handle()
+        
         try:
             return super().handle()
         except Exception as e:
             log.warning(f"error initializing http server: {e}. Probably some bots knocking on the door.")
 
     def hitRateLimit(self):
+        if self.path in EsmHttpThrottledHandler.rateLimitExceptions: return False
         client_ip = self.client_address[0]
         # rate limit check, send 429 if the client is trying to make too many requests
         if not self.rateLimiter.hit(self.rateLimit, "global", client_ip):
@@ -72,9 +80,10 @@ class EsmHttpThrottledHandler(http.server.SimpleHTTPRequestHandler):
             source = redirect['source']
             destination = redirect['destination']
             code = redirect['code']
-            if source == self.path[1:]:
+            if source == self.path:
+                log.debug(f"redirecting {self.path} to {destination} with code {code}")
                 self.send_response_only(code)
-                self.send_header("Location", f"/{destination}")
+                self.send_header("Location", f"{destination}")
                 self.end_headers()
                 self.log_request(code)
                 return True
@@ -91,9 +100,10 @@ class EsmHttpThrottledHandler(http.server.SimpleHTTPRequestHandler):
         return False
 
     def pathNotInWhitelist(self):
-        filename = self.path[1:]
-        zipFileNames = [x.name for x in EsmHttpThrottledHandler.zipFiles]
-        if filename not in EsmHttpThrottledHandler.defaultAssets and filename not in zipFileNames:
+        filename = self.path
+        zipFileNames = [f"/{x.name}" for x in EsmHttpThrottledHandler.zipFiles]
+        allowedWhitelist = [*zipFileNames, *EsmHttpThrottledHandler.defaultAssets, *EsmHttpThrottledHandler.whitelist]
+        if filename not in allowedWhitelist:
             self.send_response_only(404, "There's nothing else to see here. Go away.")
             self.end_headers()
             self.log_request(404)
@@ -106,7 +116,7 @@ class EsmHttpThrottledHandler(http.server.SimpleHTTPRequestHandler):
             self.send_response_only(404, "Didn't find a thing.")
             self.end_headers()
             self.log_request(404)
-            log.warn(f"file '{file}' not found, but is listed as default asset, make sure its still there.")
+            log.warning(f"file '{file}' not found, but is listed as default asset, make sure its still there.")
             return True
         return False
 
@@ -126,11 +136,11 @@ class EsmHttpThrottledHandler(http.server.SimpleHTTPRequestHandler):
         if self.pathNotInWhitelist(): return
         if self.fileDoesNotExist(): return
 
-        file = self.directory + self.path
         try:
+            log.debug(f"Client {self.client_address} requested file '{self.path}'.")
             return super().do_GET()
         except Exception as ex:
-            log.warn(f"Error while serving file {file}: {ex}")
+            log.warning(f"Error while serving file {self.path}: {ex}")
 
     def copyfile(self, source, outputfile) -> None:
         # we'll only limit the speed of the zip file, not the rest of the files

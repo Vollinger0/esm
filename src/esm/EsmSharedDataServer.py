@@ -364,21 +364,36 @@ class EsmSharedDataServer:
         """
         starts the httpd server using the different configurations for the given zipFiles
         """
-        wwwroot = Path(self.config.downloadtool.wwwroot).resolve()
         serverPort = self.config.downloadtool.serverPort
-        handler = EsmHttpThrottledHandler
+        handler = self._setUpSharedDataHandler(zipFiles)
+
+        if self.config.communication.chatlogViewerEnabled:
+            servingUrlRoot = self.getServingUrlRoot()
+            pSgmt = self.config.communication.chatlogViewerPathSegment
+            log.info(f"Enabling chat log viewer on path '{servingUrlRoot}{pSgmt}'")
+
+            chatLogViewerFiles = [f"{pSgmt}", f"{pSgmt}/index.html", f"{pSgmt}/index.js", f"{pSgmt}/style.css", f"{pSgmt}/chatlog.json"]
+            handler.whitelist = chatLogViewerFiles
+            handler.rateLimitExceptions = chatLogViewerFiles
+            handler.redirects = [
+                {"source": f"{pSgmt}", "destination": f"{pSgmt}/index.html", "code": 301},
+                {"source": f"{pSgmt}/", "destination": f"{pSgmt}/index.html", "code": 301},
+            ]
+            # TODO: make chatlog.json available somehow?
+            # TODO: create nice looking chatlogviewer ui
+
+        try:
+            with socketserver.ThreadingTCPServer(("", serverPort), handler) as httpd:
+                httpd.serve_forever()
+        except Exception as e:
+            log.debug(e)
+
+    def _setUpSharedDataHandler(self, zipFiles) -> EsmHttpThrottledHandler:
+        wwwroot = Path(self.config.downloadtool.wwwroot).resolve()
+        sharedDataHandler = EsmHttpThrottledHandler
         EsmHttpThrottledHandler.rootDirectory = wwwroot.resolve() # this is the root of the webserver
         EsmHttpThrottledHandler.globalBandwidthLimit = self.config.downloadtool.maxGlobalBandwith
         EsmHttpThrottledHandler.clientBandwidthLimit = self.config.downloadtool.maxClientBandwith
         EsmHttpThrottledHandler.rateLimit = parse(self.config.downloadtool.rateLimit)
         EsmHttpThrottledHandler.zipFiles = zipFiles
-
-        # if self.config.downloadtool.useSharedDataURLFeature:
-        #     autoZipFile = Tools.findZipFileByName(zipFiles, startsWith=self.config.downloadtool.autoZipName)
-        #     EsmHttpThrottledHandler.redirects = [{"source": "GimmeTheSharedData", "destination": autoZipFile.name, "code": 301}]
-            
-        try:
-            with socketserver.ThreadingTCPServer(("", serverPort), handler) as httpd:
-                httpd.serve_forever()        
-        except Exception as e:
-            log.debug(e)
+        return sharedDataHandler
