@@ -1,8 +1,8 @@
 # TODOS
 
 ## WIP
-- [ ] BUG: shared-data-tool shows stacktrace on connection errors of clients -> just log.warn and thats it.
-- [ ] new server endpoint (or reuse shared-data-tool?) where someone can see the chatlog, ideally with a search functionality, initially scrolled to the bottom.
+- [ ] shared-data-tool server needs a spinner
+- [ ] new server endpoint (or reuse shared-data-tool?) where someone can see/read the current chatlog, ideally with a search functionality, initially scrolled to the bottom.
 
 ## later
 - [+] how can the haimster chat messages be made visible in discord, EWA, EAH? -> Changed to use sendertype Player, see if that helps.
@@ -44,6 +44,7 @@
 - [ ] add cb:shield:$id function to be able to get a ships shield values?
 
 ## done
+- [x] BUG: shared-data-tool shows stacktrace on connection errors of clients -> just log.warn and thats it.
 - [x] BUG: when shutting down, we have to kill the emprc listener!
 - [x] BUG: connector should not forward chat messages from the server tab!
 - [x] BUG started connector server doesn't log into our esm logger properly

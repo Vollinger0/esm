@@ -44,12 +44,21 @@ class EsmHttpThrottledHandler(http.server.SimpleHTTPRequestHandler):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=EsmHttpThrottledHandler.rootDirectory, **kwargs)
 
+    def handle(self) -> None:
+        """
+            wrap any errors that might occur while handling the request, we don't want stack traces
+        """
+        try:
+            return super().handle()
+        except Exception as e:
+            log.warning(f"error initializing http server: {e}. Probably some bots knocking on the door.")
+
     def hitRateLimit(self):
         client_ip = self.client_address[0]
         # rate limit check, send 429 if the client is trying to make too many requests
         if not self.rateLimiter.hit(self.rateLimit, "global", client_ip):
             self.send_error(429, f"Rate limit exceeded. Go away.")
-            log.warn(f"client ip {client_ip} exceeded the rate limit, requested path '{self.path}'")
+            log.warning(f"client ip {client_ip} exceeded the rate limit, requested path '{self.path}'")
             return True
         return False
 
