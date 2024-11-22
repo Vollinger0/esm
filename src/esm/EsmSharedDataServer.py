@@ -372,15 +372,17 @@ class EsmSharedDataServer:
             pSgmt = self.config.communication.chatlogViewerPathSegment
             log.info(f"Enabling chat log viewer on path '{servingUrlRoot}{pSgmt}'")
 
-            chatLogViewerFiles = [f"{pSgmt}", f"{pSgmt}/index.html", f"{pSgmt}/index.js", f"{pSgmt}/style.css", f"{pSgmt}/chatlog.json"]
+            chatLogViewerFiles = [f"{pSgmt}", f"{pSgmt}/index.html", f"{pSgmt}/script.js", f"{pSgmt}/styles.css"]
             handler.whitelist = chatLogViewerFiles
             handler.rateLimitExceptions = chatLogViewerFiles
             handler.redirects = [
                 {"source": f"{pSgmt}", "destination": f"{pSgmt}/index.html", "code": 301},
                 {"source": f"{pSgmt}/", "destination": f"{pSgmt}/index.html", "code": 301},
             ]
-            # TODO: make chatlog.json available somehow?
-            # TODO: create nice looking chatlogviewer ui
+            haimsterChatLog = f"{self.config.communication.haimsterHost}{self.config.communication.chatlogPath}"
+            handler.proxiedPaths = [
+                {"path": f"{pSgmt}/chatlog.json", "target": haimsterChatLog},
+            ]
 
         try:
             with socketserver.ThreadingTCPServer(("", serverPort), handler) as httpd:

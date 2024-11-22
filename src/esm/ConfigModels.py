@@ -108,8 +108,8 @@ class ConfigCommunication(BaseModel):
     incomingMessageHostPort: int = Field(9000, description="the port to bind to to receive messages from haimster. This ip and port must be configured on haimster side aswell.")
 
     chatlogViewerEnabled: bool = Field(True, description="enables the chatlog viewer in the shared data tool server. This is just a convenience feature to see the chatlog in a browser")
-    #chatlogViewerRoot: str = Field("chatlog", description="the path of the files of the chatlog viewer in the shared data tool server.")
     chatlogViewerPathSegment: str = Field("/chatlog", description="the path to the chatlog viewer in the url.")
+    chatlogPath: str = Field("/chatlog", description="the url path to the chatlog served by the haimster server.")
 
 class RobocopyOptions(BaseModel):
     moveoptions: str = Field("/MOVE /E /np /ns /nc /nfl /ndl /mt /r:10 /w:10 /unicode", alias="move")

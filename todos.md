@@ -2,6 +2,7 @@
 
 ## WIP
 - [+] new server endpoint (or reuse shared-data-tool?) where someone can see/read the current chatlog, ideally with a search functionality, initially scrolled to the bottom.
+      - actually, haimster should provide the download, esm has to proxy it.
 
 ## later
 - [+] how can the haimster chat messages be made visible in discord, EWA, EAH? -> Changed to use sendertype Player, see if that helps.

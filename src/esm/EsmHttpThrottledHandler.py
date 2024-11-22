@@ -1,13 +1,17 @@
 import logging
-from typing import Dict
+import urllib.request
 import humanize
 import http.server
 import threading
 import time
-from esm import Tools
-from esm.Tools import Timer
+import urllib
+
+from typing import Dict
+from urllib.error import URLError
 from limits import parse, storage, strategies
 from pathlib import Path
+from esm import Tools
+from esm.Tools import Timer
 
 log = logging.getLogger(__name__)
 
@@ -44,6 +48,9 @@ class EsmHttpThrottledHandler(http.server.SimpleHTTPRequestHandler):
 
     # dynamic whitelist
     whitelist = [] 
+
+    # special services where the handler will be proxying requests to the given url, e.g. {"src": "/chatlog/chatlog.json", "dst": "https://haimsterhost.com/chatlog/chatlog.json"}
+    proxiedPaths = []
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=EsmHttpThrottledHandler.rootDirectory, **kwargs)
@@ -92,6 +99,7 @@ class EsmHttpThrottledHandler(http.server.SimpleHTTPRequestHandler):
     def redirectToIndex(self):
         filename = self.path[1:]
         if filename == "":
+            log.debug(f"redirecting {self.path} to /index.html")
             self.send_response_only(301)
             self.send_header("Location", "/index.html")
             self.end_headers()
@@ -99,15 +107,30 @@ class EsmHttpThrottledHandler(http.server.SimpleHTTPRequestHandler):
             return True
         return False
 
-    def pathNotInWhitelist(self):
+    def pathInWhitelist(self):
         filename = self.path
-        zipFileNames = [f"/{x.name}" for x in EsmHttpThrottledHandler.zipFiles]
-        allowedWhitelist = [*zipFileNames, *EsmHttpThrottledHandler.defaultAssets, *EsmHttpThrottledHandler.whitelist]
-        if filename not in allowedWhitelist:
-            self.send_response_only(404, "There's nothing else to see here. Go away.")
-            self.end_headers()
-            self.log_request(404)
+        if filename in EsmHttpThrottledHandler.defaultAssets:
+            #log.debug(f"serving default asset {filename}")
             return True
+        
+        if filename in EsmHttpThrottledHandler.whitelist:
+            #log.debug(f"serving whitelisted asset {filename}")
+            return True
+
+        zipFileNames = [f"/{x.name}" for x in EsmHttpThrottledHandler.zipFiles]
+        if filename in zipFileNames:
+            #log.debug(f"serving zip file {filename}")
+            return True
+
+        for proxiedPath in EsmHttpThrottledHandler.proxiedPaths:
+            if filename.startswith(proxiedPath['path']):
+                #log.debug(f"serving proxied path {filename}")
+                return True
+            
+        log.debug(f"not serving {filename}")
+        self.send_response_only(404, "There's nothing else to see here. Go away.")
+        self.end_headers()
+        self.log_request(404)
         return False
 
     def fileDoesNotExist(self):
@@ -122,7 +145,7 @@ class EsmHttpThrottledHandler(http.server.SimpleHTTPRequestHandler):
 
     def do_HEAD(self) -> None:
         if self.handleRedirects(): return
-        if self.pathNotInWhitelist(): return
+        if not self.pathInWhitelist(): return
         if self.fileDoesNotExist(): return
 
         self.send_response_only(200, "OK")
@@ -133,7 +156,8 @@ class EsmHttpThrottledHandler(http.server.SimpleHTTPRequestHandler):
         if self.redirectToIndex(): return
         if self.hitRateLimit(): return
         if self.handleRedirects(): return
-        if self.pathNotInWhitelist(): return
+        if not self.pathInWhitelist(): return
+        if self.handleProxiedPath(): return
         if self.fileDoesNotExist(): return
 
         try:
@@ -141,6 +165,38 @@ class EsmHttpThrottledHandler(http.server.SimpleHTTPRequestHandler):
             return super().do_GET()
         except Exception as ex:
             log.warning(f"Error while serving file {self.path}: {ex}")
+
+    def handleProxiedPath(self):
+        # get the entry that matches the self.path from the proxiedPaths
+        for proxiedPath in EsmHttpThrottledHandler.proxiedPaths:
+            if self.path.startswith(proxiedPath['path']):
+                # get the line query parameter after the requested path
+                query = self.path[len(proxiedPath['path']):].strip("/")
+                targetUrl = proxiedPath['target']
+                targetUrl += f"{query}"
+                #log.debug(f"Client {self.client_address} requested file '{self.path}', proxying to '{targetUrl}'.")
+                # Make request to remote server
+                try:
+                    response = urllib.request.urlopen(targetUrl)
+                    # Copy status code and headers
+                    self.send_response(response.status)
+                    for header, value in response.headers.items():
+                        self.send_header(header, value)
+                    self.end_headers()
+                    
+                    # Stream the response body
+                    while True:
+                        chunk = response.read(8192)
+                        if not chunk:
+                            break
+                        self.wfile.write(chunk)
+                except URLError as e:
+                    self.send_error(502, f"Proxy error: {str(e)}")
+                except Exception as e:
+                    self.send_error(500, f"Internal server error: {str(e)}")                
+                return True
+        return False
+       
 
     def copyfile(self, source, outputfile) -> None:
         # we'll only limit the speed of the zip file, not the rest of the files
@@ -187,4 +243,3 @@ class EsmHttpThrottledHandler(http.server.SimpleHTTPRequestHandler):
     def log_message(self, format: str, *args) -> None:
         message = format % args
         log.debug(f"{self.address_string()} - - [{self.log_date_time_string()}] {message.translate(self._control_char_table)}")
-        
