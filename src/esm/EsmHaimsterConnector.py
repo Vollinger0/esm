@@ -91,11 +91,10 @@ class EsmHaimsterConnector:
             )
             self._httpServer = uvicorn.Server(config)
             self._httpServer.run()
-            
-            if log.getEffectiveLevel() == logging.DEBUG:
-                EsmLogger.configureUvicornLogging(logLevel=logging.INFO)
-            else:
-                EsmLogger.configureUvicornLogging(logLevel=logging.WARNING)
+            # if log.getEffectiveLevel() == logging.DEBUG:
+            #     EsmLogger.configureUvicornLogging(logLevel=logging.INFO)
+            # else:
+            #     EsmLogger.configureUvicornLogging(logLevel=logging.WARNING)
 
         self._httpServerWorker = threading.Thread(target=runHttpServer, daemon=True)
         self._httpServerWorker.start()

@@ -188,6 +188,9 @@ class EsmMain:
         """
         Will stop the synchronizer, then stop the server and do a last sync from ram 2 mirror
         """
+        if self.config.communication.haimsterEnabled:
+            self.haimsterConnector.shutdown()
+
         if self.config.general.useRamdisk:
             # stop synchronizer
             log.info(f"Stopping synchronizer thread")
@@ -825,12 +828,14 @@ class EsmMain:
     def startHaimsterConnectorAndWait(self):
         """
             Starts the haimster connector (in a separate thread) and waits for it to exit, ignoring the configuration flag
+            It will shut down the connector on exit
             This can be used if you want to start the haimster connector in a separate process with a tool call
         """
         self.openSocket(port=self.config.communication.incomingMessageHostPort, interval=5, tries=10, raiseException=True)
         shouldExit = self.haimsterConnector.initialize()
         while not shouldExit.is_set():
             time.sleep(1)
+        self.haimsterConnector.shutdown()
 
     def exportChatLog(self, dblocation: str=None, filename: str="chatlog.json", format: str="json", excludeNames: List[str] = [], includeNames: List[str] = []):
         """

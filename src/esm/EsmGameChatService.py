@@ -73,12 +73,23 @@ class EsmGameChatService:
         self._startChatPoster()
 
     def shutdown(self):
-        """Stops both processes and their threads"""
+        """Stops both, processes and their threads"""
         log.info("Shutting down chat service")
         self._shouldStop = True
 
         if self._readerProcess:
             self._readerProcess.terminate()
+            try:
+                log.debug("Waiting for emprc process to terminate")
+                self._readerProcess.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                log.warning("killing emprc process, since it didn't terminate in time")
+                self._readerProcess.kill()
+        if self._eventReaderThread:
+            self._eventReaderThread.join(timeout=5)
+        if self._chatPosterThread:  
+            self._chatPosterThread.join(timeout=5)
+
 
     def _startEventReader(self):
         """
@@ -95,7 +106,7 @@ class EsmGameChatService:
                 bufsize=1,
                 universal_newlines=True,
             )
-
+        
         def _eventReaderThread():
             log.debug("Starting emprc event reader thread")
             retryDelay=10

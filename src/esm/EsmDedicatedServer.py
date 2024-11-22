@@ -78,7 +78,7 @@ class EsmDedicatedServer:
         arguments2String = lambda arguments: " ".join(str(element) if isinstance(element, Path) else element for element in arguments)
         log.info(f"Starting server with: '{arguments2String(arguments)}' in directory '{self.config.paths.install}'")
         if not self.config.general.debugMode:
-            # we do not use subprocess.run here, since we'll need the PID later and only psutil.Popen provides that.            
+            # we do not use subprocess.run here, since we'll need the PID later and only psutil.Popen provides that. <- unless you just keep the process object, since it provides all methods.           
             process = psutil.Popen(args=arguments)
         else:
             log.debug(f"debug mode enabled!")

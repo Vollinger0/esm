@@ -294,7 +294,7 @@ class EsmRamdiskManager:
 
     def stopSynchronizer(self):
         if not self.synchronizerShutdownEvent:
-            log.warn("Can not stop synchronizer thread since there is probably no synchronizer thread running.")
+            log.warning("Can not stop synchronizer thread since there is probably no synchronizer thread running.")
             return
         
         # set the shared boolean, which will make the synchronizer stop
