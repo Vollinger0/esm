@@ -1,7 +1,6 @@
 # TODOS
 
 ## WIP
-- [ ] shared-data-tool server needs a spinner
 - [ ] new server endpoint (or reuse shared-data-tool?) where someone can see/read the current chatlog, ideally with a search functionality, initially scrolled to the bottom.
 
 ## later
@@ -44,6 +43,7 @@
 - [ ] add cb:shield:$id function to be able to get a ships shield values?
 
 ## done
+- [x] shared-data-tool server needs a spinner
 - [x] BUG: shared-data-tool shows stacktrace on connection errors of clients -> just log.warn and thats it.
 - [x] BUG: when shutting down, we have to kill the emprc listener!
 - [x] BUG: connector should not forward chat messages from the server tab!

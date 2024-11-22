@@ -448,8 +448,11 @@ def toolSharedDataServer(resume):
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)
         esm.setUpLogging(caller="esm-shareddata-server", streamLogLevel=EsmLogger.streamLogLevel, fileLogLevel=EsmLogger.fileLogLevel)
-        esm.startSharedDataServer(resume)
-
+        with Timer() as timer:
+            with EsmLogger.console.status("Server running...") as status:
+                esm.startSharedDataServer(resume)
+            status.stop()
+        log.info(f"Server was running for {timer.elapsedTime} and has stopped now.")
 
 @cli.command(name="tool-haimster-connector", short_help="starts the haimster connector as separate tool")
 def toolHaimsterConnector():
@@ -466,7 +469,11 @@ def toolHaimsterConnector():
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)
         esm.setUpLogging(caller="esm-haimster-connector", streamLogLevel=EsmLogger.streamLogLevel, fileLogLevel=EsmLogger.fileLogLevel)
-        esm.startHaimsterConnectorAndWait()
+        with Timer() as timer:
+            with EsmLogger.console.status("Server running...") as status:
+                esm.startHaimsterConnectorAndWait()
+            status.stop()
+        log.info(f"Server was running for {timer.elapsedTime} and has stopped now.")
 
 
 @cli.command(name="terminate-galaxy", short_help="creates a singularity to destroy everything")
