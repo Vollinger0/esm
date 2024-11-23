@@ -382,6 +382,7 @@ class EsmSharedDataServer:
                 {"source": f"{pSgmt}/", "destination": f"{pSgmt}/index.html", "code": 301},
             ]
             haimsterChatLog = f"{self.config.communication.haimsterHost}{self.config.communication.chatlogPath}"
+            log.info(f"Will proxy chatlog url at: '{haimsterChatLog}'")
             handler.proxiedPaths = [
                 {"path": f"{pSgmt}/chatlog.json", "target": haimsterChatLog},
             ]
