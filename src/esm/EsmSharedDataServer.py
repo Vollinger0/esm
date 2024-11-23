@@ -19,7 +19,7 @@ from esm.EsmDedicatedServer import EsmDedicatedServer
 from esm.EsmHttpThrottledHandler import EsmHttpThrottledHandler
 from esm.FsTools import FsTools
 from esm.ServiceRegistry import Service, ServiceRegistry
-from esm.exceptions import RequirementsNotFulfilledError
+from esm.exceptions import RequirementsNotFulfilledError, SafetyException
 
 log = logging.getLogger(__name__)
 
@@ -78,6 +78,8 @@ class EsmSharedDataServer:
 
         if self.config.downloadtool.useSharedDataURLFeature:
             autoZipFile = Tools.findZipFileByName(zipFiles, startsWith=self.config.downloadtool.autoZipName.split(".")[0])
+            if not autoZipFile:
+                raise SafetyException(f"Could not find auto zip file with name '{self.config.downloadtool.autoZipName}' in the wwwroot folder. You probably need to recreate the zip files.")
             
             sharedDataUrl = self.getSharedDataURL(servingUrlRoot, autoZipFile)
 

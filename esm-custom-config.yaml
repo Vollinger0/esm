@@ -51,9 +51,6 @@ deletes:
     
 downloadtool:
   useSharedDataURLFeature: True
-  #customExternalHostNameAndPort: 'https://my-server.com:12345'
-  #customSharedDataURL: 'https://my-server.com:54321/SharedData.zip'
-  #autoEditDedicatedYaml: False
 
 galaxy:
   territories: #faction Territory Definitions (look up their definitions in the file "$scenario/Content/Configuration/GalaxyConfig.ecf" of your scenario)
