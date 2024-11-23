@@ -124,7 +124,7 @@ class EsmHttpThrottledHandler(http.server.SimpleHTTPRequestHandler):
 
         for proxiedPath in EsmHttpThrottledHandler.proxiedPaths:
             if filename.startswith(proxiedPath['path']):
-                #log.debug(f"serving proxied path {filename}")
+                log.info(f"serving proxied path {filename}")
                 return True
             
         log.debug(f"not serving {filename}")
