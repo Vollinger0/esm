@@ -37,6 +37,9 @@ Its meant to run fully automated, so you only need to configure it once, then se
 - supports a direct starting mode (without launcher), when you're running several instances of the game on one machine.
 - various tools to manage the galaxy
 
+### Other 
+- hAImster integration
+
 ### Screenshot
 
 ![screenshot](esm_help_screenshot.png)
@@ -51,6 +54,9 @@ Its meant to run fully automated, so you only need to configure it once, then se
 
 provided:
 - 3rd party: EmpyrionPrime.RemoteClient by notoats (see <https://github.com/notOats/EmpyrionPrime>)
+
+optional:
+- a running hAImster server
 
 ## All about performance, ramdisk, shared data downloads and more
 

@@ -3,28 +3,36 @@
 ## WIP
 
 ## later
-- [+] how can the haimster chat messages be made visible in discord, EWA, EAH? -> Changed to use sendertype Player, see if that helps.
-- [ ] integrate haimster as tool, maybe aswell run integrated?
 - [ ] read the territory config from the galaxyconfig.ecf ourselves. Search for "Child Territory" - Blocks.
 - [ ] backup additional should support globbing
 - [ ] wipe-tool --show* options should work without instance-check, also in dryrun it should work with --dblocation (to get some stats from backups)
 - [ ] wipe-tool: find a way to also remove wiped playfields from the player registries to avoid teleportation bugs (since the bug is still not fixed)
 - [ ] fix purge-tools: these need to also delete related data in the database! Probably not difficult to finish implementing, but a PITA to test.
-- [ ] implement allowMultpleServerInstances switch? Once enabled, do not check for instances of the game before starting, do not start if startmode is set to direct, etc.
-
-## optional
-- [+] fix all FS-modifying tests to use the test fixture of the usually existing ramdisk (R:) - or use mocks!
-- [ ] offer some kind of better interactive mode for different stuff
-  - [ ] add fzf-like selection, also replace user prompts with that.
-  - [ ] interactive mode for wipe galaxy tool?
-  - [ ] add a -batchmode when there are interactive prompts, in doubt, defaulting to the most defensive option
+- [ ] integrate haimster as tool, maybe aswell run integrated? => for the rewrite
+- [ ] needs a big rewrite:
+      - integrating the shared data tool
+      - haimster
+      - an event system that propagates game events (not only chat messages)
+      - a separate server with a GUI to manage stuff (incl. chatlog)
+      - discord integration - with the ability to control esm from discord, post the chatlog there, etc.
 - [ ] add support for the tool to run along with the shared-data-server, without having to start it separatedly
   - for this, we have to ensure the shared data zip is only created when there were relevant changes in the shared data, otherwise every restart would lead to redownloads.
   - we would need to compare if there are changes and what size the changes are (to avoid having to redownload everything when only a single file changed)
   - see change detector from hAImster or the "dirhash" library
   - a configurable treshold for change size in MB at what point it makes sense to enable the shareddataurl or keep the old method?
-- [+] GUI!
-- [+] create separate windows-gui thingy that resides in the taskbar or similar and provides a shortcut to the cli tool.
+  - BUG: shared-data tool should not roll back to backup, but just remove the line instead since changes while the tool was running may get lost. ruamel yaml_rt should work well with this
+- extend documentation, add readme_tools or something to explain the new ones
+
+## optional
+- [+] how can the haimster chat messages be made visible in discord, EWA, EAH? -> Changed to use sendertype Player, see if that helps => nope. sounds like its not possible.
+- [ ] implement allowMultpleServerInstances switch? Once enabled, do not check for instances of the game before starting, do not start if startmode is set to direct, etc.
+- [+] fix all FS-modifying tests to use the test fixture of the usually existing ramdisk (R:) - or use mocks!
+- [ ] offer some kind of better interactive mode for different stuff
+  - [ ] add fzf-like selection, also replace user prompts with that.
+  - [ ] interactive mode for wipe galaxy tool?
+  - [ ] add a -batchmode when there are interactive prompts, in doubt, defaulting to the most defensive option
+- [ ] GUI!?
+- [ ] create separate windows-gui thingy that resides in the taskbar or similar and provides a shortcut to the cli tool?
 - [ ] ask notoats to create a downloadable release of his contained exe, so i can add it as 3rd party requirement
 - [ ] provide full installation package with install bat, that installs esm, the tools (osfmount, peazip, emprc, etc.)?
 - [ ] implement warning/talkback via tickets for when an admin is required (e.g. low disk space, etc.), e.g. as an extra tool, so it can just be planned in EAH, or as delayed task after a startup (e.g. 5 minutes after the server started) - alternatively just a discord bot.
