@@ -1,9 +1,9 @@
 # TODOS
 
 ## WIP
+- [ ] read the territory config from the galaxyconfig.ecf ourselves. Search for "Child Territory" - Blocks.
 
 ## later
-- [ ] read the territory config from the galaxyconfig.ecf ourselves. Search for "Child Territory" - Blocks.
 - [ ] backup additional should support globbing
 - [ ] wipe-tool --show* options should work without instance-check, also in dryrun it should work with --dblocation (to get some stats from backups)
 - [ ] wipe-tool: find a way to also remove wiped playfields from the player registries to avoid teleportation bugs (since the bug is still not fixed)
@@ -48,8 +48,10 @@
    1. find customicon name
    1. save customicon as itemid for EWA.
 - [ ] add cb:shield:$id function to be able to get a ships shield values?
+- [ ] proper python-native connector to the EGS server to not have to use the emprc
 
 ## done
+- [x] tool to generate the effective config
 - [x] new server endpoint (or reuse shared-data-tool?) where someone can see/read the current chatlog, ideally with a search functionality, initially scrolled to the bottom.
       - actually, haimster should provide the download, esm has to proxy it.
 - [x] shared-data-tool server needs a spinner

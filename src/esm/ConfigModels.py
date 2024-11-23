@@ -1,6 +1,6 @@
 from enum import Enum
 from pathlib import Path
-from typing import List, Optional, TypedDict
+from typing import List, Optional
 from pydantic import BaseModel, Field
 from easyconfig import AppConfigMixin, AppBaseModel
 
@@ -12,7 +12,7 @@ FILESIZEPATTERN = r"^\d+(\.\d+)?\s*[KkMmGgTtPpEeZzYy]$"
 
 class ConfigGeneral(BaseModel):
     useRamdisk: bool = Field(True, description="if True, use a ramdisk for the savegame. Requires the user to call ramdisk-install and ramdisk-setup to work. Will completely solve your server performance issues.")
-    externalizeTemplates: bool = Field(True, description="if True, will 'externalize' the savegame templates, meaning that they will be symlinked back to the hdd when using the ramdisk. This saves aboit 40% of space on the ramdisk!")
+    externalizeTemplates: bool = Field(True, description="if True, will 'externalize' the savegame templates, meaning that they will be symlinked back to the hdd when using the ramdisk. This saves about 40% of space on the ramdisk!")
     bindingPort: int = Field(6969, lt=65535, gt=1024, description="default port to bind this application to, just used to make sure only one instance can run with one config at a time.")
     multipleInstanceWaitInterval: int = Field(10, description="interval in seconds for checking if there is another script running at script start")
     multipleInstanceWaitTries: int = Field(180, description="amount of times of checking if there is another script running at script start")
@@ -89,10 +89,11 @@ class ConfigFoldernames(BaseModel):
     esmtests: str = Field("esm-tests", description="this folder will be used to conduct a few tests on the filesystem below the installation dir")
 
 class ConfigFilenames(BaseModel):
-    globaldb: str = Field("global.db")
-    buildNumber: str = Field("BuildNumber.txt")
-    dedicatedExe: str = Field("EmpyrionDedicated.exe")
-    launcherExe: str = Field("EmpyrionLauncher.exe")
+    globaldb: str = Field("global.db", description="the name of the global db file")
+    buildNumber: str = Field("BuildNumber.txt", description="the name of the build number file")
+    dedicatedExe: str = Field("EmpyrionDedicated.exe", description="the name of the dedicated exe")
+    launcherExe: str = Field("EmpyrionLauncher.exe", description="the name of the launcher exe")
+    galaxyConfig: str = Field("Content/Configuration/GalaxyConfig.ecf", description="the path to the galaxy config file, relative to the installation dir")
 
 class ConfigCommunication(BaseModel):
     announceSyncEvents: bool = Field(True, description="if true, sync events (syncStart, syncEnd) will be announced in the chat")
@@ -175,14 +176,15 @@ class MainConfig(AppBaseModel, AppConfigMixin):
     updates: ConfigUpdates = Field(ConfigUpdates())
     deletes: ConfigDeletes = Field(ConfigDeletes())
     paths: ConfigPaths = Field(...)
+    downloadtool: DownloadToolConfig = Field(DownloadToolConfig(), description="configuration for the shared data download tool")
+    communication: ConfigCommunication = Field(ConfigCommunication(), description="configuration for the in-game communication")
+
     foldernames: ConfigFoldernames = Field(ConfigFoldernames(), description="names of different folders, you probably do not need to change any of these")
     filenames: ConfigFilenames = Field(ConfigFilenames(), description="names of different files, you probably do not need to change any of these")
-    communication: ConfigCommunication = Field(ConfigCommunication(), description="configuration for the in-game communication")
     robocopy: ConfigRobocopy = Field(ConfigRobocopy())
-    galaxy: Optional[ConfigGalaxy] = None
     dedicatedConfig: Optional[DediConfig] = Field(None)
     context: Optional[dict] = {}
-    downloadtool: DownloadToolConfig = Field(DownloadToolConfig(), description="configuration for the shared data download tool")
+    galaxy: Optional[ConfigGalaxy] = None
 
 
     @staticmethod

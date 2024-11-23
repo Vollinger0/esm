@@ -60,7 +60,8 @@ click.rich_click.COMMAND_GROUPS = {
                 "tool-clear-discovered", 
                 "tool-shareddata-server",
                 "tool-haimster-connector",
-                "tool-export-chatlog"
+                "tool-export-chatlog",
+                "tool-effectiveconfig"
             ],
         },
         {
@@ -521,7 +522,7 @@ def terminateGalaxy(i_am_darkestwarrior, i_am_vollinger, i_am_kreliz, who_is_kr0
                     status.stop()
                     log.warning("Destruction of the galaxy ended prematurely. Please contact an expert.")
         except:
-            log.error("Looks like someone else is already destroying the world already!")
+            log.error("Looks like someone else is already destroying the world!")
 
 
 @cli.command(name="check-requirements", short_help="checks various configs and requirements")
@@ -540,6 +541,15 @@ def checkRequirements(nonadmin):
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)
         esm.checkRequirements(not nonadmin)
+
+
+@cli.command(name="tool-effectiveconfig", short_help="saves the effective configuration based on the default config file as a new file")
+@click.option('--configfile', default="esm-effective-config.yaml", metavar='<file>', help="the config file to save the effective config file to")
+@click.option('--overwrite', default=False, is_flag=True, help="if the file already exists, overwrite it")
+def toolEfectiveConfig(configfile, overwrite):
+    with LogContext():
+        esm = ServiceRegistry.get(EsmMain)
+        esm.saveEffectiveConfig(configfile, overwrite)
 
 
 @cli.command(name="tool-wipe", short_help="provides a lot of options to wipe empty playfields, check the help for details", no_args_is_help=True)
@@ -573,8 +583,6 @@ def wipeTool(listfile, territory, showterritories, wipetype, showtypes, nocleard
     """
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)  
-        esm.checkAndWaitForOtherInstances()
-
         if showtypes:
             showWipeTypes()
             return
@@ -609,14 +617,23 @@ def wipeTool(listfile, territory, showterritories, wipetype, showtypes, nocleard
             minage = int(minage)
             if minage < 0:
                 raise WrongParameterError(f"minage must be >= 0")
+            
+        # TODO: only wait for other instances if the dblocation given is the current game's db
+        esm.checkAndWaitForOtherInstances()
 
         esm.wipeTool(inputFilePath=inputFilePath, territoryName=territory, wipetype=WipeType.byName(wipetype), cleardiscoveredby=not nocleardiscoveredby, minage=minage, dbLocation=dblocation, dryrun=not nodryrun)
 
 def showConfiguredTerritories(esm: EsmMain):
+    """
+        just print out the configured custom territories
+    """
     click.echo("Configured custom territories:\n\n" + "\n".join(f"{ct.name}" for ct in esm.configService.getAvailableTerritories()))
     click.echo(f"\nUse {Territory.GALAXY} to wipe the whole galaxy.\n")
 
 def showWipeTypes():
+    """
+        just print out the supported wipe types
+    """
     click.echo("Supported wipe types are:\n\n" + "\n".join(f"{wt.value.name}\t\t-\t{wt.value.description}" for wt in list(WipeType))+"\n")
 
 def checkWipeTypeParameter(wipetype):

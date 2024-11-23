@@ -843,3 +843,9 @@ class EsmMain:
         """
         dbLocationPath = self.getDBLocationPath(dblocation)
         self.gameChatService.exportChatLog(dbLocationPath, filename, format, excludeNames, includeNames)
+
+    def saveEffectiveConfig(self, filePath: str, overwrite: bool = False):
+        """
+            saves the effective config to the given filePath
+        """
+        self.configService.saveConfig(Path(filePath), overwrite)

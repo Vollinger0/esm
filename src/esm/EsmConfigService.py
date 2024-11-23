@@ -1,6 +1,8 @@
 import logging
 import os
 import yaml
+
+from copy import deepcopy
 from typing import List
 from functools import cached_property
 from pathlib import Path
@@ -11,6 +13,8 @@ from esm.exceptions import AdminRequiredException
 from esm.ServiceRegistry import Service, ServiceRegistry
 from esm.Tools import mergeDicts
 from ruamel.yaml import YAML
+from easyconfig import create_app_config
+from easyconfig.yaml import yaml_rt
 
 log = logging.getLogger(__name__)
 
@@ -38,8 +42,6 @@ class EsmConfigService:
             Creates a new config yaml from our config model with all the default values
         """
         log.info(f"create a new {filename} from default config model")
-        from easyconfig import create_app_config
-        from easyconfig.yaml import yaml_rt
         yaml_rt.indent(mapping=2, sequence=4, offset=2)
         configFilePath = Path(filename)
         if configFilePath.exists(): configFilePath.unlink()
@@ -63,6 +65,26 @@ class EsmConfigService:
                 return mainConfig
         log.error(f"Could not read configuration from path '{self.configFilePath}'")
         raise AdminRequiredException(f"Could not read configuration from path '{self.configFilePath}'")
+    
+    def saveConfig(self, filePath: Path, overwrite: bool = False):
+        """ 
+            Save the configuration to a new yaml file.
+            filePath: Path to the file to save the configuration to.
+        """
+        if filePath.exists():
+            if overwrite:
+                log.warning(f"Overwriting configuration file at path '{filePath.absolute()}'")
+            else:
+                raise AdminRequiredException(f"Can not save configuration: File already exists at path '{filePath.absolute()}'")
+
+        log.debug(f"Saving configuration to path '{filePath.absolute()}'")
+        # work on a deep copy, we don't want to alter the existing config. This might be ok for tool-calls but not otherwise.
+        model = deepcopy(self.config)
+        del model.context
+        effectiveConfig = create_app_config(model)
+        effectiveConfig.load_config_file(path=filePath.absolute())
+        log.info(f"Created file '{filePath.absolute()}'")
+        
     
     def loadDedicatedYaml(self, mainConfig: MainConfig):
         """
@@ -241,6 +263,8 @@ class EsmConfigService:
     def getAvailableTerritories(self) -> List[Territory]:
         """
         return the list of available territories from config
+
+        TODO: this should, instead, read it from the configured GalaxyConfig.ecf file!
         """
         territories = []
         for territory in self.config.galaxy.territories:
