@@ -76,6 +76,9 @@ communication:  # configuration for the in-game communication
   haimsterStartupDelay: 60                # how many seconds to wait after a server start before starting the haimster connector, since it needs a running server
   incomingMessageHostIp: 0.0.0.0          # the host url to bind our http server to to receive messages from haimster. This ip and port must be configured on haimster side aswell.
   incomingMessageHostPort: 9000           # the port to bind to to receive messages from haimster. This ip and port must be configured on haimster side aswell.
+  chatlogViewerEnabled: true              # enables the chatlog viewer in the shared data tool server. This is just a convenience feature to see the chatlog in a browser
+  chatlogViewerPathSegment: /chatlog      # the path to the chatlog viewer in the url.
+  chatlogPath: /chatlog                   # the url path to the chatlog served by the haimster server.
 robocopy:
   encoding: ansi   # depending on the shell used, it may be necessary to change this to ansi, utf-8, cp1252 or something. This will be passed to subprocess.run(...encoding=...)
   options:         # options for the different robocopy operations

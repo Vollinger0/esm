@@ -35,6 +35,9 @@ datafiles = [
         ('index.template.html', '.'),
         ('wwwroot/styles.css', 'wwwroot/styles.css'),
         ('wwwroot/favicon.ico', 'wwwroot/favicon.ico'),
+        ('wwwroot/chatlog/index.html', 'wwwroot/chatlog/index.html'),
+        ('wwwroot/chatlog/script.js', 'wwwroot/chatlog/script.js'),
+        ('wwwroot/chatlog/styles.css', 'wwwroot/chatlog/styles.css'),
         ]
 
 a = Analysis(
