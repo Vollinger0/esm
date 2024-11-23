@@ -1,7 +1,7 @@
 # TODOS
 
 ## WIP
-- [ ] read the territory config from the galaxyconfig.ecf ourselves. Search for "Child Territory" - Blocks.
+- [+] read the territory config from the galaxyconfig.ecf ourselves. Search for "Child Territory" - Blocks.
 
 ## later
 - [ ] backup additional should support globbing

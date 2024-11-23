@@ -264,7 +264,7 @@ class EsmConfigService:
         """
         return the list of available territories from config
 
-        TODO: this should, instead, read it from the configured GalaxyConfig.ecf file!
+        TODO: this should read it from the configured GalaxyConfig.ecf aswell, keep the ones in the yaml as custom configured ones.
         """
         territories = []
         for territory in self.config.galaxy.territories:
