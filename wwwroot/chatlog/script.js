@@ -4,8 +4,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const saveSettingsButton = document.getElementById('saveSettings');
 
     // Function to load and display chatlog
-    function loadChatlog(lines = 100) {
-        fetch('/chatlog/chatlog.json?lines=' + lines)
+    function loadChatlog() {
+        fetch('/chatlog/chatlog.json?lines=' + getLineCount())
             .then(response => response.json())
             .then(chatlogData => {
                 chatlogDiv.innerHTML = '';
@@ -70,18 +70,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function getLineCount() {
-        return localStorage.getItem('lineCount');
+        return localStorage.getItem('lineCount') || 100;
     }
 
     // Save settings to local storage
     function saveSettings() {
         localStorage.setItem('lineCount', lineCountInput.value);
         applyLineCountLimit();
-        loadChatlog(lineCountInput.value);
+        loadChatlog();
     }
 
     // Load chatlog on initial load
-    loadChatlog(getLineCount());
+    loadChatlog();
 
     // Load settings from local storage
     loadSettings();
