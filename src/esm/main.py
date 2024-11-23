@@ -617,9 +617,9 @@ def wipeTool(listfile, territory, showterritories, wipetype, showtypes, nocleard
             minage = int(minage)
             if minage < 0:
                 raise WrongParameterError(f"minage must be >= 0")
-            
-        # TODO: only wait for other instances if the dblocation given is the current game's db
-        esm.checkAndWaitForOtherInstances()
+        
+        if nodryrun:
+            esm.checkAndWaitForOtherInstances()
 
         esm.wipeTool(inputFilePath=inputFilePath, territoryName=territory, wipetype=WipeType.byName(wipetype), cleardiscoveredby=not nocleardiscoveredby, minage=minage, dbLocation=dblocation, dryrun=not nodryrun)
 

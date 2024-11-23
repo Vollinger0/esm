@@ -497,7 +497,9 @@ class EsmMain:
         resolves the given system- and playfieldnames from the file or the names array and clears the discovered by info for these completely
         The game saves an entry for every player, even if it was discovered before, so this tool will delete them all so it goes back to "Undiscovered".
         """
-        dbLocationPath = self.getDBLocationPath(dblocation)
+        isCurrentDbSelected, dbLocationPath = self.getDBLocationPath(dblocation)
+        if dryrun and self.dedicatedServer.isRunning() and isCurrentDbSelected:
+            log.warning(f"Executing a dryrun on the current game's database while the server is running might affect the games performance.")
 
         territory = None
         systemAndPlayfieldNames = None
@@ -514,16 +516,25 @@ class EsmMain:
         
         self.wipeService.clearDiscoveredByInfo(dbLocationPath=dbLocationPath, territory=territory, systemAndPlayfieldNames=systemAndPlayfieldNames, dryrun=dryrun)
 
-    def getDBLocationPath(self, dbLocation):
+    def getDBLocationPath(self, dbLocation) -> tuple[bool, Path]:
         """
         resolves the given dbLocation and returns the absolute path or uses the global db if dbLocation is None
+
+        returns 
+            isCurrentGameDb - boolean indicating if the returned location is the current game's DB or not
+            dbLocation - Path to the database
         """
+        currentGameDBPath = self.fileSystem.getAbsolutePathTo("saves.games.savegame.globaldb")
         if dbLocation is None:
-            return self.fileSystem.getAbsolutePathTo("saves.games.savegame.globaldb")
+            return True, currentGameDBPath
         else:
             dbLocationPath = Path(dbLocation).resolve()
             if dbLocationPath.exists():
-                return dbLocationPath
+                if dbLocationPath.samefile(currentGameDBPath):
+                    log.warning("The given database location is the current game's database. Make sure you know what you are doing.")
+                    return True, dbLocationPath
+                else:
+                    return False, dbLocationPath
             else:
                 raise WrongParameterError(f"DbLocation '{dbLocation}' is not a valid database location path.")
 
@@ -665,6 +676,7 @@ class EsmMain:
         while timeLeft >= 0:
             try:
                 self.serverSocket.bind(('localhost', port))
+                log.debug(f"Bound application instance to port {port}")
                 return
             except OSError as ex:
                 if timeLeft > 1:
@@ -787,12 +799,12 @@ class EsmMain:
         """
         the mighty wipe tool
         """
-        #log.debug(f"{__name__}.{sys._getframe().f_code.co_name} called with params: {locals()}")
-
         if not dryrun and self.dedicatedServer.isRunning():
             raise ServerNeedsToBeStopped("Can not execute tool-wipe with --nodryrun if the server is running. Please stop it first.")
 
-        dbLocationPath = self.getDBLocationPath(dbLocation)
+        isCurrentDbSelected, dbLocationPath = self.getDBLocationPath(dbLocation)
+        if dryrun and self.dedicatedServer.isRunning() and isCurrentDbSelected:
+            log.warning(f"Executing a dryrun on the current game's database while the server is running might affect the games performance.")
 
         systemAndPlayfieldNames = None
         territory = None
@@ -841,7 +853,10 @@ class EsmMain:
         """
             exports the chat log from given database to filename with given format.
         """
-        dbLocationPath = self.getDBLocationPath(dblocation)
+        isCurrentDbSelected, dbLocationPath = self.getDBLocationPath(dblocation)
+        if self.dedicatedServer.isRunning() and isCurrentDbSelected:
+            log.warning(f"Executing the export on thecurrent game's database while the server is running might affect the games performance.")
+
         self.gameChatService.exportChatLog(dbLocationPath, filename, format, excludeNames, includeNames)
 
     def saveEffectiveConfig(self, filePath: str, overwrite: bool = False):
