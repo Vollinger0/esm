@@ -8,6 +8,7 @@ from functools import cached_property
 from pathlib import Path
 from esm.ConfigModels import DediConfig, MainConfig
 from esm.DataTypes import Territory
+from esm.EsmGalaxyConfigReader import EsmGalaxyConfigReader
 from esm.FsTools import FsTools
 from esm.exceptions import AdminRequiredException
 from esm.ServiceRegistry import Service, ServiceRegistry
@@ -50,6 +51,19 @@ class EsmConfigService:
         config.load_config_file(configFilePath)
         log.info(f"created file {filename}")
 
+    @staticmethod
+    def getTestConfig(dict: dict=None) -> MainConfig:
+        """
+            creates an inmemory config for testing
+            remember to overwrite any attribute you may need
+        """
+        if dict is not None:
+            mainConfig = MainConfig.model_validate(dict)
+        else:
+            mainConfig = MainConfig.getExampleConfig()
+        cs = EsmConfigService()
+        return cs.setConfig(mainConfig)
+
     @cached_property
     def config(self) -> MainConfig:
         return self.getConfig()
@@ -60,11 +74,14 @@ class EsmConfigService:
             with open(self.configFilePath, "r") as configFile:
                 configContent = yaml.safe_load(configFile)
                 mainConfig = MainConfig.model_validate(configContent)
-                self.loadDedicatedYaml(mainConfig)
-                mergeDicts(a=mainConfig.context, b={"configFilePath": self.configFilePath})
-                return mainConfig
+                return self.setConfig(mainConfig)
         log.error(f"Could not read configuration from path '{self.configFilePath}'")
         raise AdminRequiredException(f"Could not read configuration from path '{self.configFilePath}'")
+
+    def setConfig(self, mainConfig: MainConfig) -> MainConfig:
+        self.loadDedicatedYaml(mainConfig)
+        mergeDicts(a=mainConfig.context, b={"configFilePath": self.configFilePath})
+        return mainConfig
     
     def saveConfig(self, filePath: Path, overwrite: bool = False):
         """ 
@@ -101,8 +118,8 @@ class EsmConfigService:
                     mainConfig.dedicatedConfig = DediConfig.model_validate(configContent)
                     return
             else:
-                log.error(f"Could not read dedicated.yaml from path '{dedicatedYamlPath}'. Are you sure the path is correct?")
-                raise AdminRequiredException(f"Could not read dedicated.yaml from path '{dedicatedYamlPath}'. Are you sure the path is correct?")
+                log.error(f"Could not read dedicated.yaml from path '{dedicatedYamlPath.absolute()}'. Are you sure the path is correct?")
+                raise AdminRequiredException(f"Could not read dedicated.yaml from path '{dedicatedYamlPath.absolute()}'. Are you sure the path is correct?")
         else:
             log.error(f"Could not find install dir at '{mainConfig.paths.install}'. Are you sure the config is correct?")
             raise AdminRequiredException(f"Could not find install dir at '{mainConfig.paths.install}'. Are you sure the config is correct?")
@@ -260,19 +277,33 @@ class EsmConfigService:
         self.configFilePath = configFilePath
         self.searchDedicatedYamlLocal = searchDedicatedYamlLocal
 
-    def getAvailableTerritories(self) -> List[Territory]:
-        """
-        return the list of available territories from config
-
-        TODO: this should read it from the configured GalaxyConfig.ecf aswell, keep the ones in the yaml as custom configured ones.
-        """
-        territories = []
-        for territory in self.config.galaxy.territories:
-            territories.append(Territory(territory["faction"].capitalize(), territory["center-x"], territory["center-y"], territory["center-z"], territory["radius"]))
-        return territories
-    
     def addToContext(self, key, value):
         """
         Add a value to the context
         """
         self.config.context[key] = value
+
+    @cached_property
+    def availableTerritories(self) -> List[Territory]:
+        return self.readAvailableTerritories()
+    
+    def getAvailableTerritories(self) -> List[Territory]:
+        return self.availableTerritories
+
+    def readAvailableTerritories(self) -> List[Territory]:
+        """
+        return the list of available territories from galaxy config and custom config
+
+        This will read it from the currently configured scenario's GalaxyConfig.ecf aswell, then add any custom configured one aswell
+        """
+        territories = []
+        for territory in EsmGalaxyConfigReader(self.config).retrieveTerritories():
+            territories.append(territory)
+
+        for territory in self.config.galaxy.territories:
+            territories.append(Territory(territory["faction"].capitalize(), territory["center-x"], territory["center-y"], territory["center-z"], territory["radius"]))
+            
+        # make sure there are no entries with the same name
+        territories = list(set(territories))
+        territories.sort(key=lambda x: x.name)
+        return territories

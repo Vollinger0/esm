@@ -1,25 +1,37 @@
-
+from functools import cached_property
+import logging
 from pathlib import Path
 from typing import List
+from esm.ConfigModels import MainConfig
 from esm.DataTypes import Territory
-from esm.EcfReader import EcfReader
-from esm.exceptions import WrongParameterError
+from esm.ecf.galaxyconfig import GalaxyConfig
+
+log = logging.getLogger(__name__)
 
 class EsmGalaxyConfigReader:
     """
-        class that reads the galaxy configuration and provides the parsed date
+        class that reads the galaxy configuration and provides the parsed data
     """
-    def __init__(self, filePath: str):
-        self.filePath = Path(filePath)
-        if not self.filePath.exists():
-            raise WrongParameterError(f"File '{self.filePath}' does not exist, can not read galaxy configuration")
+    @cached_property
+    def galaxyConfig(self) -> GalaxyConfig:
+        return self.getGalaxyConfig()
+
+    def __init__(self, config: MainConfig) -> None:
+        self.scenarioName = config.dedicatedConfig.GameConfig.CustomScenario
+        self.pathToScenario = Path(f"{config.paths.install}/Content/Scenarios/{self.scenarioName}/Content/Configuration").resolve()
+
+    def getGalaxyConfig(self):
+        return GalaxyConfig(pathToScenario=self.pathToScenario)
 
     def retrieveTerritories(self) -> List[Territory]:
         """
             returns a list of all the territories in the galaxy config file
         """
         territories = []
-        ecfReader = EcfReader(self.filePath)
+        ecfTerritories = self.galaxyConfig.getTerritories()
+        for id, faction, center, radius in ecfTerritories:
+            #log.debug(f"Block: {id}, Faction: {faction} Center: {center}, Radius: {radius}")
+            name = f"{id}_{faction}"
+            if center and radius:
+                territories.append(Territory(name, center[0], center[1], center[2], radius))
         return territories
-    
-   

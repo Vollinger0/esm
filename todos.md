@@ -1,7 +1,6 @@
 # TODOS
 
 ## WIP
-- [+] read the territory config from the galaxyconfig.ecf ourselves. Search for "Child Territory" - Blocks.
 
 ## later
 - [ ] backup additional should support globbing
@@ -50,6 +49,7 @@
 - [ ] proper python-native connector to the EGS server to not have to use the emprc
 
 ## done
+- [x] read the territory config from the galaxyconfig.ecf ourselves. Search for "Child Territory" - Blocks.
 - [x] wipe-tool --show* options should work without instance-check, also in dryrun it should work with --dblocation (to get some stats from backups)
 - [x] tool to generate the effective config
 - [x] new server endpoint (or reuse shared-data-tool?) where someone can see/read the current chatlog, ideally with a search functionality, initially scrolled to the bottom.

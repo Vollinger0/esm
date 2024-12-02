@@ -73,3 +73,21 @@ class test_EsmConfigService(unittest.TestCase):
         cs.setConfigFilePath(Path("test/esm-test-missingdedi-config.yaml"))
         with self.assertRaises(AdminRequiredException):
             config = cs.getConfig()
+
+    def test_reading_territories(self):
+        cs = EsmConfigService()
+        config: MainConfig = cs.getConfig()
+
+        self.assertEqual(config.dedicatedConfig.GameConfig.GameName, "EsmDediGame")
+        self.assertEqual(config.dedicatedConfig.ServerConfig.AdminConfigFile, "adminconfig.yaml")
+        self.assertEqual(config.dedicatedConfig.ServerConfig.SaveDirectory, "Saves")
+
+        # check that the context contains info about the custom file that was read
+        self.assertEqual(config.context.get("configFilePath"), Path("esm-custom-config.yaml"))
+
+        territories = cs.getAvailableTerritories()
+        self.assertEqual(len(territories), 32)
+        for territory in territories:
+            log.info(f"territory: {territory.name}, x: {territory.x/100000}, y: {territory.y/100000}, z: {territory.z/100000}, radius: {territory.radius/100000}")
+
+        

@@ -184,7 +184,7 @@ class MainConfig(AppBaseModel, AppConfigMixin):
     robocopy: ConfigRobocopy = Field(ConfigRobocopy())
     dedicatedConfig: Optional[DediConfig] = Field(None)
     context: Optional[dict] = {}
-    galaxy: Optional[ConfigGalaxy] = None
+    galaxy: Optional[ConfigGalaxy] = Field(ConfigGalaxy(), description="additional configurations for the galaxy, you can define your own territories for the wipetool here")
 
 
     @staticmethod

@@ -1,11 +1,10 @@
 import importlib
 import logging
-from pathlib import Path
 import random
 import signal
-from typing import List
 import rich_click as click
 import sys
+from pathlib import Path
 from esm.EsmLogger import EsmLogger
 from esm.exceptions import EsmException, ExitCodes, WrongParameterError
 from esm.DataTypes import Territory, WipeType
@@ -555,7 +554,7 @@ def toolEfectiveConfig(configfile, overwrite):
 @cli.command(name="tool-wipe", short_help="provides a lot of options to wipe empty playfields, check the help for details", no_args_is_help=True)
 @click.option('--listfile', metavar='<file>', help="if this is given, use the text file as input for the system/playfield names. Syntax: <S:Systemname> for systems, <Playfield> for playfields. The textfile has to be a simple list with one string per line containing either a system or a playfield name with no quotes or special characters.")
 @click.option('--territory', metavar='<territory>', type=str, help=f"territory to wipe, use {Territory.GALAXY} for the whole galaxy or any of the configured ones, use --showterritories to get the list")
-@click.option('--showterritories', is_flag=True, help="show the configured territories")
+@click.option('--showterritories', is_flag=True, help="show the configured territories. This will read them from the scenario GalaxyConfig and add the ones from the esm configuration.")
 
 @click.option('--wipetype', type=str, metavar="<wipetype>", help="what type of wipe to apply to the playfields, use --showtypes to get the list of available types")
 @click.option('--showtypes', is_flag=True, help="show the supported wipetypes the game supports")
@@ -625,10 +624,23 @@ def wipeTool(listfile, territory, showterritories, wipetype, showtypes, nocleard
 
 def showConfiguredTerritories(esm: EsmMain):
     """
-        just print out the configured custom territories
+        just print out the configured custom territories as a table
     """
-    click.echo("Configured custom territories:\n\n" + "\n".join(f"{ct.name}" for ct in esm.configService.getAvailableTerritories()))
-    click.echo(f"\nUse {Territory.GALAXY} to wipe the whole galaxy.\n")
+    territoryList = []
+    for territory in esm.configService.getAvailableTerritories():
+        name = territory.name
+        centerx = territory.x/100000
+        centery = territory.y/100000
+        centerz = territory.z/100000
+        radius = territory.radius/100000
+        territoryList.append(f"{name:<40}\t{centerx:>10}\t{centery:>10}\t{centerz:>10}\t{radius:>10}")
+
+    click.echo(f"Configured custom territories:\n" + 
+               f"{"Territory name":<40}\t{"center x":>10}\t{"center y":>10}\t{"center z":>10}\t{"radius":>10}\n" +
+               f"----------------------------------------------------------------------------------------------------------\n" +
+               f"\n".join(territoryList))
+    click.echo(f"\nUse the name '{Territory.GALAXY}' to wipe the whole galaxy.\n")
+
 
 def showWipeTypes():
     """
