@@ -3,6 +3,15 @@
 ## WIP
 
 ## later
+- [ ] new tool that sets a players position on the database directly, to fix broken players when they get yeeted to 0,0,0
+- [ ] new zip, provide the server zip as manual download aswell, along with the instructions for people to "install" manually
+  - need to find out how eleon calculates the zip name in _shareddatazips, alternatively, make it configurable.
+  - url1: _http://142.44.135.35:27440/SharedData_202412............. -> 11623555678862160980.zip
+  - url2: _http://142.44.135.35:27440/SharedData_20241208_165323.zip -> 4395619394772511996.zip
+- [ ] shared data tool should recognize when it is needed to update the shared data zip, by creating and keeping a hashdb of it, ideally only of the shared data folder
+  - save the hashdb along with the zip, so we know its state/version.
+- [ ] BUG: shared data tool should comment out the shared data url when it is finished instead of rolling back the backup.
+- [ ] BUG: wipe-tool territories causes NPE when custom territories are not configured
 - [ ] backup additional should support globbing
 - [ ] wipe-tool: find a way to also remove wiped playfields from the player registries to avoid teleportation bugs (since the bug is still not fixed)
 - [ ] fix purge-tools: these need to also delete related data in the database! Probably not difficult to finish implementing, but a PITA to test.
