@@ -300,10 +300,10 @@ class EsmConfigService:
         for territory in EsmGalaxyConfigReader(self.config).retrieveTerritories():
             territories.append(territory)
 
-        for territory in self.config.galaxy.territories:
-            territories.append(Territory(territory["faction"].capitalize(), territory["center-x"], territory["center-y"], territory["center-z"], territory["radius"]))
+        if self.config.galaxy and self.config.galaxy.territories:
+            for territory in self.config.galaxy.territories:
+                territories.append(Territory(territory["faction"], territory["center-x"], territory["center-y"], territory["center-z"], territory["radius"]))
             
-        # make sure there are no entries with the same name
-        territories = list(set(territories))
-        territories.sort(key=lambda x: x.name)
+        # make sure there are no entries with the same name, retaining order
+        territories = list(dict.fromkeys(territories, lambda x: x.name))
         return territories

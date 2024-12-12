@@ -54,83 +54,13 @@ downloadtool:
 
 galaxy:
   territories: #faction Territory Definitions (look up their definitions in the file "$scenario/Content/Configuration/GalaxyConfig.ecf" of your scenario)
-    - faction: "blade"
-      center-x: 155
-      center-y: 10
-      center-z: -360
-      radius: 35
-    - faction: "zirax"
-      center-x: 10
-      center-y: 0
-      center-z: 45
-      radius: 145
-    - faction: "polaris"
-      center-x: 135
-      center-y: 0
-      center-z: 295
-      radius: 90
-    - faction: "farr"
-      center-x: 138
-      center-y: 0
-      center-z: 415
-      radius: 40
-    - faction: "trader"
-      center-x: 310
-      center-y: 4
-      center-z: -126
-      radius: 70
-    - faction: "colonists"
-      center-x: -200
-      center-y: 0
-      center-z: 350
-      radius: 125
-    - faction: "pirates"
-      center-x: 375
-      center-y: 0
-      center-z: 60
-      radius: 75
-    - faction: "kriel"
-      center-x: -750
-      center-y: 100
-      center-z: 0
-      radius: 75
-    - faction: "wastelanders"
-      center-x: -100
-      center-y: 0
-      center-z: -350
-      radius: 160
-    - faction: "drone"
-      center-x: -625
-      center-y: -25
-      center-z: 625
-      radius: 275
-    - faction: "tesch"
-      center-x: -290
-      center-y: 23
-      center-z: -40
-      radius: 50
-    - faction: "legacy"
-      center-x: 360
-      center-y: 50
-      center-z: -1150
-      radius: 250
-    - faction: "zirax-2"
-      center-x: 200
-      center-y: 20
-      center-z: -860
-      radius: 100
-    - faction: "solitude"
-      center-x: -418
-      center-y: 0
-      center-z: -258
-      radius: 125
-    - faction: "progenitor"
-      center-x: 1010
-      center-y: 290
-      center-z: 0
-      radius: 150
-    - faction: "anvil"
-      center-x: 210
-      center-y: 10
-      center-z: -360
-      radius: 35
+     - faction: "MyCustomTerritory"
+       center-x: 155
+       center-y: 10
+       center-z: -360
+       radius: 35
+     - faction: "RandomRegionILikeWiping"
+       center-x: 12
+       center-y: 34
+       center-z: -56
+       radius: 78
