@@ -820,14 +820,14 @@ class EsmMain:
 
         self.wipeService.wipeTool(systemAndPlayfieldNames, territory, wipetype, cleardiscoveredby, minage, dbLocationPath, dryrun)
 
-    def startSharedDataServer(self, resume=False):
+    def startSharedDataServer(self, resume=False, forceRecreate=False):
         """
         starts the shared data server
         """
         if resume:
             self.sharedDataServer.resume()
         else:
-            self.sharedDataServer.start()
+            self.sharedDataServer.start(forceRecreate)
 
     def startHaimsterConnector(self):
         """

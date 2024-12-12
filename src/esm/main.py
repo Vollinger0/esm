@@ -436,10 +436,11 @@ def toolExportChatlog(dblocation, filename, format, excludenames, includenames):
 
 @cli.command(name="tool-shareddata-server", short_help="starts a webserver to serve the shared data as a downloadable zip")
 @click.option('--resume', is_flag=True, help="if set, just resume the server, do not recreate data or change the configuration.")
-def toolSharedDataServer(resume):
+@click.option('--force-recreate', default=False, is_flag=True, show_default=True, help="if set, will force recreation of the zip files even if esm finds out that it is not necessary")
+def toolSharedDataServer(resume, force_recreate):
     """This will start a webserver to serve the shared data of the configured scenario as a downloadable zip.\n
     \n    
-    The tool will recreate the zip every time it is started, unless you use resume. The server will provide instructions at (/)\n 
+    The tool will check the shared data folder in the scenario and recreate the zip if needed. It will not if you use resume. The server will provide instructions at (/)\n 
     and the download at the configured path.\n
     Make sure to enable the "useSharedDataURLFeature" property in the configuration, if you want to use that feature with it.\n
     This can be started completely separate from the main server and will run in the background until you stop it via CTRL+C.\n
@@ -450,7 +451,7 @@ def toolSharedDataServer(resume):
         esm.setUpLogging(caller="esm-shareddata-server", streamLogLevel=EsmLogger.streamLogLevel, fileLogLevel=EsmLogger.fileLogLevel)
         with Timer() as timer:
             with EsmLogger.console.status("Server running...") as status:
-                esm.startSharedDataServer(resume)
+                esm.startSharedDataServer(resume, force_recreate)
             status.stop()
         log.info(f"Server was running for {timer.elapsedTime} and has stopped now.")
 

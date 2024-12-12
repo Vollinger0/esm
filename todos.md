@@ -5,28 +5,22 @@
   - need to find out how eleon calculates the zip name in _shareddatazips, alternatively, make it configurable.
   - url1: _http://142.44.135.35:27440/SharedData_202412............. -> 11623555678862160980.zip
   - url2: _http://142.44.135.35:27440/SharedData_20241208_165323.zip -> 4395619394772511996.zip
+- [ ] add support for the tool to run along with the shared-data-server, without having to start it separatedly
+- [ ] BUG: shared-data tool should not roll back to backup, but just remove the line instead since changes while the tool was running may get lost. ruamel yaml_rt should work well with this
 
 ## later
 - [ ] BUG: shared data tool should comment out the shared data url when it is finished instead of rolling back the backup.
-- [ ] shared data tool should recognize when it is needed to update the shared data zip, by creating and keeping a hashdb of it, ideally only of the shared data folder
-  - save the hashdb along with the zip, so we know its state/version.
+- [ ] SDS: a configurable treshold for change size in MB at what point it makes sense to enable the shareddataurl or keep the old method?
 - [ ] new tool that sets a players position on the database directly, to fix broken players when they get yeeted to 0,0,0
 - [ ] backup additional should support globbing
 - [ ] wipe-tool: find a way to also remove wiped playfields from the player registries to avoid teleportation bugs (since the bug is still not fixed)
 - [ ] fix purge-tools: these need to also delete related data in the database! Probably not difficult to finish implementing, but a PITA to test.
 - [ ] integrate haimster as tool, maybe aswell run integrated? => for the rewrite
 - [ ] needs a big rewrite:
-      - integrating the shared data tool
       - haimster
       - an event system that propagates game events (not only chat messages)
       - a separate server with a GUI to manage stuff (incl. chatlog)
       - discord integration - with the ability to control esm from discord, post the chatlog there, etc.
-- [ ] add support for the tool to run along with the shared-data-server, without having to start it separatedly
-  - for this, we have to ensure the shared data zip is only created when there were relevant changes in the shared data, otherwise every restart would lead to redownloads.
-  - we would need to compare if there are changes and what size the changes are (to avoid having to redownload everything when only a single file changed)
-  - see change detector from hAImster or the "dirhash" library
-  - a configurable treshold for change size in MB at what point it makes sense to enable the shareddataurl or keep the old method?
-  - BUG: shared-data tool should not roll back to backup, but just remove the line instead since changes while the tool was running may get lost. ruamel yaml_rt should work well with this
 - extend documentation, add readme_tools or something to explain the new ones
 
 ## optional
@@ -57,6 +51,8 @@
 - [ ] proper python-native connector to the EGS server to not have to use the emprc
 
 ## done
+- [x] shared data tool should recognize when it is needed to update the shared data zip, by creating and keeping a hashdb of it, ideally only of the shared data folder
+  - save the hashdb along with the zip, so we know its state/version.
 - [x] BUG: wipe-tool territories causes NPE when custom territories are not configured
 - [x] read the territory config from the galaxyconfig.ecf ourselves. Search for "Child Territory" - Blocks.
 - [x] wipe-tool --show* options should work without instance-check, also in dryrun it should work with --dblocation (to get some stats from backups)

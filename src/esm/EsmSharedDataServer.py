@@ -1,9 +1,11 @@
 import glob
+import json
 import logging
 import os
 import re
 import shutil
 import signal
+import dirhash
 import humanize
 import socketserver
 import time
@@ -42,17 +44,17 @@ class EsmSharedDataServer:
     def dedicatedServer(self) -> EsmDedicatedServer:
         return ServiceRegistry.get(EsmDedicatedServer)
 
-    def start(self):
+    def start(self, forceRecreate=False):
         """
         prepare the files and start the shared data server
         """
-        zipFiles = self.prepareZipFiles()
-        self.prepareIndexHtml()
+        zipFiles = self.ensureZipFilesAreUpToDate(forceRecreate)
+        self.prepareIndexHtml(zipFiles)
         self.startServer(zipFiles)
 
     def resume(self):
         """
-        just resume the shared data server, do not recreate the files nor change configuration
+            just resume the shared data server, do not recreate the files nor change configuration
         """
         zipFiles = self.findZipFiles()
         if len(zipFiles) < 1 or len(zipFiles) > 2:
@@ -111,6 +113,7 @@ class EsmSharedDataServer:
             log.info(f"SharedData server stopped serving. Total downloads: {EsmHttpThrottledHandler.globalZipDownloads}")
             
             if self.config.downloadtool.useSharedDataURLFeature and self.config.downloadtool.autoEditDedicatedYaml:
+                #TODO: instead of rolling back, just comment out or remove the edited line
                 self.configService.rollbackDedicatedYaml()
                 log.warning(f"The dedicated yaml has been rolled back to its original state, make sure to restart the server for it to take effect!")
 
@@ -129,16 +132,67 @@ class EsmSharedDataServer:
             myHostIp = Tools.getOwnIp(self.config)
             return f"http://{myHostIp}:{self.config.downloadtool.serverPort}"
 
-    def prepareZipFiles(self) -> List[ZipFile]:
+    def ensureZipFilesAreUpToDate(self, forceRecreate=False) -> List[ZipFile]:
         """
-        prepare the zip files for download
+            ensure that the zip files for download are up to date, comparing the hashdb with the scenario
         """
         scenarioName = self.config.dedicatedConfig.GameConfig.CustomScenario
         pathToScenarioFolder = Path(f"{self.config.paths.install}/Content/Scenarios/{scenarioName}").resolve()
+        pathToSharedDataFolder = pathToScenarioFolder.joinpath("SharedData")
 
-        log.info(f"Creating new shared data zip files from the current configured scenario at '{pathToScenarioFolder}' for download.")
-        zipFiles = self.createSharedDataZipFiles(pathToScenarioFolder)
+        if forceRecreate:
+            return self.prepareZipFiles(pathToSharedDataFolder)
+
+        log.info(f"Checking if shared data folder '{pathToSharedDataFolder}' has been updated...")
+        oldHash = self.readHashfile()
+        newHash = self.calculateHashForDir(pathToSharedDataFolder)
+        
+        if oldHash == newHash:
+            log.info(f"Shared data folder '{pathToSharedDataFolder}' has not been modified, no need to update the shared data zip files.")
+            return self.findZipFiles()
+        else:
+            log.info(f"Shared data folder '{pathToSharedDataFolder}' has been modified.")
+            return self.prepareZipFiles(pathToSharedDataFolder)
+
+    def writeHashfile(self, pathToSharedDataFolder: Path):
+        """
+            write the hash to file
+        """
+        newHash = self.calculateHashForDir(pathToSharedDataFolder)
+        pathToHashfile = Path(self.config.downloadtool.wwwroot).joinpath("shareddata.md5").resolve()
+        with open(pathToHashfile, "w") as f:
+            json.dump(newHash, f, indent=4)
+
+    def calculateHashForDir(self, pathToFolder: Path) -> str:
+        """
+            calculates the md5 hash of the given folder including all its content
+        """
+        with Tools.Timer() as timer:
+            log.debug(f"Checking if the folder '{pathToFolder}' has been updated...")
+            # create a hash from the whole shared data folder using dirhash
+            newHash = dirhash.dirhash(pathToFolder, match="**", algorithm="md5", jobs=4)
+        log.debug(f"Checked folder '{pathToFolder}' in {timer.elapsedTime} seconds.")
+        return newHash
+
+    def readHashfile(self) -> dict:
+        """
+            read and return the hash from file
+        """
+        pathToHashDb = Path(self.config.downloadtool.wwwroot).joinpath("shareddata.md5").resolve()
+        hashDb = {}
+        if pathToHashDb.is_file():
+            with open(pathToHashDb, "r") as f:
+                hashDb = json.load(f)
+        return hashDb
+
+    def prepareZipFiles(self, pathToSharedDataFolder: Path) -> List[ZipFile]:
+        """
+            prepare the zip files for download by creating them and moving them to the wwwroot folder
+        """
+        log.info(f"Creating new shared data zip files from '{pathToSharedDataFolder}' for download.")
+        zipFiles = self.createSharedDataZipFiles(pathToSharedDataFolder)
         zipFiles = self.moveSharedDataZipFilesToWwwroot(zipFiles)
+        self.writeHashfile(pathToSharedDataFolder)
 
         for zipFile in zipFiles:
             log.info(f"Created SharedData zip file as '{zipFile.wwwrootPath}' with a size of '{humanize.naturalsize(zipFile.size, gnu=False)}'.")
@@ -193,7 +247,7 @@ class EsmSharedDataServer:
         else:
             return content.replace(placeholder, "")
     
-    def prepareIndexHtml(self):
+    def prepareIndexHtml(self, zipFiles: List[ZipFile]):
         """
          copy the index.template.html into the wwwroot folder and replace placeholders
         """
@@ -299,12 +353,7 @@ class EsmSharedDataServer:
             log.debug(f"Could not determine unique game id. Using default cache folder name '{self.config.downloadtool.customCacheFolderName}'")
             return self.config.downloadtool.customCacheFolderName
 
-    def createSharedDataZipFiles(self, pathToScenarioFolder: Path) -> List[ZipFile]:
-        # just using something smaller for debugging
-        # TODO
-        pathToSharedDataFolder = pathToScenarioFolder.joinpath("SharedData")
-        #pathToSharedDataFolder = pathToScenarioFolder.joinpath("SharedData/Content/Extras")
-
+    def createSharedDataZipFiles(self, pathToSharedDataFolder: Path) -> List[ZipFile]:
         if not pathToSharedDataFolder.exists():
             log.warning(f"Path to the shared data in the games scenario folder '{pathToSharedDataFolder}' does not exist. Please check the configuration.")
             return
