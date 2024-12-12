@@ -108,7 +108,7 @@ class EsmSharedDataServer:
 
                 # check if the configuration of the dedicated yaml (we will not make any changes to it) has the auto zip url configured properly
                 self.checkDedicatedYamlHasAutoZipUrl(sharedDataUrl)
-                if self.config.downloadtool.startWithMainServer:
+                if not self.config.downloadtool.startWithMainServer:
                     log.warning(f"The dedicated yaml has been updated to point to the shared data tool, make sure to restart the server for it to take effect!")
             else:
                 log.warning(f"You turned off the autoEditDedicatedYaml feature. The dedicated yaml will NOT be updated automatically, make sure it the correct url! Otherwise it might break the game!")
@@ -283,10 +283,19 @@ class EsmSharedDataServer:
         """
          copy the index.template.html into the wwwroot folder and replace placeholders
         """
-        wwwroot = Path(self.config.downloadtool.wwwroot).resolve()
         indexTemplateFilePath = Path("index.template.html").resolve()
+
+        autoZipFileName = ""
+        if self.config.downloadtool.useSharedDataURLFeature:
+            indexTemplateFilePath = Path("index.shared.template.html").resolve()
+            autoZipFile = Tools.findZipFileByName(zipFiles, startsWith=self.config.downloadtool.autoZipName.split(".")[0])
+            if autoZipFile is not None:
+                autoZipFileName = autoZipFile.name
+
+        wwwroot = Path(self.config.downloadtool.wwwroot).resolve()
         content = indexTemplateFilePath.read_text()
         content = self.replaceInTemplate(content, "$SHAREDDATAZIPFILENAME", self.config.downloadtool.manualZipName)
+        content = self.replaceInTemplate(content, "$SHAREDDATAAUTOZIPFILE", autoZipFileName)
         content = self.replaceInTemplate(content, "$CACHEFOLDERNAME", self.getCacheFolderName())
         content = self.replaceInTemplate(content, "$SRV_NAME", self.config.dedicatedConfig.ServerConfig.Srv_Name)
         content = self.replaceInTemplate(content, "$SRV_DESCRIPTION", self.config.dedicatedConfig.ServerConfig.Srv_Description)
