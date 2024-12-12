@@ -30,4 +30,4 @@ You can always create a static backup using `esm backup-static-create`, which wi
 
 When wiping everything with `esm delete-all`, you will be asked if you want to create a static backup and back up all the logs before the actual deletion, so that tool should provide anything you would need when wiping your server.
 
-#### copyright by Vollinger 2023-2024
+#### copyright by Vollinger 2023-2025

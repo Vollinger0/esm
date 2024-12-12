@@ -164,6 +164,8 @@ def startServer():
     \n
     If haimster connector is enabled, this will automatically start the haimster connector thread.\n
     \n
+    If the shared data tool server is enabled, this will automatically start this aswell\n
+    \n
     Stopping this script with CTRL+C will *NOT* shut down the server. If you want to do that do that either via other means or use the server-stop command in a new console.\n
     """
     with LogContext():
@@ -434,7 +436,7 @@ def toolExportChatlog(dblocation, filename, format, excludenames, includenames):
         esm.exportChatLog(dblocation=dblocation, filename=filename, format=format, excludeNames=list(excludenames), includeNames=list(includenames))
 
 
-@cli.command(name="tool-shareddata-server", short_help="starts a webserver to serve the shared data as a downloadable zip")
+@cli.command(name="tool-shareddata-server", short_help="starts a webserver to serve the shared data as a downloadable zip, if you do not want it to start with the main server.")
 @click.option('--resume', is_flag=True, help="if set, just resume the server, do not recreate data or change the configuration.")
 @click.option('--force-recreate', default=False, is_flag=True, show_default=True, help="if set, will force recreation of the zip files even if esm finds out that it is not necessary")
 def toolSharedDataServer(resume, force_recreate):
@@ -451,7 +453,7 @@ def toolSharedDataServer(resume, force_recreate):
         esm.setUpLogging(caller="esm-shareddata-server", streamLogLevel=EsmLogger.streamLogLevel, fileLogLevel=EsmLogger.fileLogLevel)
         with Timer() as timer:
             with EsmLogger.console.status("Server running...") as status:
-                esm.startSharedDataServer(resume, force_recreate)
+                esm.startSharedDataServer(resume, force_recreate, wait=True)
             status.stop()
         log.info(f"Server was running for {timer.elapsedTime} and has stopped now.")
 

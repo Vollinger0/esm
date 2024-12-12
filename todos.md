@@ -5,11 +5,9 @@
   - need to find out how eleon calculates the zip name in _shareddatazips, alternatively, make it configurable.
   - url1: _http://142.44.135.35:27440/SharedData_202412............. -> 11623555678862160980.zip
   - url2: _http://142.44.135.35:27440/SharedData_20241208_165323.zip -> 4395619394772511996.zip
-- [ ] add support for the tool to run along with the shared-data-server, without having to start it separatedly
 - [ ] BUG: shared-data tool should not roll back to backup, but just remove the line instead since changes while the tool was running may get lost. ruamel yaml_rt should work well with this
 
 ## later
-- [ ] BUG: shared data tool should comment out the shared data url when it is finished instead of rolling back the backup.
 - [ ] SDS: a configurable treshold for change size in MB at what point it makes sense to enable the shareddataurl or keep the old method?
 - [ ] new tool that sets a players position on the database directly, to fix broken players when they get yeeted to 0,0,0
 - [ ] backup additional should support globbing
@@ -51,6 +49,7 @@
 - [ ] proper python-native connector to the EGS server to not have to use the emprc
 
 ## done
+- [x] add support for the tool to run along with the shared-data-server, without having to start it separatedly
 - [x] shared data tool should recognize when it is needed to update the shared data zip, by creating and keeping a hashdb of it, ideally only of the shared data folder
   - save the hashdb along with the zip, so we know its state/version.
 - [x] BUG: wipe-tool territories causes NPE when custom territories are not configured
@@ -152,4 +151,4 @@
 - [x] usecase: kill gameserver (via sigterm)
 - [x] usecase: start up gameserver
 
-#### copyright by Vollinger 2023-2024
+#### copyright by Vollinger 2023-2025

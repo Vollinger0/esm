@@ -56,4 +56,4 @@ Then regenerate the requirements.txt to have a "frozen" reproducible state of de
 
 [here](todos.md)
 
-#### copyright by Vollinger 2023-2024
+#### copyright by Vollinger 2023-2025

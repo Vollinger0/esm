@@ -19,11 +19,11 @@ class test_EsmGalaxyConfigReader(unittest.TestCase):
                 "install": "D:\\Servers\\Empyrion"
             }
         })
-        config.dedicatedConfig.GameConfig.CustomScenario = "ProjectA"
+        config.dedicatedConfig.GameConfig.CustomScenario = "ReforgedEden2Beta"
         self.assertEqual(config.paths.install, Path("D:\Servers\Empyrion"))
         reader = EsmGalaxyConfigReader(config)
-        self.assertEqual(Path("D:/Servers/Empyrion/Content/Scenarios/ProjectA/Content/Configuration"), reader.pathToScenario)
+        self.assertEqual(Path("D:/Servers/Empyrion/Content/Scenarios/ReforgedEden2Beta/Content/Configuration"), reader.pathToScenario)
         
         territories = reader.retrieveTerritories()
         self.assertIsNotNone(territories)
-        self.assertEqual(16, len(territories))
+        self.assertEqual(12, len(territories))

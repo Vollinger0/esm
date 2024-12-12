@@ -148,14 +148,14 @@ class DediConfig(BaseModel):
     GameConfig: Optional[DediGameConfig] = None
 
 class DownloadToolConfig(BaseModel):
-    """represents the download tool config"""
+    """represents the shared data download tool config"""
     serverPort: int = Field(27440, description="port of the webserver to listen to. Make sure this port is reachable from outside")
     maxGlobalBandwith: int = Field(50*1000*1000, description="max bandwith to use for the downloads globally in bytes, e.g. 50 MB/s")
     maxClientBandwith: int = Field(30*1000*1000, description="max bandwith to use for the download per client in bytes, e.g. 30 MB/s")
     rateLimit: str = Field("10 per minute", description="rate limit of max allowed requests per ip address per time unit, e.g. '10 per minute' or '10 per hour'")
     customExternalHostNameAndPort: str = Field("", description="if set, this will be used as the host instead of the automatically generated host-part of the url. must be something like: 'https://my-server.com:12345'. The path/name of the files will be appended.")
 
-    useSharedDataURLFeature: bool = Field(False, description="if true, a zip for the SharedDataURL feature will be created, served and the dedicated yaml will be automatically edited.")
+    useSharedDataURLFeature: bool = Field(True, description="if true, a zip for the SharedDataURL feature will be created, served and the dedicated yaml will be automatically edited.")
     autoEditDedicatedYaml: bool = Field(True, description="set to false if you do not want the dedicated yaml to be edited automatically")
     customSharedDataURL: str = Field("", description="if set, this will be used as the shared data url instead of the automatically generated one. Make sure it is correct!")
     autoZipName: str = Field("SharedData.zip", description="The filename of the zip file for the auto download of the SharedDataURL feature postfixed with _yyyymmdd_hhmmss so the client recognizes this as a new file on recreation.")
@@ -167,6 +167,8 @@ class DownloadToolConfig(BaseModel):
     timeToAddToModificationTimestamps: int = Field(43200, description="how much time should be added to the modification timestamps of the files in the cache folder, so the game recognizes them as up to date. Should be 12 hours (default) or more.")
     wwwroot: str = Field("wwwroot", description="folder to use as wwwroot, where the download will be served from")
     tempFolder: str = Field("temp", description="temporary folder for creating the downloadable zip")
+
+    startWithMainServer: bool = Field(True, description="if true, the download tool will be started with the main server for a fully automated shared data file handling.")
 
 class MainConfig(AppBaseModel, AppConfigMixin):
     general: ConfigGeneral = Field(ConfigGeneral())

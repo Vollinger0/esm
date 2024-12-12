@@ -151,8 +151,8 @@ class EsmMain:
         if self.dedicatedServer.isRunning():
             log.warning("A server is already running! You may want to use the server resume operation to connect back to it.")
             raise ServerNeedsToBeStopped("A server is already running!")
-
-        self.startSynchronizer()
+        
+        self.onStartUp()
         
         # start the server
         log.info(f"Starting the dedicated server")
@@ -183,10 +183,20 @@ class EsmMain:
         """
         while self.dedicatedServer.isRunning():
             time.sleep(checkInterval)
+
+    def onStartUp(self):
+        """
+        Will start the synchronizer and the shared data server if needed
+        """
+        if self.config.downloadtool.startWithMainServer:
+            self.startSharedDataServer(wait=False)
+
+        self.startSynchronizer()
+        self.startHaimsterConnector()
     
     def onShutdown(self):
         """
-        Will stop the synchronizer, then stop the server and do a last sync from ram 2 mirror
+            Will stop the synchronizer, then stop the server and do a last sync from ram 2 mirror
         """
         if self.config.communication.haimsterEnabled:
             self.haimsterConnector.shutdown()
@@ -203,6 +213,9 @@ class EsmMain:
             log.info(f"Sending server the saveandexit command.")
             self.dedicatedServer.sendExitRetryAndWait(interval=self.config.server.sendExitInterval, additionalTimeout=self.config.server.sendExitTimeout)
             log.info(f"Server shut down")
+
+        if self.config.downloadtool.startWithMainServer:
+            self.sharedDataServer.stop()
 
         if self.config.general.useRamdisk:
             # sync ram to mirror
@@ -241,19 +254,15 @@ class EsmMain:
         if not self.dedicatedServer.isRunning():
             log.warning("No running gameserver found.")
             return
-        
         log.info(f"Running server found")
-        # we found a server, then start synchronizer if enabled
-        self.startSynchronizer()
+        # we found a server, then start stuff
+        self.onStartUp()
 
-        self.startHaimsterConnector()
-        
         log.info(f"Waiting until game server shut down or stopped existing.")
         self.waitForEnd()
 
         log.info(f"Game server shut down. Executing shutdown tasks.")
         self.onShutdown()
-
 
     def createBackup(self):
         """
@@ -820,14 +829,15 @@ class EsmMain:
 
         self.wipeService.wipeTool(systemAndPlayfieldNames, territory, wipetype, cleardiscoveredby, minage, dbLocationPath, dryrun)
 
-    def startSharedDataServer(self, resume=False, forceRecreate=False):
+    def startSharedDataServer(self, resume=False, forceRecreate=False, wait=False):
         """
-        starts the shared data server
+            starts the shared data server
+            if you use wait = False, you'll need to stop it afterwards
         """
         if resume:
-            self.sharedDataServer.resume()
+            self.sharedDataServer.resume(wait)
         else:
-            self.sharedDataServer.start(forceRecreate)
+            self.sharedDataServer.start(wait, forceRecreate)
 
     def startHaimsterConnector(self):
         """

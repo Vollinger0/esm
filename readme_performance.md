@@ -47,4 +47,4 @@ Btw, this is *way* more reliable than without a ramdisk, because an OS crash can
 - creating static backups (zips) take a lot of time. 90 minutes for a 50GB savegame on the worst but fastest compression. It ends up as a ~20GB zip. You can alter the zip settings in the configuration
 - The minimum duration for EAH scheduled restarts is 2,5 minutes due to hardcoded timeouts in EAH. Thanks to the ramdisk, the savegame size is no longer relevant, so the restarts will take just that. The game will be waiting for EAH to time out. Remember to call the async backup script on your restarts.
 
-#### copyright by Vollinger 2023-2024
+#### copyright by Vollinger 2023-2025

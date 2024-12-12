@@ -55,6 +55,7 @@ downloadtool:   # configuration for the shared data download tool
   timeToAddToModificationTimestamps: 43200                    # how much time should be added to the modification timestamps of the files in the cache folder, so the game recognizes them as up to date. Should be 12 hours (default) or more.
   wwwroot: wwwroot                                            # folder to use as wwwroot, where the download will be served from
   tempFolder: temp                                            # temporary folder for creating the downloadable zip
+  startWithMainServer: true                                   # if true, the download tool will be started with the main server for a fully automated shared data file handling.
 communication:  # configuration for the in-game communication
   announceSyncEvents: true                # if true, sync events (syncStart, syncEnd) will be announced in the chat
   announceSyncProbability: 0.3            # probability factor that a sync will be announced at all, this is to avoid it being too spammy. something between 0.0 and 1.0

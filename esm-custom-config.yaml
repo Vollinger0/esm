@@ -18,7 +18,7 @@ ramdisk:
 communication:
   announceSyncProbability: 0.1
 
-  haimsterEnabled: True                  # enables haimster integration, which requires a running haimster server
+  haimsterEnabled: False                  # enables haimster integration, which requires a running haimster server
   haimsterHost: http://192.168.1.102:8000     # the url to the haimster server
   playerNameCacheTime: 300                # time in seconds to cache player names for, since they need to be retrieved from the database
   incomingMessageHostIp: 0.0.0.0          # the host url to bind our http server to to receive messages from haimster. This ip and port must be configured on haimster side aswell.

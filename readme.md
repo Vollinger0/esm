@@ -23,7 +23,7 @@ Its meant to run fully automated, so you only need to configure it once, then se
 - everything is logged in console and logfiles, so you can always see what the scripts do, did and what happened when.
 - freely configurable in-game announcer for a few actions
 - special downloadserver as tool, that creates and serves the shared data folder as manually downloadable zip, see [performance section](readme_performance.md) or the ...
-- [shareddata-server tool](readme_shareddata.md) that will automate the SharedDataURL feature by creating the zip automatically and serving it via the esm downloadserver
+- [shareddata-server tool](readme_shareddata.md) that will fully automate the SharedDataURL feature by creating the zip automatically and serving it via the esm downloadserver
 
 ### Game maintenance / performance
 - wipe tool for wiping playfields with no player or player-owned terrain placeables or structures.
@@ -168,4 +168,4 @@ A: Search for a setting in your terminal/console that controls something like "s
 
 Go down this [rabbit hole](readme_development.md).
 
-#### copyright by Vollinger 2023-2024
+#### copyright by Vollinger 2023-2025

@@ -73,4 +73,4 @@ ESM provides a special tool that ensures that scenario updates stay minimal to a
 The tool will update any file with changed **content** by comparing them via hashes, it will ignore other attributes or time attributes. All of these 
 trigger the slow re-downloads for nothing, since the game is not overly smart in finding out what changed.
 
-#### copyright by Vollinger 2023-2024
+#### copyright by Vollinger 2023-2025

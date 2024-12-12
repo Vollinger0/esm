@@ -1,6 +1,15 @@
 # About scenarios and shared data downloads
 
-The games network bandwith seems to be limited to ~10MB/s for the whole server. This bandwith has to be shared by all players currently playing and all players who want to download anything. If you have big scenario updates, prepare to have network issues for the rest of the day. Unless, of course, you use the shared data server tool (read about the [shared data tool](readme_shareddata.md)).
+## tl;dr
+ESM brings a fully automated management for the shared data feature. It will autocreate the zip files as needed, edit the file for you and serve the files with a dedicated server.
+Make sure that your configuration contains these flags:
+
+    downloadtool:
+      startWithMainServer: true
+      useSharedDataURLFeature: true
+
+## long version
+The games network bandwith seems to be limited to ~10MB/s for the whole server. This bandwith has to be shared by all players currently playing and all players who want to download anything. If you have big scenario updates, prepare to have network issues for the rest of the day. Unless, of course, you use the shared data server tool.
 
 ## Things to consider
 The game does not check for content changes on the SharedData-files of the scenario. It only checks for the last modification date of these files. Once that changes, a re-download is triggered for the client. If you touch all the files in the shared folder, the clients will redownload the whole scenario although nothing really changed.
@@ -8,7 +17,7 @@ The `esm scenario-update` command will make sure this does not happen and will u
 
 ## The Shared Data Server Tool
 To overcome the bandwidth limit and avoid that players already on the server get network issues due to other players downloading the shared data, this tool will work around this problem.
-The tool `esm tool-shareddata-server` will automatically generate a zip file from the current shared data folder of the running scenario and serve them in a custom http webserver especially written for that. With this, you can provide your players an alternative way to download the shared data without being limited by empyrion's limitations. They'll have to unpack that shared data into their game installation manually though, unless you also enable the SharedDataURL feature mentioned below.
+The tool `esm tool-shareddata-server` will automatically generate a zip file from the current shared data folder of the running scenario and serve them in a custom http webserver especially written for that. With this, you can provide your players an alternative way to download the shared data without being limited by empyrion. They'll have to unpack that shared data into their game installation manually though, unless you also enable the SharedDataURL feature mentioned below.
 
 Since Empyrion v1.11.7, the game server now also supports a rather dangerous feature, where an admin can configure the SharedDataURL to externalize the client download for the shared data, but you have to create the zipfile with the correct structure yourself and add the correct configuration. If there are game or scenario updates, you have to repeat that and make sure the url in the configuration changes.
 Be aware though, it has some drawbacks:
@@ -18,7 +27,8 @@ Be aware though, it has some drawbacks:
 ### If the zip file does not have the required structure it will get ignored and break the game on the clients
 ### You have to recreate that file on EVERY game or scenario change, no matter if its only a change in a little file or not
 
-ESM will completely automate this for you to minimize those errors. You only have to set enable the flag `useSharedDataURLFeature` in the esm configuration.
+ESM will completely automate this for you to minimize those errors. You only have to set enable the flag `useSharedDataURLFeature` in the esm configuration. It will auto-detect changes in the configured scenario shared data folder and recreate the zip files as needed, it will also automatically update the shared data url in the dedicated yaml for you.
+
 The shared-data-tool will serve another zip file of the shared data with a changing filename, since its url needs to be changed every time the file is recreated. It will look like this `SharedData_20240621_235959.zip`. The configuration for the SharedDataURL will be **automatically** changed while the tool is running (the dedicated yaml is edited), and changed back when the tool is stopped. The change will look like this:
 
 ```yaml
@@ -54,4 +64,4 @@ This tool logs in its own logfile.
 I would recommend to use the shareddata-server at the beginning of a season, or on *big* scenario changes **only**. Turn it off when there are only minor changes. This will ensure that minor changes do NOT trigger a redownload of the whole file for all players, and still offers new players a quick enough way to get onto the server. For small changes, the old way (file-by-file sync trough the gameserver) is still good enough and faster.
 Remember that when you turn it on, all your players will have to redownload the newly created file.
 
-#### copyright by Vollinger 2023-2024
+#### copyright by Vollinger 2023-2025

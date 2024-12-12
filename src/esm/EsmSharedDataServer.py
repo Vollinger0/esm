@@ -5,6 +5,7 @@ import os
 import re
 import shutil
 import signal
+import threading
 import dirhash
 import humanize
 import socketserver
@@ -32,6 +33,8 @@ class EsmSharedDataServer:
     This will automatically create the shared data zips and provide a dedicated webserver to serve them.
     This supports files for manual download as well as the new SharedDataURL-Feature since v1.11.7
     """
+    _httpServerWorker: threading.Thread = None
+    _httpServer: socketserver.BaseServer = None
 
     @cached_property
     def config(self) -> MainConfig:
@@ -44,26 +47,35 @@ class EsmSharedDataServer:
     def dedicatedServer(self) -> EsmDedicatedServer:
         return ServiceRegistry.get(EsmDedicatedServer)
 
-    def start(self, forceRecreate=False):
+    def start(self, wait: bool = False, forceRecreate: bool=False):
         """
-        prepare the files and start the shared data server
+            prepare the files and start the shared data server
+            if wait = false, you will have to call stop() to stop the server
         """
         zipFiles = self.ensureZipFilesAreUpToDate(forceRecreate)
         self.prepareIndexHtml(zipFiles)
-        self.startServer(zipFiles)
+        self.startServer(zipFiles, wait=wait)
 
-    def resume(self):
+    def resume(self, wait: bool = False):
         """
             just resume the shared data server, do not recreate the files nor change configuration
+            if wait = false, you will have to call stop() to stop the server
         """
         zipFiles = self.findZipFiles()
         if len(zipFiles) < 1 or len(zipFiles) > 2:
             raise RequirementsNotFulfilledError(f"Expected 2 zip files in the wwwroot folder, found {len(zipFiles)}. Aborting resume since files might be missing, start the server without the resume option to regenerate the data.")
-        self.startServer(zipFiles)
+        self.startServer(zipFiles, wait=wait)
 
-    def startServer(self, zipFiles: List[ZipFile]):
+    def stop(self):
+        if self._httpServer:
+            self._httpServer.shutdown()
+        if self._httpServerWorker:
+            self._httpServerWorker.join()
+        self.stopServing()
+
+    def startServer(self, zipFiles: List[ZipFile], wait: bool = False):
         """
-        actually start the server
+            prepare the files and start the download server
         """
         self.checkSharedDataURLConfiguration()
 
@@ -96,10 +108,16 @@ class EsmSharedDataServer:
 
                 # check if the configuration of the dedicated yaml (we will not make any changes to it) has the auto zip url configured properly
                 self.checkDedicatedYamlHasAutoZipUrl(sharedDataUrl)
-                log.warning(f"The dedicated yaml has been updated to point to the shared data tool, make sure to restart the server for it to take effect!")
+                if self.config.downloadtool.startWithMainServer:
+                    log.warning(f"The dedicated yaml has been updated to point to the shared data tool, make sure to restart the server for it to take effect!")
             else:
                 log.warning(f"You turned off the autoEditDedicatedYaml feature. The dedicated yaml will NOT be updated automatically, make sure it the correct url! Otherwise it might break the game!")
-        
+        if wait:
+            self.startServingAndWait(zipFiles)
+        else:
+            self.startServing(zipFiles)
+
+    def startServingAndWait(self, zipFiles: List[ZipFile]):
         log.info(f"Starting download server for {len(zipFiles)} zip files (excluding default assets).")
         def NoOp(*args):
             raise KeyboardInterrupt()
@@ -116,6 +134,20 @@ class EsmSharedDataServer:
                 #TODO: instead of rolling back, just comment out or remove the edited line
                 self.configService.rollbackDedicatedYaml()
                 log.warning(f"The dedicated yaml has been rolled back to its original state, make sure to restart the server for it to take effect!")
+
+    def startServing(self, zipFiles: List[ZipFile]):
+        log.info(f"Starting download server for {len(zipFiles)} zip files (excluding default assets).")
+        def doServe():
+            self.serve(zipFiles)
+        self._httpServerWorker = threading.Thread(target=doServe, daemon=True)
+        self._httpServerWorker.start()
+
+    def stopServing(self):
+        log.info(f"SharedData server stopped serving. Total downloads: {EsmHttpThrottledHandler.globalZipDownloads}")
+        if self.config.downloadtool.useSharedDataURLFeature and self.config.downloadtool.autoEditDedicatedYaml:
+            #TODO: instead of rolling back, just comment out or remove the edited line
+            self.configService.rollbackDedicatedYaml()
+            log.warning(f"The dedicated yaml has been rolled back to its original state, make sure to restart the server for it to take effect!")
 
     def getSharedDataURL(self, servingUrlRoot, autoZipFile: ZipFile):
         if len(self.config.downloadtool.customSharedDataURL) > 1:
@@ -438,6 +470,7 @@ class EsmSharedDataServer:
 
         try:
             with socketserver.ThreadingTCPServer(("", serverPort), handler) as httpd:
+                self._httpServer = httpd
                 httpd.serve_forever()
         except Exception as e:
             log.debug(e)
