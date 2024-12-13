@@ -132,15 +132,6 @@ class EsmConfigService:
         dedicatedYamlBackupPath = dedicatedYamlPath.with_suffix(".bak")
         if dedicatedYamlPath.exists():
             FsTools.copyFile(source=dedicatedYamlPath, destination=dedicatedYamlBackupPath)
-
-    def rollbackDedicatedYaml(self):
-        """
-        Rolls back the dedicated.yaml file from the backup in the install directory
-        """
-        dedicatedYamlPath = self.config.paths.install.joinpath(self.config.server.dedicatedYaml)
-        dedicatedYamlBackupPath = dedicatedYamlPath.with_suffix(".bak")
-        if dedicatedYamlBackupPath.exists():
-            FsTools.copyFile(source=dedicatedYamlBackupPath, destination=dedicatedYamlPath)
         
     def upsertYamlProperty(self, filePath: Path, propertyPath, newValue):
         """
@@ -148,6 +139,7 @@ class EsmConfigService:
         """
         yaml = YAML(typ="rt", pure=True)
         yaml.preserve_quotes = True
+        yaml.width = 900
 
         with open(filePath, 'r') as file:
             data = yaml.load(file)
@@ -163,12 +155,13 @@ class EsmConfigService:
         with open(filePath, 'w') as file:
             yaml.dump(data, file)
 
-    def commentOutYamlProperty(self, filePath: Path, propertyPath, valueToMatch):
+    def removeMatchingYamlProperty(self, filePath: Path, propertyPath):
         """
-        comments out a property in a yaml file, preserving its structure as much as possible
+            removes a property in a yaml file matching path and value, preserving its structure as much as possible
         """
         yaml = YAML(typ="rt", pure=True)
         yaml.preserve_quotes = True
+        yaml.width = 900
 
         # Parse the dot-notation key path into a list
         key_path_list = propertyPath.split('.')
@@ -176,7 +169,7 @@ class EsmConfigService:
         with open(filePath, 'r') as file:
             data = yaml.load(file)
 
-        def comment_key_path(d, key_path_list, value_to_match):
+        def comment_key_path(d, key_path_list, ):
             if not key_path_list:
                 return
             for key in key_path_list[:-1]:
@@ -185,13 +178,13 @@ class EsmConfigService:
                 else:
                     return  # Path not found, do nothing
             final_key = key_path_list[-1]
-            if isinstance(d, dict) and final_key in d and d[final_key] == value_to_match:
+            if isinstance(d, dict) and final_key in d:
                 # Comment out the key
                 value = d[final_key]
                 d.yaml_set_comment_before_after_key(final_key, before=f"# {final_key}: {value}")
                 d.pop(final_key)
 
-        comment_key_path(data, key_path_list, valueToMatch)
+        comment_key_path(data, key_path_list)
 
         temp_file_path = f"{filePath}.tmp"
         with open(temp_file_path, 'w') as file:
@@ -231,16 +224,12 @@ class EsmConfigService:
             log.error(f"Could not find install dir at  '{self.config.paths.install}'. Are you sure the config is correct?")
             raise AdminRequiredException(f"Could not find install dir at  '{self.config.paths.install}'. Are you sure the config is correct?")
         
-    def commentOutSharedDataUrl(self, sharedDataUrl: str):
+    def removeSharedDataUrl(self):
         """
-        edits the dedicated yaml to comment out the shared data url if it contains the given shared data url
+            edits the dedicated yaml to remove the shared data url
         """
         if self.config.dedicatedConfig.GameConfig.SharedDataURL is None:
             log.info(f"There is no SharedDataURL configured in the dedicated yaml, nothing to comment out")
-            return False
-
-        if self.config.dedicatedConfig.GameConfig.SharedDataURL != sharedDataUrl:
-            log.info(f"There is a SharedDataURL configured, but it is not the one that was autoconfigured, so we won't edit it.")
             return False
 
         if self.config.paths.install.exists():
@@ -250,8 +239,7 @@ class EsmConfigService:
             if self.searchDedicatedYamlLocal:
                 dedicatedYamlPath = self.config.server.dedicatedYaml
             if dedicatedYamlPath.exists():
-                # replace the existing value of the shareddataurl with our new value, to do it in place, we'll only search&replace with regex by line
-                self.commentOutYamlProperty(dedicatedYamlPath, "GameConfig.SharedDataURL", sharedDataUrl)
+                self.removeMatchingYamlProperty(dedicatedYamlPath, "GameConfig.SharedDataURL")
 
                 # reload dedicated yaml config
                 self.loadDedicatedYaml(self.config)

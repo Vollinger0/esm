@@ -6,6 +6,7 @@ from unittest.mock import patch
 from pydantic import ValidationError
 from esm.ConfigModels import MainConfig
 from esm.EsmConfigService import EsmConfigService
+from esm.FsTools import FsTools
 from esm.exceptions import AdminRequiredException
 from esm.ServiceRegistry import ServiceRegistry
 from TestTools import TestTools
@@ -90,4 +91,72 @@ class test_EsmConfigService(unittest.TestCase):
         for territory in territories:
             log.info(f"territory: {territory.name}, x: {territory.x/100000}, y: {territory.y/100000}, z: {territory.z/100000}, radius: {territory.radius/100000}")
 
-        
+    def test_editingDedicatedYamlRoundTrip(self):
+        self.maxDiff = None
+        cs = EsmConfigService()
+        original = """
+ServerConfig:
+  Srv_Port: 40000
+  Srv_Name: Vollingers Test Server
+  Srv_Description: Running on a ramdisk managed by ESM. There's nothing to see here, please move on.
+  Srv_MaxPlayers: 8
+  Srv_ReservePlayfields: 1
+  Srv_Public: false
+  EACActive: false
+  AdminConfigFile: adminconfig.yaml
+  SaveDirectory: Saves
+  MaxAllowedSizeClass: 21
+  AllowedBlueprints: All
+  HeartbeatServer: 15
+  TimeoutBootingPfServer: 90
+  PlayerLoginParallelCount: 5
+  #PlayerLoginVipNames: 76561198086927352,123456789
+  PlayerLoginFullServerQueueCount: 10
+GameConfig:
+  GameName: EsmTestDediGame
+  Mode: Survival
+  Seed: 42069420
+  CustomScenario: TestProjectA
+"""
+        tempYamlPath = Path("test/test-dedicated-temp.yaml").resolve()
+        # create the dedicated yaml
+        with open(tempYamlPath, "w") as f:
+            f.write(original)
+        cs.upsertYamlProperty(tempYamlPath, "GameConfig.SharedDataURL", "http://example.com")
+
+        edited = """
+ServerConfig:
+  Srv_Port: 40000
+  Srv_Name: Vollingers Test Server
+  Srv_Description: Running on a ramdisk managed by ESM. There's nothing to see here, please move on.
+  Srv_MaxPlayers: 8
+  Srv_ReservePlayfields: 1
+  Srv_Public: false
+  EACActive: false
+  AdminConfigFile: adminconfig.yaml
+  SaveDirectory: Saves
+  MaxAllowedSizeClass: 21
+  AllowedBlueprints: All
+  HeartbeatServer: 15
+  TimeoutBootingPfServer: 90
+  PlayerLoginParallelCount: 5
+  #PlayerLoginVipNames: 76561198086927352,123456789
+  PlayerLoginFullServerQueueCount: 10
+GameConfig:
+  GameName: EsmTestDediGame
+  Mode: Survival
+  Seed: 42069420
+  CustomScenario: TestProjectA
+  SharedDataURL: http://example.com
+"""
+        with open(tempYamlPath, "r") as f:
+            actual = f.read()
+            self.assertEqual(edited.strip(), actual.strip())
+
+        cs.removeMatchingYamlProperty(tempYamlPath, "GameConfig.SharedDataURL")
+
+        with open(tempYamlPath, "r") as f:
+            actual = f.read()
+            self.assertEqual(original.strip(), actual.strip())
+
+        tempYamlPath.unlink()

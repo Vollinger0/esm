@@ -1,7 +1,6 @@
 # TODOS
 
 ## WIP
-- [ ] BUG: shared-data tool should not roll back to backup, but just remove the line instead since changes while the tool was running may get lost. ruamel yaml_rt should work well with this
 
 ## later
 - [ ] SDS: a configurable treshold for change size in MB at what point it makes sense to enable the shareddataurl or keep the old method?
@@ -45,6 +44,7 @@
 - [ ] proper python-native connector to the EGS server to not have to use the emprc
 
 ## done
+- [x] BUG: shared-data tool should not roll back to backup, but just remove the line instead since changes while the tool was running may get lost. ruamel yaml_rt should work well with this
 - [x] new zip, provide the server zip as manual download aswell, along with the instructions for people to "install" manually
   - need to find out how eleon calculates the zip name in _shareddatazips, alternatively, make it configurable.
 - [x] add support for the tool to run along with the shared-data-server, without having to start it separatedly

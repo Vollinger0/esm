@@ -98,7 +98,7 @@ class EsmSharedDataServer:
             sharedDataUrl = self.getSharedDataURL(servingUrlRoot, autoZipFile)
 
             log.info(f"Shared data zip file for server is at: '{sharedDataUrl}'")
-            log.warning(f"Using this SharedDataURL feature is dangerous! Make sure the URL above will be reachable for all your players, or it might break the game! Read the readme_shareddata.md for more information.")
+            log.warning(f"Using this SharedDataURL feature is dangerous! Make sure the URL above will be reachable for all your players, or it might break some clients! Read the readme_shareddata.md for more information.")
 
             if self.config.downloadtool.autoEditDedicatedYaml:
                 self.configService.backupDedicatedYaml()
@@ -131,9 +131,9 @@ class EsmSharedDataServer:
             log.info(f"SharedData server stopped serving. Total downloads: {EsmHttpThrottledHandler.globalZipDownloads}")
             
             if self.config.downloadtool.useSharedDataURLFeature and self.config.downloadtool.autoEditDedicatedYaml:
-                #TODO: instead of rolling back, just comment out or remove the edited line
-                self.configService.rollbackDedicatedYaml()
-                log.warning(f"The dedicated yaml has been rolled back to its original state, make sure to restart the server for it to take effect!")
+                self.configService.removeSharedDataUrl()
+                if not self.config.downloadtool.startWithMainServer:
+                    log.warning(f"The dedicated yaml has been rolled back to its original state, make sure to restart the server for it to take effect!")
 
     def startServing(self, zipFiles: List[ZipFile]):
         log.info(f"Starting download server for {len(zipFiles)} zip files (excluding default assets).")
@@ -145,9 +145,9 @@ class EsmSharedDataServer:
     def stopServing(self):
         log.info(f"SharedData server stopped serving. Total downloads: {EsmHttpThrottledHandler.globalZipDownloads}")
         if self.config.downloadtool.useSharedDataURLFeature and self.config.downloadtool.autoEditDedicatedYaml:
-            #TODO: instead of rolling back, just comment out or remove the edited line
-            self.configService.rollbackDedicatedYaml()
-            log.warning(f"The dedicated yaml has been rolled back to its original state, make sure to restart the server for it to take effect!")
+            self.configService.removeSharedDataUrl()
+            if not self.config.downloadtool.startWithMainServer:
+                log.warning(f"The dedicated yaml has been rolled back to its original state, make sure to restart the server for it to take effect!")
 
     def getSharedDataURL(self, servingUrlRoot, autoZipFile: ZipFile):
         if len(self.config.downloadtool.customSharedDataURL) > 1:
