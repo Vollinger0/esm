@@ -1,10 +1,6 @@
 # TODOS
 
 ## WIP
-- [ ] new zip, provide the server zip as manual download aswell, along with the instructions for people to "install" manually
-  - need to find out how eleon calculates the zip name in _shareddatazips, alternatively, make it configurable.
-  - url1: _http://142.44.135.35:27440/SharedData_202412............. -> 11623555678862160980.zip
-  - url2: _http://142.44.135.35:27440/SharedData_20241208_165323.zip -> 4395619394772511996.zip
 - [ ] BUG: shared-data tool should not roll back to backup, but just remove the line instead since changes while the tool was running may get lost. ruamel yaml_rt should work well with this
 
 ## later
@@ -49,6 +45,8 @@
 - [ ] proper python-native connector to the EGS server to not have to use the emprc
 
 ## done
+- [x] new zip, provide the server zip as manual download aswell, along with the instructions for people to "install" manually
+  - need to find out how eleon calculates the zip name in _shareddatazips, alternatively, make it configurable.
 - [x] add support for the tool to run along with the shared-data-server, without having to start it separatedly
 - [x] shared data tool should recognize when it is needed to update the shared data zip, by creating and keeping a hashdb of it, ideally only of the shared data folder
   - save the hashdb along with the zip, so we know its state/version.

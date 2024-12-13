@@ -352,20 +352,36 @@ class EsmSharedDataServer:
         # find gameserver logfile and extract unique game id
         buildNumber = self.dedicatedServer().getBuildNumber()
         logFilePattern = "Dedicated_*.log"
-        logFileDirectoryPath = self.config.paths.install.joinpath(f"Logs").joinpath(buildNumber).resolve()
-        log.debug(f"Trying to extract unique game id from logfiles in '{logFileDirectoryPath}' with pattern '{logFilePattern}'")
-        for possiblePath in glob.glob(root_dir=logFileDirectoryPath, pathname=logFilePattern, recursive=True):
+        logFileDirectoryPath = self.config.paths.install.joinpath(f"Logs")
+        logFileDirectoryForCurrentBuildPath = logFileDirectoryPath.joinpath(buildNumber).resolve()
+        log.debug(f"Trying to extract unique game id from logfiles in '{logFileDirectoryForCurrentBuildPath}' with pattern '{logFilePattern}'")
+
+        for possiblePath in glob.glob(root_dir=logFileDirectoryForCurrentBuildPath, pathname=logFilePattern, recursive=True):
+            logFilePath = Path(logFileDirectoryForCurrentBuildPath).joinpath(possiblePath).resolve()
+            uniqueGameId = self.readUniqueGameId(logFilePath)
+            if uniqueGameId is not None:
+                return uniqueGameId
+        log.debug(f"Did not find unique game id in any of the {logFilePattern} files in '{logFileDirectoryForCurrentBuildPath}', will try the whole log folder again")
+
+        # try the whole log folder again
+        for possiblePath in glob.glob(root_dir=logFileDirectoryPath, pathname=f"**/{logFilePattern}", recursive=True):
             logFilePath = Path(logFileDirectoryPath).joinpath(possiblePath).resolve()
-            if logFilePath.exists():
-                log.debug(f"Trying to extract unique game id from logfile '{logFilePath}'")
-                with open(logFilePath, 'r') as f:
-                    for line in f:
-                        if "UniqueId" in line:
-                            # extract unique game id from logline, which is the number after the 'UniqueId=' string
-                            uniqueGameId = re.search(r"UniqueId=(\d+)", line).group(1)
-                            return uniqueGameId
+            uniqueGameId = self.readUniqueGameId(logFilePath)
+            if uniqueGameId is not None:
+                return uniqueGameId
+
         log.warning(f"Did not find unique game id in any of the {logFilePattern} files in '{logFileDirectoryPath}'. You may need to start the server at least once so esm can find out the id.")
         return None
+
+    def readUniqueGameId(self, logFilePath: Path):
+        if logFilePath.exists():
+            log.debug(f"Trying to extract unique game id from logfile '{logFilePath}'")
+            with open(logFilePath, 'r') as f:
+                for line in f:
+                    if "UniqueId" in line:
+                        # extract unique game id from logline, which is the number after the 'UniqueId=' string
+                        uniqueGameId = re.search(r"UniqueId=(\d+)", line).group(1)
+                        return uniqueGameId
     
     def getUniqueGameId(self):
         """
@@ -395,6 +411,9 @@ class EsmSharedDataServer:
             return self.config.downloadtool.customCacheFolderName
 
     def createSharedDataZipFiles(self, pathToSharedDataFolder: Path) -> List[ZipFile]:
+        """
+            actually creates the zip files for the shared data download, if shared data url feature is enabled, it will create both, the manual and the auto zip
+        """
         if not pathToSharedDataFolder.exists():
             log.warning(f"Path to the shared data in the games scenario folder '{pathToSharedDataFolder}' does not exist. Please check the configuration.")
             return
