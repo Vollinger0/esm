@@ -3,6 +3,9 @@
 ## WIP
 
 ## later
+- [ ] new bash script: that executes the esm commands in a list and deletes them (or renames as "done") afterwards. Great for automating one-shot stuff, like wipes, player fixes, exports, etc.
+  - bash script would be more versatile
+  - for regular tasks, we already have everything in place (and EAH or EWA for scheduling)
 - [ ] SDS: a configurable treshold for change size in MB at what point it makes sense to enable the shareddataurl or keep the old method?
 - [ ] new tool that sets a players position on the database directly, to fix broken players when they get yeeted to 0,0,0
 - [ ] backup additional should support globbing
