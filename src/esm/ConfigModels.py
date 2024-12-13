@@ -107,6 +107,8 @@ class ConfigCommunication(BaseModel):
     haimsterStartupDelay: int = Field(60, description="how many seconds to wait after a server start before starting the haimster connector, since it needs a running server")
     incomingMessageHostIp: str = Field("0.0.0.0", description="the host url to bind our http server to to receive messages from haimster. This ip and port must be configured on haimster side aswell.")
     incomingMessageHostPort: int = Field(9000, description="the port to bind to to receive messages from haimster. This ip and port must be configured on haimster side aswell.")
+    haimsterConnectedMessage: str = Field("Anvil broadcast sent, accepting hamster deliveries", description="The message to send to the server when the haimster connector started up")
+    haimsterDisconnectedMessage: str = Field("Anvil is closing its doors to hamsters...", description="The message to send to the server when the haimster connector is shutting down")
 
     chatlogViewerEnabled: bool = Field(True, description="enables the chatlog viewer in the shared data tool server. This is just a convenience feature to see the chatlog in a browser")
     chatlogViewerPathSegment: str = Field("/chatlog", description="the path to the chatlog viewer in the url.")

@@ -67,7 +67,8 @@ class EsmHaimsterConnector:
         log.info(f"HTTP server container for receiving haimster messages started on http://{host}:{port}")
 
         # send welcome message
-        self.queueChatMessageForEgsChat(ChatMessage(speaker="hAImster", message="connected!", timestamp=time.time()))
+        haimsterConnectedMessage = self.config.communication.haimsterConnectedMessage
+        self.queueChatMessageForEgsChat(ChatMessage(speaker="hAImster", message=haimsterConnectedMessage, timestamp=time.time()))
 
         # register fastapi routes
         @self._fastApiApp.post("/outgoingmessage")
@@ -120,7 +121,8 @@ class EsmHaimsterConnector:
         """
         log.info("Shutting down haimster connector")
         self._shutdownHttpServer()
-        self.queueChatMessageForEgsChat(ChatMessage(speaker="hAImster", message="disconnecting...", timestamp=time.time()))
+        haimsterDisconnectedMessage = self.config.communication.haimsterDisconnectedMessage
+        self.queueChatMessageForEgsChat(ChatMessage(speaker="hAImster", message=haimsterDisconnectedMessage, timestamp=time.time()))
         self._incomingChatMessageHandlerShouldStop.set()
         self._outgoingChatResponseHandlerShouldStop.set()
         self.esmGameChatService.shutdown()
