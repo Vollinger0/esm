@@ -13,7 +13,7 @@
       - haimster
       - an event system that propagates game events (not only chat messages)
       - a separate server with a GUI to manage stuff (incl. chatlog)
-      - discord integration - with the ability to control esm from discord, post the chatlog there, etc.
+      - discord integration - with the ability to control esm+haimster from discord, post the chatlog there, etc.
 - extend documentation, add readme_tools or something to explain the new ones
 
 ## optional
