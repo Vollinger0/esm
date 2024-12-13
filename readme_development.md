@@ -24,7 +24,7 @@ Alternatively, you can enable the virtual environment, like below, or create one
 
 ## releasing
 
-- execute a `pip freeze | sort -u >> requirements.txt`
+- execute a `pip freeze | sort -u > requirements.txt`
   - check the computed requirements, clean up as necessary. In doubt, start with a fresh venv to check if all is there.
 - create a distribution once: `pyinstaller esm.spec --noconfirm`, to make sure it works properly, this will also generate the default config
 - make sure all changes are in the main branch in github
