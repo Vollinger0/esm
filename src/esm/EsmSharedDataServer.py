@@ -202,7 +202,8 @@ class EsmSharedDataServer:
         with Tools.Timer() as timer:
             log.debug(f"Checking if the folder '{pathToFolder}' has been updated...")
             # create a hash from the whole shared data folder using dirhash
-            newHash = dirhash.dirhash(pathToFolder, match="**", algorithm="md5", jobs=4)
+            # do not use jobs > 1, since multiprocessing doesn't work with the distributed executable :/
+            newHash = dirhash.dirhash(pathToFolder, match="**", algorithm="md5", jobs=1)
         log.debug(f"Checked folder '{pathToFolder}' in {timer.elapsedTime} seconds.")
         return newHash
 
