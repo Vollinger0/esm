@@ -329,6 +329,8 @@ class EsmDedicatedServer:
         """
         make sure the shared data url is available, raise an error if not because this will break the game
         """
+        # invalidate configuration, since it might be outdated if the shared data server is running within the same process.
+        del self.config
         url = self.config.dedicatedConfig.GameConfig.SharedDataURL
         if url is not None:
             if not re.match(pattern="_?https?://", string=url):

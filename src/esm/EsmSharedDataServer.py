@@ -98,7 +98,7 @@ class EsmSharedDataServer:
             sharedDataUrl = self.getSharedDataURL(servingUrlRoot, autoZipFile)
 
             log.info(f"Shared data zip file for server is at: '{sharedDataUrl}'")
-            log.warning(f"Using this SharedDataURL feature is dangerous! Make sure the URL above will be reachable for all your players, or it might break some clients! Read the readme_shareddata.md for more information.")
+            log.warning(f"Using this SharedDataURL feature is dangerous! Make sure the URL above will be reachable for all your players, or it might break some clients! Read the data/readme_shareddata.md for more information.")
 
             if self.config.downloadtool.autoEditDedicatedYaml:
                 self.configService.backupDedicatedYaml()
