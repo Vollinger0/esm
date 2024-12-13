@@ -65,19 +65,19 @@ downloadtool:   # configuration for the shared data download tool
   tempFolder: temp                                            # temporary folder for creating the downloadable zip
   startWithMainServer: true                                   # if true, the download tool will be started with the main server for a fully automated shared data file handling.
 communication:  # configuration for the in-game communication
-  announceSyncEvents: true                # if true, sync events (syncStart, syncEnd) will be announced in the chat
-  announceSyncProbability: 0.3            # probability factor that a sync will be announced at all, this is to avoid it being too spammy. something between 0.0 and 1.0
-  synceventname: '[0fa336]Hamster-News'   # the name to be used when announcing a sync on the server, may contain bb-code for colors and such
-  synceventmessageprefix: '[aaaaaa]'      # this string will be prepended to all sync event messages, you can use this to set a bb-color code
-  synceventsfile: hamster_sync_lines.csv  # should contain the path to a csv file with two columns, each containing the first and second sentence. The first will be used when starting a sync, the second when its finished.
-  haimsterEnabled: false                  # enables haimster integration, which requires a running haimster server
-  haimsterHost: http://localhost:8000     # the url to the haimster server
-  haimsterStartupDelay: 60                # how many seconds to wait after a server start before starting the haimster connector, since it needs a running server
-  incomingMessageHostIp: 0.0.0.0          # the host url to bind our http server to to receive messages from haimster. This ip and port must be configured on haimster side aswell.
-  incomingMessageHostPort: 9000           # the port to bind to to receive messages from haimster. This ip and port must be configured on haimster side aswell.
-  chatlogViewerEnabled: true              # enables the chatlog viewer in the shared data tool server. This is just a convenience feature to see the chatlog in a browser
-  chatlogViewerPathSegment: /chatlog      # the path to the chatlog viewer in the url.
-  chatlogPath: /chatlog                   # the url path to the chatlog served by the haimster server.
+  announceSyncEvents: true                     # if true, sync events (syncStart, syncEnd) will be announced in the chat
+  announceSyncProbability: 0.3                 # probability factor that a sync will be announced at all, this is to avoid it being too spammy. something between 0.0 and 1.0
+  synceventname: '[0fa336]Hamster-News'        # the name to be used when announcing a sync on the server, may contain bb-code for colors and such
+  synceventmessageprefix: '[aaaaaa]'           # this string will be prepended to all sync event messages, you can use this to set a bb-color code
+  synceventsfile: data/hamster_sync_lines.csv  # should contain the path to a csv file with two columns, each containing the first and second sentence. The first will be used when starting a sync, the second when its finished.
+  haimsterEnabled: false                       # enables haimster integration, which requires a running haimster server
+  haimsterHost: http://localhost:8000          # the url to the haimster server
+  haimsterStartupDelay: 60                     # how many seconds to wait after a server start before starting the haimster connector, since it needs a running server
+  incomingMessageHostIp: 0.0.0.0               # the host url to bind our http server to to receive messages from haimster. This ip and port must be configured on haimster side aswell.
+  incomingMessageHostPort: 9000                # the port to bind to to receive messages from haimster. This ip and port must be configured on haimster side aswell.
+  chatlogViewerEnabled: true                   # enables the chatlog viewer in the shared data tool server. This is just a convenience feature to see the chatlog in a browser
+  chatlogViewerPathSegment: /chatlog           # the path to the chatlog viewer in the url.
+  chatlogPath: /chatlog                        # the url path to the chatlog served by the haimster server.
 foldernames:    # names of different folders, you probably do not need to change any of these
   games: Games
   backup: Backup

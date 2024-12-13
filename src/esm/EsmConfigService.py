@@ -38,7 +38,7 @@ class EsmConfigService:
         return cs.config
 
     @staticmethod
-    def createDefaultConfigFile(filename: str = "esm-default-config.example.yaml"):
+    def createDefaultConfigFile(filename: str = "data/esm-default-config.example.yaml"):
         """
             Creates a new config yaml from our config model with all the default values
         """

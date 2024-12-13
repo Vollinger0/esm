@@ -18,28 +18,57 @@ EsmConfigService.createDefaultConfigFile()
 print ("Proceeding with pyinstaller spec")
 # define the files to copy to the dist additionally
 datafiles = [
-        ('data/esm-default-config.example.yaml', 'data/'),
-        ('esm-custom-config.example.yaml', 'data/'),
-        ('esm-dedicated.example.yaml', 'data/'),
-        ('hamster_sync_lines.csv', 'data/'),
-        ('emprc/EmpyrionPrime.RemoteClient.Console.exe', 'emprc/EmpyrionPrime.RemoteClient.Console.exe'),
-        ('callesm-async.example.bat', 'data/'),
-        ('callesm-sync.example.bat', 'data/'),
-        ('esm-starter-for-eah.example.cmd', 'data/'),
-        ('readme.md', '.'),
-        ('readme_install.md', 'data/'),        
-        ('readme_backups.md', 'data/'),        
-        ('readme_performance.md', 'data/'),
-        ('readme_development.md', 'data/'),
-        ('readme_shareddata.md', 'data/'),
-        ('index.template.html', 'data/'),
-        ('index.shared.template.html', 'data/'),
-        ('wwwroot/styles.css', 'wwwroot/styles.css'),
-        ('wwwroot/favicon.ico', 'wwwroot/favicon.ico'),
-        ('wwwroot/chatlog/index.html', 'wwwroot/chatlog/index.html'),
-        ('wwwroot/chatlog/script.js', 'wwwroot/chatlog/script.js'),
-        ('wwwroot/chatlog/styles.css', 'wwwroot/chatlog/styles.css'),
+        ('data/esm-default-config.example.yaml', None),
+        ('data/esm-custom-config.example.yaml', None),
+        ('data/esm-dedicated.example.yaml', None),
+        ('data/hamster_sync_lines.csv', None),
+        ('emprc/EmpyrionPrime.RemoteClient.Console.exe', None),
+        ('data/callesm-async.example.bat', None),
+        ('data/callesm-sync.example.bat', None),
+        ('data/esm-starter-for-eah.example.cmd', None),
+        ('readme.md', None),
+        ('data/readme_install.md', None),
+        ('data/readme_backups.md', None),
+        ('data/readme_performance.md', None),
+        ('data/readme_development.md', None),
+        ('data/readme_shareddata.md', None),
+        ('data/index.template.html', None),
+        ('data/index.shared.template.html', None),
+        ('wwwroot/styles.css', None),
+        ('wwwroot/favicon.ico', None),
+        ('wwwroot/chatlog/index.html', None),
+        ('wwwroot/chatlog/script.js', None),
+        ('wwwroot/chatlog/styles.css', None),
         ]
+
+def copyDataFiles():
+    # since the datafile-functinality of pyinstaller is sub-optimal, lets copy our datafiles to the dist folder ourselves.
+    print("Manually copying datafiles to distfolder")
+    workspaceDir = Path(".").resolve()
+    print(f"working directory is: {workspaceDir}")
+    targetDir = workspaceDir.joinpath("dist/esm")
+    if not targetDir.exists(): targetDir.mkdir(exist_ok=True)
+    for src, dst in datafiles:
+        if dst is None: dst = src
+        print(f"processing datafiles entry {src, dst}") 
+        srcPath = workspaceDir.joinpath(src)
+        dstPath = targetDir.joinpath(dst)
+        print(f"copying {srcPath} -> {dstPath}")
+        if not Path(dstPath.parent).exists(): Path(dstPath.parent).mkdir(parents=True, exist_ok=True)
+        shutil.copy(srcPath, dstPath)
+
+def zipDistribution():
+    workspaceDir = Path(".").resolve()
+    print(f"working directory is: {workspaceDir}")
+    targetDir = workspaceDir.joinpath("dist/esm")
+    print("Zipping distribution")
+    # create a zip file of the distribution in the dist folder, ready do share
+    sourcePath = targetDir
+    backupDir = targetDir.parent
+    version = info.getPackageVersion()
+    zipFilename = backupDir.joinpath(f"esm-{version}")
+    archived = shutil.make_archive(zipFilename, 'zip', sourcePath)
+    print(f"zipped distribution as: {archived}")
 
 a = Analysis(
     ['src/esm/__main__.py'],
@@ -86,25 +115,5 @@ coll = COLLECT(
     name='esm',
 )
 
-print("Manually copying datafiles to distfolder")
-# since the datafile-functinality of pyinstaller is sub-optimal, lets copy our datafiles to the dist folder ourselves.
-workspaceDir = Path(".").resolve()
-print(f"working directory is: {workspaceDir}")
-targetDir = workspaceDir.joinpath("dist/esm")
-if not targetDir.exists(): targetDir.mkdir(exist_ok=True)
-for src, dst in datafiles:
-    print(f"processing datafiles entry {src, dst}") 
-    srcPath = workspaceDir.joinpath(src)
-    dstPath = targetDir.joinpath(dst)
-    print(f"copying {srcPath} -> {dstPath}")
-    if not Path(dstPath.parent).exists(): Path(dstPath.parent).mkdir(parents=True, exist_ok=True)
-    shutil.copy(srcPath, dstPath)
-
-print("Zipping distribution")
-# create a zip file of the distribution in the dist folder, ready do share
-sourcePath = targetDir
-backupDir = targetDir.parent
-version = info.getPackageVersion()
-zipFilename = backupDir.joinpath(f"esm-{version}")
-archived = shutil.make_archive(zipFilename, 'zip', sourcePath)
-print(f"zipped distribution as: {archived}")
+copyDataFiles()
+zipDistribution()
