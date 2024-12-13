@@ -49,11 +49,8 @@ deletes:
     # if a path is relative, it will be assumed to be relative to the installation path.
     - 'Content/Mods/EncryptoidModPack/Mods/AdminTetherport/Database'
     
-downloadtool:
-  useSharedDataURLFeature: True
-
 galaxy:
-  territories: #faction Territory Definitions (look up their definitions in the file "$scenario/Content/Configuration/GalaxyConfig.ecf" of your scenario)
+  territories: # custom faction territory definitions, esm will read out the galaxy config dynamically
      - faction: "MyCustomTerritory"
        center-x: 155
        center-y: 10

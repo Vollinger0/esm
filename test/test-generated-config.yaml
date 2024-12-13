@@ -45,7 +45,7 @@ downloadtool:   # configuration for the shared data download tool
   maxClientBandwith: 30000000                                 # max bandwith to use for the download per client in bytes, e.g. 30 MB/s
   rateLimit: 10 per minute                                    # rate limit of max allowed requests per ip address per time unit, e.g. '10 per minute' or '10 per hour'
   customExternalHostNameAndPort: ''                           # if set, this will be used as the host instead of the automatically generated host-part of the url. must be something like: 'https://my-server.com:12345'. The path/name of the files will be appended.
-  useSharedDataURLFeature: false                              # if true, a zip for the SharedDataURL feature will be created, served and the dedicated yaml will be automatically edited.
+  useSharedDataURLFeature: true                               # if true, a zip for the SharedDataURL feature will be created, served and the dedicated yaml will be automatically edited.
   autoEditDedicatedYaml: true                                 # set to false if you do not want the dedicated yaml to be edited automatically
   customSharedDataURL: ''                                     # if set, this will be used as the shared data url instead of the automatically generated one. Make sure it is correct!
   autoZipName: SharedData.zip                                 # The filename of the zip file for the auto download of the SharedDataURL feature postfixed with _yyyymmdd_hhmmss so the client recognizes this as a new file on recreation.

@@ -22,8 +22,8 @@ Its meant to run fully automated, so you only need to configure it once, then se
 - almost all features, limits, timeouts and paths are configurable
 - everything is logged in console and logfiles, so you can always see what the scripts do, did and what happened when.
 - freely configurable in-game announcer for a few actions
-- special downloadserver as tool, that creates and serves the shared data folder as manually downloadable zip, see [performance section](readme_performance.md) or the ...
-- [shareddata-server tool](readme_shareddata.md) that will fully automate the SharedDataURL feature by creating the zip automatically and serving it via the esm downloadserver
+- special downloadserver as tool, that creates and serves the shared data folder as manually downloadable zip, see [performance section](data/readme_performance.md) or the ...
+- [shareddata-server tool](data/readme_shareddata.md) that will fully automate the SharedDataURL feature by creating the zip automatically and serving it via the esm downloadserver
 
 ### Game maintenance / performance
 - wipe tool for wiping playfields with no player or player-owned terrain placeables or structures.
@@ -42,7 +42,7 @@ Its meant to run fully automated, so you only need to configure it once, then se
 
 ### Screenshot
 
-![screenshot](esm_help_screenshot.png)
+![screenshot](data/esm_help_screenshot.png)
 
 ## Requirements
 
@@ -60,16 +60,16 @@ optional:
 
 ## All about performance, ramdisk, shared data downloads and more
 
-[This](readme_performance.md) will tell you all you need to know about it.
-If you're interested improving network limitations in the game, read about [the shareddata-server tool](readme_shareddata.md)
+[This](data/readme_performance.md) will tell you all you need to know about it.
+If you're interested improving network limitations in the game, read about [the shareddata-server tool](data/readme_shareddata.md)
 
 ## All about the backups
 
-You'll want to [read this](readme_backups.md).
+You'll want to [read this](data/readme_backups.md).
 
 ## How to install ESM, the game, everything
 
-Please follow this [path](readme_install.md).
+Please follow this [path](data/readme_install.md).
 
 ## RUNNING WITH EAH
 1. Select the custom provided **esm-starter-for-eah.cmd** file as dedicated starter script in EAH -> Config -> Tool -> Setup -> "Use Dedicated.cmd". That script will run the `esm server-start` which starts the server.
@@ -137,7 +137,7 @@ The ramdisk setup keeps a mirror of the savegame on the HDD, it also keeps the t
 
 ## TIPS
 - use the `esm --help` command, and get help for each command with `esm command --help`. This explains stuff and you can get the details directly from there.
-- do not edit the `esm-default-config.example.yaml`, it is meant as a documentation for your configuration file with a lot of explanations for you. Override these settings in your own `esm-custom-config.yaml`
+- do not edit the `data/esm-default-config.example.yaml`, it is meant as a documentation for your configuration file with a lot of explanations for you. Override these settings in your own `esm-custom-config.yaml`
 - open a windows console first, then start the scripts for the manual execution. This will avoid the console windows getting closed after the scripts finished so you can read the log.
 - all scripts generate logs of what they do, you can always read up anything there.
 - in windows consoles, disable the "quick edit mode", since this **will suspend the execution of scripts(!) and potentially break things**! See https://superuser.com/questions/459609/what-does-it-do-exactly-if-i-click-in-the-window-of-cmd
@@ -166,6 +166,6 @@ A: Search for a setting in your terminal/console that controls something like "s
 
 ## developing and contributing
 
-Go down this [rabbit hole](readme_development.md).
+Go down this [rabbit hole](data/readme_development.md).
 
 #### copyright by Vollinger 2023-2025

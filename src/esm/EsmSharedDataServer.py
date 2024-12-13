@@ -283,11 +283,11 @@ class EsmSharedDataServer:
         """
          copy the index.template.html into the wwwroot folder and replace placeholders
         """
-        indexTemplateFilePath = Path("index.template.html").resolve()
+        indexTemplateFilePath = Path("data/index.template.html").resolve()
 
         autoZipFileName = ""
         if self.config.downloadtool.useSharedDataURLFeature:
-            indexTemplateFilePath = Path("index.shared.template.html").resolve()
+            indexTemplateFilePath = Path("data/index.shared.template.html").resolve()
             autoZipFile = Tools.findZipFileByName(zipFiles, startsWith=self.config.downloadtool.autoZipName.split(".")[0])
             if autoZipFile is not None:
                 autoZipFileName = autoZipFile.name

@@ -100,7 +100,7 @@ class ConfigCommunication(BaseModel):
     announceSyncProbability: float = Field(0.3, ge=0, le=1, description="probability factor that a sync will be announced at all, this is to avoid it being too spammy. something between 0.0 and 1.0")
     synceventname: str = Field("[0fa336]Hamster-News", description="the name to be used when announcing a sync on the server, may contain bb-code for colors and such")
     synceventmessageprefix: str = Field("[aaaaaa]", description="this string will be prepended to all sync event messages, you can use this to set a bb-color code")
-    synceventsfile: str = Field("hamster_sync_lines.csv", description="should contain the path to a csv file with two columns, each containing the first and second sentence. The first will be used when starting a sync, the second when its finished.")
+    synceventsfile: str = Field("data/hamster_sync_lines.csv", description="should contain the path to a csv file with two columns, each containing the first and second sentence. The first will be used when starting a sync, the second when its finished.")
 
     haimsterEnabled: bool = Field(False, description="enables haimster integration, which requires a running haimster server")
     haimsterHost: str = Field("http://localhost:8000", description="the url to the haimster server")
