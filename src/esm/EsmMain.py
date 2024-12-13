@@ -152,7 +152,7 @@ class EsmMain:
             log.warning("A server is already running! You may want to use the server resume operation to connect back to it.")
             raise ServerNeedsToBeStopped("A server is already running!")
         
-        self.onStartUp()
+        self.onStartUp(haimster=False)
         
         # start the server
         log.info(f"Starting the dedicated server")
@@ -184,7 +184,7 @@ class EsmMain:
         while self.dedicatedServer.isRunning():
             time.sleep(checkInterval)
 
-    def onStartUp(self):
+    def onStartUp(self, haimster: bool=True):
         """
         Will start the synchronizer and the shared data server if needed
         """
@@ -192,7 +192,8 @@ class EsmMain:
             self.startSharedDataServer(wait=False)
 
         self.startSynchronizer()
-        self.startHaimsterConnector()
+        if haimster:
+            self.startHaimsterConnector()
     
     def onShutdown(self):
         """
