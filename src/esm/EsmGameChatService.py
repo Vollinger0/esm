@@ -1,3 +1,4 @@
+import io
 import unidecode
 from datetime import datetime
 from functools import cached_property, lru_cache
@@ -55,6 +56,7 @@ class EsmGameChatService:
     _incomingMessages = queue.Queue()
     _outgoingMessages = queue.Queue()
     _readerProcess: Optional[subprocess.Popen] = None
+    _readerProcessReader: Optional[io.TextIOWrapper] = None
     _eventReaderThread: threading.Thread = None
     _chatPosterThread: threading.Thread = None
     _shouldStop = False
@@ -102,9 +104,9 @@ class EsmGameChatService:
                 args=[emprcPath, "listen", "-q", "-o", "json"],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
-                text=True,
-                bufsize=1,
-                universal_newlines=True,
+                # text=True,
+                # bufsize=1,
+                # universal_newlines=True,
             )
         
         def _eventReaderThread():
@@ -113,8 +115,16 @@ class EsmGameChatService:
             while not self._shouldStop:
                 try:
                     self._readerProcess = _startEmpRcListeningProcess()
+                    # use the textiowrapper to have a better handling of text stream from emprc
+                    self._readerProcessReader = io.TextIOWrapper(
+                        self._readerProcess.stdout,
+                        encoding='utf-8',
+                        line_buffering=True,
+                        errors='replace'
+                    )
                     while not self._shouldStop and self._readerProcess.poll() is None:
-                        line = self._readerProcess.stdout.readline()
+                        #line = self._readerProcess.stdout.readline()
+                        line = self._readerProcessReader.readline()
                         self._processLine(line)
                     # Process has ended - check if it was due to an error
                     exitCode = self._readerProcess.poll()
@@ -143,6 +153,7 @@ class EsmGameChatService:
                     
             # Clean up when stopping
             if hasattr(self, '_readerProcess') and self._readerProcess.poll() is None:
+                self._readerProcessReader.close()
                 self._readerProcess.terminate()
             log.debug("EGS emprc event reader thread stopped")
 
@@ -167,12 +178,18 @@ class EsmGameChatService:
         """
             Tries to parse a line into an EgsChatMessageEvent, only if it is of type Event_ChatMessage
         """
+        # to save processing time we only parse the events that contain the interested event at all:
+        if "Event_ChatMessage" not in line:
+            return None
+        #log.debug(f"Received interesting event: {line}")
         try:
             event = json.loads(line)
             if event["CmdId"] == "Event_ChatMessage":
                 return EgsChatMessageEvent.model_validate_json(line)
         except json.JSONDecodeError:
-            log.error(f"Error parsing JSON: {line}")
+            # unluckily, some messages are not valid json since they seem to get truncated on the way from emprc to python.
+            log.debug(f"Error parsing chat event JSON: {line}")
+            pass
         return None
     
     def _convertToChatMessage(self, message: EgsChatMessageEvent) -> ChatMessage:
