@@ -1,9 +1,12 @@
 # TODOS
 
 ## WIP
-- [ ] esm: bug: when shareddata is being downloaded, the tool will NOT shutdown automatically (!) - can lead to issues when EGS shuts down in the meantime.
+- [ ] a scenario update should validate all yamls for galaxy generation, since errors here lead to broken savegames! especially the playfield yamls
 
 ## later
+- [ ] BUG: when shareddata is being downloaded, the tool will NOT shutdown automatically (!) - can lead to issues when EGS shuts down in the meantime.
+- [ ] haimster-connector, if an answer is longer than x, send two messages! => no more obvious bot messages
+- [ ] find out how to trigger the *regeneration* of whole systems? maybe even as a tool
 - [ ] new bash script: that executes the esm commands in a list and deletes them (or renames as "done") afterwards. Great for automating one-shot stuff, like wipes, player fixes, exports, etc.
   - bash script would be more versatile
   - for regular tasks, we already have everything in place (and EAH or EWA for scheduling)
@@ -22,7 +25,6 @@
 - [ ] esm: use the "Import Commands"-Feature of EAH to restart it every now and then? https://forum.empyrion-homeworld.net/t/restart-master-please-help-me-gtx-doesn-t-care/29105
 
 ## optional
-- [ ] haimster-connector, if an answer is longer than x, send two messages! => no more obvious bot messages
 - [+] how can the haimster chat messages be made visible in discord, EWA, EAH? -> Changed to use sendertype Player, see if that helps => nope. sounds like its not possible.
 - [ ] implement allowMultpleServerInstances switch? Once enabled, do not check for instances of the game before starting, do not start if startmode is set to direct, etc.
 - [+] fix all FS-modifying tests to use the test fixture of the usually existing ramdisk (R:) - or use mocks!
