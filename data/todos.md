@@ -1,6 +1,7 @@
 # TODOS
 
 ## WIP
+- [ ] esm: bug: when shareddata is being downloaded, the tool will NOT shutdown automatically (!) - can lead to issues when EGS shuts down in the meantime.
 
 ## later
 - [ ] new bash script: that executes the esm commands in a list and deletes them (or renames as "done") afterwards. Great for automating one-shot stuff, like wipes, player fixes, exports, etc.
@@ -17,9 +18,8 @@
       - an event system that propagates game events (not only chat messages)
       - a separate server with a GUI to manage stuff (incl. chatlog)
       - discord integration - with the ability to control esm+haimster from discord, post the chatlog there, etc.
-- extend documentation, add readme_tools or something to explain the new ones
-- esm: use the "Import Commands"-Feature of EAH to restart it every now and then? https://forum.empyrion-homeworld.net/t/restart-master-please-help-me-gtx-doesn-t-care/29105
-- esm: bug: when shareddata is being downloaded, the tool will NOT shutdown automatically (!) - can lead to issues when EGS shuts down in the meantime.
+- [ ] extend documentation, add readme_tools or something to explain the new ones
+- [ ] esm: use the "Import Commands"-Feature of EAH to restart it every now and then? https://forum.empyrion-homeworld.net/t/restart-master-please-help-me-gtx-doesn-t-care/29105
 
 ## optional
 - [ ] haimster-connector, if an answer is longer than x, send two messages! => no more obvious bot messages
