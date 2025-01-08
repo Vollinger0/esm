@@ -18,8 +18,11 @@
       - a separate server with a GUI to manage stuff (incl. chatlog)
       - discord integration - with the ability to control esm+haimster from discord, post the chatlog there, etc.
 - extend documentation, add readme_tools or something to explain the new ones
+- esm: use the "Import Commands"-Feature of EAH to restart it every now and then? https://forum.empyrion-homeworld.net/t/restart-master-please-help-me-gtx-doesn-t-care/29105
+- esm: bug: when shareddata is being downloaded, the tool will NOT shutdown automatically (!) - can lead to issues when EGS shuts down in the meantime.
 
 ## optional
+- [ ] haimster-connector, if an answer is longer than x, send two messages! => no more obvious bot messages
 - [+] how can the haimster chat messages be made visible in discord, EWA, EAH? -> Changed to use sendertype Player, see if that helps => nope. sounds like its not possible.
 - [ ] implement allowMultpleServerInstances switch? Once enabled, do not check for instances of the game before starting, do not start if startmode is set to direct, etc.
 - [+] fix all FS-modifying tests to use the test fixture of the usually existing ramdisk (R:) - or use mocks!
