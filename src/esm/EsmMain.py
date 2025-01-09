@@ -313,13 +313,14 @@ class EsmMain:
         if validate:
             Tools.validateScenario(sourcePath)
 
+        destinationPath = Path(f"{self.config.paths.install}/Content/Scenarios/{scenarioName}").resolve()
+        
         if dryrun:
             log.info(f"Would synchronize scenario from '{sourcePath}' to '{destinationPath}'. If you want to actually run it, use --nodryrun.")
         else:
             if self.dedicatedServer.isRunning():
                 raise ServerNeedsToBeStopped("Can not update scenario while the server is running. Please stop it first.")
 
-            destinationPath = Path(f"{self.config.paths.install}/Content/Scenarios/{scenarioName}").resolve()
             if not destinationPath.exists():
                 log.warning(f"Path to game scenarios folder '{destinationPath}' does not exist. Will create the directory assuming the configuration is correct.")
                 destinationPath.mkdir(parents=False, exist_ok=False)
