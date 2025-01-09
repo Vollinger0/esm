@@ -5,6 +5,7 @@ import os
 import re
 import shutil
 import signal
+import socket
 import threading
 import dirhash
 import humanize
@@ -35,6 +36,7 @@ class EsmSharedDataServer:
     """
     _httpServerWorker: threading.Thread = None
     _httpServer: socketserver.BaseServer = None
+    _activeConnections: set[socket.socket] = set()
 
     @cached_property
     def config(self) -> MainConfig:
@@ -67,11 +69,24 @@ class EsmSharedDataServer:
         self.startServer(zipFiles, wait=wait)
 
     def stop(self):
+        if len(self._activeConnections) > 0:
+            self.closeActiveConnections()
         if self._httpServer:
             self._httpServer.shutdown()
         if self._httpServerWorker:
             self._httpServerWorker.join()
         self.stopServing()
+
+    def closeActiveConnections(self):
+        log.warning(f"Closing {len(self._activeConnections)} active connections")
+        for sock in list(self._activeConnections):  # Iterate over a copy to avoid modification issues
+            try:
+                log.debug(f"Closing connection: {sock.getpeername()}")
+                sock.settimeout(1)
+                sock.shutdown(socket.SHUT_RDWR)
+                sock.close()
+            except OSError as e:
+                log.warning(f"Error closing socket {sock.getpeername()}: {e}")
 
     def startServer(self, zipFiles: List[ZipFile], wait: bool = False):
         """
@@ -512,4 +527,5 @@ class EsmSharedDataServer:
         EsmHttpThrottledHandler.clientBandwidthLimit = self.config.downloadtool.maxClientBandwith
         EsmHttpThrottledHandler.rateLimit = parse(self.config.downloadtool.rateLimit)
         EsmHttpThrottledHandler.zipFiles = zipFiles
+        EsmHttpThrottledHandler.activeConnections = self._activeConnections
         return sharedDataHandler

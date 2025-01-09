@@ -1,4 +1,5 @@
 import logging
+import socket
 import urllib.request
 import humanize
 import http.server
@@ -52,6 +53,9 @@ class EsmHttpThrottledHandler(http.server.SimpleHTTPRequestHandler):
     # special services where the handler will be proxying requests to the given url, e.g. {"src": "/chatlog/chatlog.json", "dst": "https://haimsterhost.com/chatlog/chatlog.json"}
     proxiedPaths = []
 
+    # keep track of the active connections so we can close them once the application shuts down
+    activeConnections: set[socket.socket] = set()
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=EsmHttpThrottledHandler.rootDirectory, **kwargs)
 
@@ -59,13 +63,20 @@ class EsmHttpThrottledHandler(http.server.SimpleHTTPRequestHandler):
         """
             wrap any errors that might occur while handling the request, we don't want stack traces, unless we're in debug mode
         """
+        self.activeConnections.add(self.request)
+        
         if log.getEffectiveLevel() == logging.DEBUG:
-            return super().handle()
+            try:
+                return super().handle()
+            finally:
+                self.activeConnections.discard(self.request)
         
         try:
             return super().handle()
         except Exception as e:
             log.warning(f"error initializing http server: {e}. Probably some bots knocking on the door.")
+        finally:
+            self.activeConnections.discard(self.request)
 
     def hitRateLimit(self):
         if self.path in EsmHttpThrottledHandler.rateLimitExceptions: return False

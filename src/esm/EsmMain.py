@@ -194,6 +194,22 @@ class EsmMain:
         self.startSynchronizer()
         if haimster:
             self.startHaimsterConnector()
+
+    def stop(self):
+        """
+            will stop esm and all related services, but not the game server
+        """
+        if self.config.communication.haimsterEnabled:
+            self.haimsterConnector.shutdown()
+
+        if self.config.general.useRamdisk:
+            # stop synchronizer
+            log.info(f"Stopping synchronizer thread")
+            self.ramdiskManager.stopSynchronizer()
+            log.info(f"Synchronizer thread stopped")
+
+        if self.config.downloadtool.startWithMainServer:
+            self.sharedDataServer.stop()
     
     def onShutdown(self):
         """

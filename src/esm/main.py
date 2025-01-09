@@ -684,7 +684,10 @@ def init(fileLogLevel=logging.DEBUG, streamLogLevel=logging.INFO, waitForPort=Fa
     ServiceRegistry.register(esm)
     
 def forcedExit(*args):
-    log.warning("Script execution interrupted via SIGINT. If the server is still running, you may resume execution via the server-resume command")
+    log.warning("Script execution interrupted via SIGINT. Stopping esm services...")
+    esm = ServiceRegistry.get(EsmMain)
+    esm.stop()
+    log.warning("Script execution interrupted via SIGINT. ESM services stopped, if the server is still running, you may resume execution via the server-resume command")
     sys.exit(ExitCodes.SCRIPT_INTERRUPTED)
 
 # main cli entry point.
