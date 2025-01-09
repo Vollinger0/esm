@@ -109,6 +109,7 @@ class ConfigCommunication(BaseModel):
     incomingMessageHostPort: int = Field(9000, description="the port to bind to to receive messages from haimster. This ip and port must be configured on haimster side aswell.")
     haimsterConnectedMessage: str = Field("Anvil broadcast sent, accepting hamster deliveries", description="The message to send to the server when the haimster connector started up")
     haimsterDisconnectedMessage: str = Field("Anvil is closing its doors to hamsters...", description="The message to send to the server when the haimster connector is shutting down")
+    maxEgsChatMessageLength: int = Field(100, description="the maximum length of a chat message that will be sent to EGS. EGS currently limits the players to 100 chars - limit haimster aswell")
 
     chatlogViewerEnabled: bool = Field(True, description="enables the chatlog viewer in the shared data tool server. This is just a convenience feature to see the chatlog in a browser")
     chatlogViewerPathSegment: str = Field("/chatlog", description="the path to the chatlog viewer in the url.")

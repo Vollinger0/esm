@@ -13,7 +13,6 @@ from esm.ConfigModels import MainConfig
 from esm.DataTypes import ChatMessage
 from esm.EsmConfigService import EsmConfigService
 from esm.EsmGameChatService import EsmGameChatService
-from esm.EsmLogger import EsmLogger
 from esm.ServiceRegistry import Service, ServiceRegistry
 
 log = logging.getLogger(__name__)

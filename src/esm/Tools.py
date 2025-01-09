@@ -223,3 +223,50 @@ def filterEgsYamlShenanigans(content):
     filteredContent = re.sub(r"- Name:\s*=", "- Name: \"=\"", content, flags=re.MULTILINE)
     return filteredContent
 
+def splitSentence(text, max_length=100) -> List[str]:
+    """
+    Split text into parts of maximum length while preserving whole words.
+    Adds "..." to parts that are followed by more text.
+    
+    Args:
+        text (str): The input text to split
+        max_length (int): Maximum length of each part (default: 100)
+        
+    Returns:
+        list: List of text parts
+    """
+    if len(text) <= max_length:
+        return [text]
+    
+    parts = []
+    words = text.split()
+    current_part = []
+    current_length = 0
+    
+    for word in words:
+        # Check if adding this word (plus space and possible "...") exceeds max_length
+        word_length = len(word)
+        space_length = 1 if current_part else 0
+        ellipsis_length = 3 if len(''.join(words[words.index(word)+1:])) > 0 else 0
+        
+        if current_length + word_length + space_length + ellipsis_length <= max_length:
+            if current_part:
+                current_part.append(' ')
+                current_length += 1
+            current_part.append(word)
+            current_length += word_length
+        else:
+            # Finalize current part
+            if len(''.join(words[words.index(word):])) > 0:
+                current_part.append('...')
+            parts.append(''.join(current_part))
+            
+            # Start new part
+            current_part = [word]
+            current_length = word_length
+    
+    # Add the last part
+    if current_part:
+        parts.append(''.join(current_part))
+    
+    return parts    

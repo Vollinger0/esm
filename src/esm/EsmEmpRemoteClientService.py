@@ -96,7 +96,7 @@ class EsmEmpRemoteClientService:
     def sendServerChat(self, message, quietMode=True) -> subprocess.CompletedProcess:
         """
         sends a "say 'message'" to the server chat via the empremoteclient and returns immediately. 
-        returns the completed process of the remote client.4
+        returns the completed process of the remote client.
 
         Unluckily, this is currently only a server message.
         """

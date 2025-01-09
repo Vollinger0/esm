@@ -12,6 +12,7 @@ import time
 from typing import List, Optional, Union
 
 from pydantic import BaseModel
+from esm import Tools
 from esm.ConfigModels import MainConfig
 from esm.DataTypes import ChatMessage
 from esm.EsmConfigService import EsmConfigService
@@ -225,8 +226,21 @@ class EsmGameChatService:
             log.info(f"Received message from hAImster: \"{message.message}\"")
             self.emprcClient.sendServerChat(f"{message.speaker}: {message.message}")
         else:
-            log.debug(f"Received hAImster response: \"{message.speaker}: {message.message}\"")
-            self.emprcClient.sendMessage(senderType=SenderType.Player, senderName=message.speaker, message=message.message)
+            if len(message.message) <= self.config.communication.maxEgsChatMessageLength:
+                log.debug(f"Received hAImster response: \"{message.speaker}: {message.message}\"")
+                self.emprcClient.sendMessage(senderType=SenderType.Player, senderName=message.speaker, message=message.message)
+            else:
+                # split the message and send it in parts with a delay
+                log.debug(f"Received hAImster response ({len(message.message)} bytes): \"{message.speaker}: {message.message}\"")
+                parts = Tools.splitSentence(message.message, max_length=self.config.communication.maxEgsChatMessageLength)
+                for index, part in enumerate(parts):
+                    #log.debug(f"Sending hAImster response part {index+1}/{len(parts)}: \"{message.speaker}: {part}\"")
+                    self.emprcClient.sendMessage(senderType=SenderType.Player, senderName=message.speaker, message=part)
+                    # if there are more parts following, delay according to the length of the next part
+                    if index < len(parts) - 1:
+                        delay = len(parts[index+1]) * 0.08
+                        #log.debug(f"Delaying for {delay} seconds")
+                        time.sleep(delay)
   
     def sendMessage(self, speaker: str, message: str):
         """Adds a message to the outgoing queue"""

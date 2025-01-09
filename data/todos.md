@@ -4,7 +4,6 @@
 
 ## later
 - [ ] BUG: when shareddata is being downloaded, the tool will NOT shutdown automatically (!) - can lead to issues when EGS shuts down in the meantime.
-- [ ] haimster-connector, if an answer is longer than x, send two messages! => no more obvious bot messages
 - [ ] find out how to trigger the *regeneration* of whole systems? maybe even as a tool
 - [ ] new bash script: that executes the esm commands in a list and deletes them (or renames as "done") afterwards. Great for automating one-shot stuff, like wipes, player fixes, exports, etc.
   - bash script would be more versatile
@@ -51,6 +50,7 @@
 - [ ] proper python-native connector to the EGS server to not have to use the emprc
 
 ## done
+- [x] haimster-connector, if an answer is longer than x, send two messages! => no more obvious bot messages
 - [x] a scenario update should validate all yamls for galaxy generation, since errors here lead to broken savegames! especially the playfield yamls
 - [x] BUG: shared-data tool should not roll back to backup, but just remove the line instead since changes while the tool was running may get lost. ruamel yaml_rt should work well with this
 - [x] new zip, provide the server zip as manual download aswell, along with the instructions for people to "install" manually

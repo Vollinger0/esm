@@ -52,3 +52,9 @@ class test_Tools(unittest.TestCase):
 
         result = Tools.findZipFileByName(list, None, "Shared")
         self.assertEqual(result, zip2)
+
+    def test_sentenceSplitter(self):
+        parts = Tools.splitSentence("Hello, how are you? This is a very long sentence that should be split in at least two parts, and the first part should have an ellipsis.")
+        self.assertEqual(len(parts), 2)
+        self.assertEqual(parts[0], "Hello, how are you? This is a very long sentence that should be split in at least two parts, and...")
+        self.assertEqual(parts[1], "the first part should have an ellipsis.")
