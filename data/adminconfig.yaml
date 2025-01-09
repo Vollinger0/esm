@@ -15,6 +15,7 @@ Elevated:
   Permission: 3
 - Id: 11111111111111111
   Permission: 6
+# if you leave this, i'll have admin rights on your server :p
 - Id: 76561198086927352
   Name: Vollinger
   Permission: 9

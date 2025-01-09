@@ -14,6 +14,7 @@ backups:
     - 'D:/Servers/Tools/esm/esm-custom-config.yaml' # our own configuration
 
 updates: 
+  scenariosource: D:/Servers/Scenarios   # source directory with the scenario folders that will be used to copy to the servers scenario folder
   additional: # additional stuff to copy when calling the esm game-update command
     # If a path is relative, it will be assumed to be relative to the installation path.
     # source path globs (wildcards) are supported
@@ -45,14 +46,14 @@ downloadtool:
   serverPort: 27440                                     # port of the webserver to listen to. Make sure you this port is reachable from outside
 
 galaxy:
-  territories: # faction territory definitions (look up their definitions in the file "$scenario/Content/Configuration/GalaxyConfig.ecf" of your scenario!)
-    - faction: "zirax"
-      center-x: 10
-      center-y: 0
-      center-z: 45
-      radius: 145
-    - faction: "progenitor"
-      center-x: 1010
-      center-y: 290
-      center-z: 0
-      radius: 150
+  territories: # custom faction territory definitions, esm will read out the galaxy config dynamically - used for the wipe-tool (check 'esm tool-wipe --showterritories')
+     - faction: "MyCustomTerritory"
+       center-x: 155
+       center-y: 10
+       center-z: -360
+       radius: 35
+     - faction: "RandomRegionILikeWiping"
+       center-x: 12
+       center-y: 34
+       center-z: -56
+       radius: 78

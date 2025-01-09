@@ -30,7 +30,7 @@ Its meant to run fully automated, so you only need to configure it once, then se
 - tool to clear the "discovered-by" infos from playfields and/or systems
 - purge-tools to delete old playfield files, delete the related structures and templates - this will keep your savegame small if used regularly.
 - some other tools to clean up and remove obsolete files and data
-- update-scenario command that will make sure only changed files are updated (to minimize server file redownloads on scenario updates)
+- update-scenario command that will make sure only changed and valid files are updated (to minimize server file redownloads on scenario updates and avoid broken savegames)
 - can install the game for you (from steam)
 - can update the game for you (from steam) and do additional operations (like copy custom files, etc.)
 - fully integrated to be used with EAH

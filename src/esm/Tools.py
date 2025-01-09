@@ -1,9 +1,11 @@
 import logging
 import os
+import re
 import shutil
 import socket
 import subprocess
 import traceback
+from ruamel.yaml import YAML
 from datetime import timedelta
 from pathlib import Path
 from timeit import default_timer as timer
@@ -11,6 +13,7 @@ from typing import List
 
 from esm.ConfigModels import MainConfig
 from esm.DataTypes import ZipFile
+from esm.exceptions import AdminRequiredException
 
 log = logging.getLogger(__name__)
 
@@ -146,3 +149,77 @@ def findZipFileByName(zipFileList: List[ZipFile], containedIn: str = None, start
         if startsWith and zipFile.name.startswith(startsWith):
             return zipFile
     return None
+
+def validateScenario(sourcePath: Path):
+    """
+        checks if the scenario is valid throws an exception if not
+    """
+    if not sourcePath.is_dir():
+        raise AdminRequiredException(f"'{sourcePath}' is not a directory. Please check the configuration.")
+    validateYamlFiles(sourcePath)
+
+def validateYamlFiles(sourcePath: Path):
+    """
+        checks all the scenario's yaml files
+    """
+    yaml = YAML(typ='safe')
+    # allow duplicate keys since they are all over the place
+    yaml.allow_duplicate_keys = True
+    yaml.allow_unicode = True
+
+    validYamlFiles = 0
+    invalidYamlFiles = 0
+    brokenYamlFiles = 0
+    ignoredYamlFiles = 0
+
+    log.info(f"Validating scenario yaml files")
+    with Timer() as timer:
+        # walk through the whole directory, validate all yaml files
+        for root, dirs, files in sourcePath.walk():
+            for file in files:  
+                if file.endswith(".yml") or file.endswith(".yaml"):
+                    if file.startswith("+"): 
+                        ignoredYamlFiles += 1
+                        continue
+                    path = Path(root).joinpath(file)
+                    try:
+                        loadYamlFile(yaml, Path(path))
+                        validYamlFiles += 1
+                    except Exception as e1:
+                        invalidYamlFiles += 1
+                        log.warning(f"Failed to load file '{path}': {e1} - trying again with preprocessing to remove yaml-illegal shenanigans")
+                        try:
+                            loadYamlFile(yaml, Path(path), preprocess=True)
+                        except Exception as e2:
+                            log.warning(f"Failed to load file again '{path}': {e2} - trying again with 'iso-8859-1' encoding")
+                            try:
+                                loadYamlFile(yaml, Path(path), preprocess=True, encoding="iso-8859-1")
+                            except Exception as e3:
+                                log.error(f"Failed to load file '{path}': {e3} - file must be broken. If it is not, this tool needs to learn what else to accept. Please open an issue on github.")
+                                brokenYamlFiles += 1
+
+    log.info(f"Validation took {timer.elapsedTime}. Ignored files: {ignoredYamlFiles}, valid: {validYamlFiles}, invalid but readable: {invalidYamlFiles}, broken: {brokenYamlFiles}.")
+    if brokenYamlFiles > 0:
+        raise AdminRequiredException(f"Scenario contains broken files. Please fix them and try again.")
+    else:                          
+        log.info(f"The scenarios yaml files should be valid.")
+
+def loadYamlFile(yaml: YAML, filePath: Path, preprocess: bool = False, encoding: str = "utf-8"):
+    """
+        parse the yaml file, return false if it is invalid.
+    """
+    with open(filePath, "r", encoding=encoding) as f:
+        content = f.read()
+        if preprocess:
+            content = filterEgsYamlShenanigans(content)
+        yaml.load(content)
+
+def filterEgsYamlShenanigans(content):
+    """
+        filters out shenanigans from the egs yaml files
+    """
+    # a ton of files have this illegal property value: - Name: =
+    # no yaml parser can ignore this easily, so we have to remove this in this preprocessing
+    filteredContent = re.sub(r"- Name:\s*=", "- Name: \"=\"", content, flags=re.MULTILINE)
+    return filteredContent
+

@@ -1,11 +1,11 @@
 from functools import cached_property
-import logging
 from pathlib import Path
+from typing import List
+import logging
 import socket
 import threading
 import time
 import sys
-from typing import List
 from esm import Tools
 from esm.EsmGameChatService import EsmGameChatService
 from esm.EsmHaimsterConnector import EsmHaimsterConnector
@@ -294,14 +294,11 @@ class EsmMain:
         """
         return self.steamService.updateGame(steam, additionals)
     
-    def updateScenario(self, sourcePathParameter: str = None, dryrun: bool=True):
+    def updateScenario(self, sourcePathParameter: str = None, dryrun: bool=True, validate: bool=True):
         """
         synchronizes the source scenario folder with the games scenario folder.
         only new files or files whose size or content differ are copied, deleted files in the destination are removed.
         """
-        if self.dedicatedServer.isRunning():
-            raise ServerNeedsToBeStopped("Can not update scenario while the server is running. Please stop it first.")
-
         scenarioName = self.config.dedicatedConfig.GameConfig.CustomScenario
 
         if sourcePathParameter is not None:
@@ -313,17 +310,22 @@ class EsmMain:
         if not sourcePath.exists():
             raise AdminRequiredException(f"Path to scenario source not properly configured, '{sourcePath}' does not exist.")
 
-        destinationPath = Path(f"{self.config.paths.install}/Content/Scenarios/{scenarioName}").resolve()
-        if not destinationPath.exists():
-            log.warning(f"Path to game scenarios folder '{destinationPath}' does not exist. Will create the directory assuming the configuration is correct.")
-            destinationPath.mkdir(parents=False, exist_ok=False)
+        if validate:
+            Tools.validateScenario(sourcePath)
 
         if dryrun:
             log.info(f"Would synchronize scenario from '{sourcePath}' to '{destinationPath}'. If you want to actually run it, use --nodryrun.")
         else:
+            if self.dedicatedServer.isRunning():
+                raise ServerNeedsToBeStopped("Can not update scenario while the server is running. Please stop it first.")
+
+            destinationPath = Path(f"{self.config.paths.install}/Content/Scenarios/{scenarioName}").resolve()
+            if not destinationPath.exists():
+                log.warning(f"Path to game scenarios folder '{destinationPath}' does not exist. Will create the directory assuming the configuration is correct.")
+                destinationPath.mkdir(parents=False, exist_ok=False)
+
             log.info(f"Synchronizing scenario from '{sourcePath}' to '{destinationPath}'")
             return self.fileSystem.synchronize(sourcePath, destinationPath)
-
     
     def deleteAll(self):
         """

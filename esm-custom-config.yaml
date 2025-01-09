@@ -30,7 +30,7 @@ backups:
     - 'D:/Servers/Tools/esm/esm-custom-config.yaml' # our own configuration
 
 updates: 
-  scenariosource: 'D:/Servers/Scenarios/ProjectA' # source directory with the scenario files that will be copied to the servers scenario folder.
+  scenariosource: 'D:/Servers/Scenarios' # source directory with the scenario files that will be copied to the servers scenario folder.
   additional: # additional stuff to copy when calling the esm game-update command
     # If a path is relative, it will be assumed to be relative to the installation path.
     # source path globs (wildcards) are supported
@@ -39,7 +39,7 @@ updates:
     # existing files/directories in the target will be overwritten!
     #
     # copy all item icons from the scenario to EAH
-    - {src: 'D:/Servers/Scenarios/ProjectA/SharedData/Content/Bundles/ItemIcons/*.*', dst: 'D:/Servers/Empyrion/DedicatedServer/EmpyrionAdminHelper/Items/'}
+    - {src: 'D:/Servers/Scenarios/Project_A_Season10/SharedData/Content/Bundles/ItemIcons/*.*', dst: 'D:/Servers/Empyrion/DedicatedServer/EmpyrionAdminHelper/Items/'}
     # copy custom sqlqueries to the game config
     - {src: 'D:/Servers/Misc/server_rankings/SqlQueries_disabled.txt', dst: 'D:/Servers/Empyrion/Content/Configuration/SqlQueries.txt'}
 

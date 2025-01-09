@@ -66,10 +66,13 @@ If you are NOT using a ramdisk (and disabled it in the config), skip this sectio
 ESM provides a special tool that ensures that scenario updates stay minimal to avoid players having to download files that didn't change.
 
 - download the scenario from the workshop, copy it to a separate folder on the server, e.g. `D:\Servers\Scenarios\ReforgedEden`
-- configure exactly that path in your custom config at `updates -> scenariosource`
-- run `esm scenario-update` - this will synchronize the scenario files into the game's scenario folder *with the same name*
-- configure the Scenario name in your dedicated.yaml or via EAH.
+- configure the scenario name in your dedicated.yaml or via EAH.
+- configure path to the scenarios in your custom config at `updates -> scenariosource` (e.g. `D:\Servers\Scenarios`)
 
+- run `esm scenario-update --help` to see the tools options
+- then run the tool, this will validate the scenario files, then synchronize the scenario files into the game's scenario folder *with the same name*
+
+The tool will validate the scenario by checking and parsing all the yaml files. If typos in yaml files make them unparseable, the game will still start but fail in creating the affected systems. This leads to all kind of problems, including failed warps, inconsistent playfield files and database entries, structures that disappear while warping and whatnot. Currently, there's no way to fix systems that break with this issue.
 The tool will update any file with changed **content** by comparing them via hashes, it will ignore other attributes or time attributes. All of these 
 trigger the slow re-downloads for nothing, since the game is not overly smart in finding out what changed.
 

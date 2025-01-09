@@ -249,8 +249,10 @@ def updateGame(nosteam, noadditionals):
 @cli.command(name="scenario-update", short_help="updates the configured scenario on the server from the local copy")
 @click.option("--source", metavar="<path>", help="path to the scenario source folder to update the scenario from. Overrides the source path in the configuration")
 @click.option("--nodryrun", is_flag=True, help="If set, will *not* do a dry run of the update.")
-def updateScenario(source, nodryrun):
+@click.option("--novalidation", is_flag=True, help="If set, will *not* validate scenario files. Use with caution, since broken files might lead to a broken galaxy and savegame.")
+def updateScenario(source, nodryrun, novalidation):
     """Updates the scenario on the server using the passed or configured scenario source folder. This will make sure that only files that actually have different content are updated to minimize client downloads.\n
+    This tool will also do a basic validation of the scenario before copying it to avoid broken files breaking your galaxy and/or savegame.\n
     \n
     Since steam does not allow for anonymous downloads, you'll need to get the scenario and copy it to the scenario source folder yourself.\n
     Alternatively, you may define the scenario source path with the --source param\n
@@ -262,7 +264,7 @@ def updateScenario(source, nodryrun):
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)
         esm.checkAndWaitForOtherInstances()
-        esm.updateScenario(source, not nodryrun)
+        esm.updateScenario(source, not nodryrun, not novalidation)
 
 
 @cli.command(name="delete-all", short_help="deletes everything related to the currently configured savegame interactively")

@@ -1,7 +1,6 @@
 # TODOS
 
 ## WIP
-- [ ] a scenario update should validate all yamls for galaxy generation, since errors here lead to broken savegames! especially the playfield yamls
 
 ## later
 - [ ] BUG: when shareddata is being downloaded, the tool will NOT shutdown automatically (!) - can lead to issues when EGS shuts down in the meantime.
@@ -52,6 +51,7 @@
 - [ ] proper python-native connector to the EGS server to not have to use the emprc
 
 ## done
+- [x] a scenario update should validate all yamls for galaxy generation, since errors here lead to broken savegames! especially the playfield yamls
 - [x] BUG: shared-data tool should not roll back to backup, but just remove the line instead since changes while the tool was running may get lost. ruamel yaml_rt should work well with this
 - [x] new zip, provide the server zip as manual download aswell, along with the instructions for people to "install" manually
   - need to find out how eleon calculates the zip name in _shareddatazips, alternatively, make it configurable.
