@@ -77,6 +77,7 @@ communication:  # configuration for the in-game communication
   incomingMessageHostPort: 9000                                                 # the port to bind to to receive messages from haimster. This ip and port must be configured on haimster side aswell.
   haimsterConnectedMessage: Anvil broadcast sent, accepting hamster deliveries  # The message to send to the server when the haimster connector started up
   haimsterDisconnectedMessage: Anvil is closing its doors to hamsters...        # The message to send to the server when the haimster connector is shutting down
+  maxEgsChatMessageLength: 100                                                  # the maximum length of a chat message that will be sent to EGS. EGS currently limits the players to 100 chars - limit haimster aswell
   chatlogViewerEnabled: true                                                    # enables the chatlog viewer in the shared data tool server. This is just a convenience feature to see the chatlog in a browser
   chatlogViewerPathSegment: /chatlog                                            # the path to the chatlog viewer in the url.
   chatlogPath: /chatlog                                                         # the url path to the chatlog served by the haimster server.
