@@ -46,6 +46,7 @@
 - [ ] proper python-native connector to the EGS server to not have to use the emprc
 
 ## done
+- [x] tool to delete the cache, so we can use the esm-taskprocessor to do it for us
 - [x] esm: use the "Import Commands"-Feature of EAH to restart it every now and then?
   TOOL_RESTART.txt https://forum.empyrion-homeworld.net/t/restart-master-please-help-me-gtx-doesn-t-care/29105
   TOOL_STOP.txt https://empyriononline.com/threads/tool-empyrion-server-auto-update-tools-v2-0-1-0.26031/

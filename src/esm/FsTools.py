@@ -122,7 +122,7 @@ class FsTools:
         log.debug(f"process returned: {process}")
 
     @staticmethod
-    def createDirs(dirPaths: [Path]):
+    def createDirs(dirPaths: List[Path]):
         for dirPath in dirPaths:
             FsTools.createDir(dirPath)
 
@@ -202,7 +202,7 @@ class FsTools:
         return bool(re.search(glob_patterns, str(path)))        
     
     @staticmethod
-    def toAbsolutePaths(paths: [Path], parent: Path) -> List[Path]:
+    def toAbsolutePaths(paths: List[Path], parent: Path) -> List[Path]:
         """
         returns the list of paths given, but all relative links will be joined with the given parent path.
         """

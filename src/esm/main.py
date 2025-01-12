@@ -53,6 +53,7 @@ click.rich_click.COMMAND_GROUPS = {
         {
             "name": "Tool commands",
             "commands": [
+                "tool-deletecache",
                 "tool-wipe", 
                 "tool-cleanup-removed-entities", 
                 "tool-cleanup-shared", 
@@ -60,8 +61,8 @@ click.rich_click.COMMAND_GROUPS = {
                 "tool-shareddata-server",
                 "tool-haimster-connector",
                 "tool-export-chatlog",
-                "tool-effectiveconfig",
                 "eah-restart"
+                "tool-effectiveconfig",
             ],
         },
         {
@@ -570,6 +571,18 @@ def triggerEahRestart(eahpath, stop, delay):
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)
         esm.triggerEahRestart(eahpath, stop, delay)
+
+
+@cli.command(name="tool-deletecache", short_help="deletes the ever growing cache. This can be safely done every now and then, since the cache grow to hundreds of GBs.")
+@click.option('--noconfirm', is_flag=True, default=False, help="set to have the tool delete without asking you first - use with care!")
+def deleteGameCache(noconfirm):
+    """
+        Deletes the ever growing cache. This can be safely done every now and then, since the cache grow to hundreds of GBs - the server must be stopped first.
+    """
+    with LogContext():
+        esm = ServiceRegistry.get(EsmMain)
+        esm.checkAndWaitForOtherInstances()
+        esm.deleteGameCache(not noconfirm)
 
 
 @cli.command(name="tool-wipe", short_help="provides a lot of options to wipe empty playfields, check the help for details", no_args_is_help=True)

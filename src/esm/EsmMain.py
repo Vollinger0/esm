@@ -685,6 +685,25 @@ class EsmMain:
         except UserAbortedException:
             log.info(f"User aborted clean up execution.")
 
+    def deleteGameCache(self, confirm: bool = True):
+        """
+            deletes the games ever growing cache completely. Will only work if the server is stopped
+        """
+        if self.dedicatedServer.isRunning():
+            raise ServerNeedsToBeStopped("Can not delete cache if the server is running. Please stop it first.")
+        
+        # mark the game cache for deletion first
+        self.deleteService.deleteGameCache()
+
+        log.info(f"Will start deletion tasks now. Depending on cache size this might take a while")
+        override = "yes" if not confirm else None
+        comitted, elapsedTime = self.fileSystem.commitDelete(override=override)
+        if comitted:
+            log.info(f"Deleting all took {elapsedTime}. You can now start a fresh game.")
+        else:
+            self.fileSystem.clearPendingDeletePaths()
+            log.warning("Deletion cancelled")
+
     def getSavegamePath(self, savegame=None):
         if savegame is None:
             return self.fileSystem.getAbsolutePathTo("saves.games.savegame")
