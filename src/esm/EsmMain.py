@@ -918,4 +918,7 @@ class EsmMain:
             commandFileName = "TOOL_RESTART.txt"
         commandFilePath = importCommandsPath.joinpath(commandFileName).absolute()
         commandFilePath.touch()
-        log.info(f"Created file that should stop EAH - this can take a few minutes to trigger though. File '{commandFilePath}'")
+        # for some reason, eah doesn't always pick up that we created the file the first time, but it works way more reliable if we do twice.
+        time.sleep(5)
+        commandFilePath.touch()
+        log.info(f"Created file that should stop EAH - this can take a few seconds to trigger though. File '{commandFilePath}'")
