@@ -1,21 +1,23 @@
 @echo off
 setlocal enabledelayedexpansion
-:: A simple bash script that will execute tasks in a todo file and move them to the done file
+:: A simple bash script that will execute tasks in a todo file and move them to the done file once finished.
 :: 
 :: To be executed via a scheduling app (like EAH or EWA's timetable) on restarts or similar.
 ::
 :: Perfect for queueing up maintenance tasks in a file, then have them be done automatically on a restart -
 :: especially if the tasks require the server to be shut down, e.g. updating the game, the scenario, wiping territories, etc.
 ::
+:: Only use this for commands that don't take too long, or EAH/EWA might have a problem when it takes too long.
+::
 :: by vollinger 20250112
 
 :: ################################################################################################################
 :: ## CONFIGURATION
-
+::
 :: path to esm tool installation
 :: ************** UNCOMMENT THE FOLLOWING LINE AND MAKE SURE THE PATH POINTS TO THE ESM INSTALLATION **************
 ::set "esmPath=D:\Servers\Tools\esm"
-:: ************** UNCOMMENT THE FOLLOWING LINE AND MAKE SURE THE PATH POINTS TO THE TASK FOLDER **************
+:: **************** UNCOMMENT THE FOLLOWING LINE AND MAKE SURE THE PATH POINTS TO THE TASK FOLDER *****************
 ::set "esmTaskDir=D:\Servers\Tools\esm\tasks"
 
 :: ################################################################################################################
