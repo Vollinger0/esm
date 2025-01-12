@@ -87,7 +87,7 @@ class test_EsmConfigService(unittest.TestCase):
         self.assertEqual(config.context.get("configFilePath"), Path("esm-custom-config.yaml"))
 
         territories = cs.getAvailableTerritories()
-        self.assertEqual(14, len(territories))
+        self.assertEqual(16, len(territories))
         for territory in territories:
             log.info(f"territory: {territory.name}, x: {territory.x/100000}, y: {territory.y/100000}, z: {territory.z/100000}, radius: {territory.radius/100000}")
 
