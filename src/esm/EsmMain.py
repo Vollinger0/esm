@@ -894,3 +894,28 @@ class EsmMain:
             saves the effective config to the given filePath
         """
         self.configService.saveConfig(Path(filePath), overwrite)
+
+    def triggerEahRestart(self, eahPath: str = None, stop: bool = False, delay: int = 60):
+        """
+            Restarts or stops EAH using its import-commands feature. Will only work if its running, of course.
+
+            Rather undocumented feature of EAH, found it on some buried thread of the past.
+        """
+        if eahPath is None:
+            eahPath = self.config.paths.eah
+        pathToEah = Path(eahPath).resolve()
+        if not pathToEah.exists():
+            raise WrongParameterError(f"path to EAH at '{eahPath}' does not exist.")
+        importCommandsPath = pathToEah.joinpath("Import Commands").absolute()
+        if not importCommandsPath.exists():
+            raise AdminRequiredException(f"'Import Commands' folder at '{eahPath}' does not exist but should, is the game installed correctly? Or is EAH not provided with it any more?")
+
+        log.info(f"Waiting {delay} seconds before triggering EAH")
+        time.sleep(delay)
+        if stop:
+            commandFileName = "TOOL_STOP.txt"
+        else:
+            commandFileName = "TOOL_RESTART.txt"
+        commandFilePath = importCommandsPath.joinpath(commandFileName).absolute()
+        commandFilePath.touch()
+        log.info(f"Created file that should stop EAH - this can take a few minutes to trigger though. File '{commandFilePath}'")

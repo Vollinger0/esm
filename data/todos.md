@@ -4,11 +4,10 @@
 
 ## later
 - [ ] find out how to trigger the *regeneration* of whole systems? maybe even as a tool
-- [ ] SDS: a configurable treshold for change size in MB at what point it makes sense to enable the shareddataurl or keep the old method?
 - [ ] new tool that sets a players position on the database directly, to fix broken players when they get yeeted to 0,0,0
-- [ ] backup additional should support globbing
+- [ ] config.backup.additional should support globbing
 - [ ] wipe-tool: find a way to also remove wiped playfields from the player registries to avoid teleportation bugs (since the bug is still not fixed)
-- [ ] fix purge-tools: these need to also delete related data in the database! Probably not difficult to finish implementing, but a PITA to test.
+- [ ] fix purge-tools: these need to also delete related data in the database and cache! Probably not difficult to finish implementing, but a PITA to test.
 - [ ] allow admins to whisper to haimster for instructions
 - [ ] integrate haimster as tool, maybe aswell run integrated? => for the rewrite
 - [ ] needs a big rewrite:
@@ -17,9 +16,9 @@
       - a separate server with a GUI to manage stuff (incl. chatlog)
       - discord integration - with the ability to control esm+haimster from discord, post the chatlog there, etc.
 - [ ] extend documentation, add readme_tools or something to explain the new ones
-- [ ] esm: use the "Import Commands"-Feature of EAH to restart it every now and then? https://forum.empyrion-homeworld.net/t/restart-master-please-help-me-gtx-doesn-t-care/29105
 
 ## optional
+- [ ] SDS: a configurable treshold for change size in MB at what point it makes sense to enable the shareddataurl or keep the old method?
 - [+] how can the haimster chat messages be made visible in discord, EWA, EAH? -> Changed to use sendertype Player, see if that helps => nope. sounds like its not possible.
 - [ ] implement allowMultpleServerInstances switch? Once enabled, do not check for instances of the game before starting, do not start if startmode is set to direct, etc.
 - [+] fix all FS-modifying tests to use the test fixture of the usually existing ramdisk (R:) - or use mocks!
@@ -47,6 +46,9 @@
 - [ ] proper python-native connector to the EGS server to not have to use the emprc
 
 ## done
+- [x] esm: use the "Import Commands"-Feature of EAH to restart it every now and then?
+  TOOL_RESTART.txt https://forum.empyrion-homeworld.net/t/restart-master-please-help-me-gtx-doesn-t-care/29105
+  TOOL_STOP.txt https://empyriononline.com/threads/tool-empyrion-server-auto-update-tools-v2-0-1-0.26031/
 - [x] new bash script: that executes the esm commands in a list and deletes them (or renames as "done") afterwards. Great for automating one-shot stuff, like wipes, player fixes, exports, etc.
   - bash script would be more versatile
   - for regular tasks, we already have everything in place (and EAH or EWA for scheduling)

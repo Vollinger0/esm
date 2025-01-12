@@ -6,6 +6,7 @@ setlocal enabledelayedexpansion
 ::
 :: Perfect for queueing up maintenance tasks in a file, then have them be done automatically on a restart -
 :: especially if the tasks require the server to be shut down, e.g. updating the game, the scenario, wiping territories, etc.
+:: Make sure to check out the '--wait' switch of esm, since this is handy for planning tasks here.
 ::
 :: Only use this for commands that don't take too long, or EAH/EWA might have a problem when it takes too long.
 ::

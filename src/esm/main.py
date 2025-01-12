@@ -60,7 +60,8 @@ click.rich_click.COMMAND_GROUPS = {
                 "tool-shareddata-server",
                 "tool-haimster-connector",
                 "tool-export-chatlog",
-                "tool-effectiveconfig"
+                "tool-effectiveconfig",
+                "eah-restart"
             ],
         },
         {
@@ -551,9 +552,24 @@ def checkRequirements(nonadmin):
 @click.option('--configfile', default="esm-effective-config.yaml", metavar='<file>', help="the config file to save the effective config file to")
 @click.option('--overwrite', default=False, is_flag=True, help="if the file already exists, overwrite it")
 def toolEfectiveConfig(configfile, overwrite):
+    """Will save the effective config based on the default config file as a new file.
+    """
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)
         esm.saveEffectiveConfig(configfile, overwrite)
+
+
+@cli.command(name="eah-restart", short_help="restarts (or stops) EAH using its import-commands feature. Will only work if its running, of course.")
+@click.option('--eahpath', metavar='<path>', help="optional path to alternative eah installation, if you are not using the one provided by the game")
+@click.option('--stop', default=False, show_default=True, is_flag=True, help="if set, will stop eah instead of just restarting it. Beware that this tool can not start eah")
+@click.option('--delay', default=60, show_default=True, help="time to wait until triggering the command. This is helpful so EAH has time to finish the call to esm properly.")
+def triggerEahRestart(eahpath, stop, delay):
+    """
+        Restarts or stops EAH using its import-commands feature. Will only work if its running, of course.
+    """
+    with LogContext():
+        esm = ServiceRegistry.get(EsmMain)
+        esm.triggerEahRestart(eahpath, stop, delay)
 
 
 @cli.command(name="tool-wipe", short_help="provides a lot of options to wipe empty playfields, check the help for details", no_args_is_help=True)
