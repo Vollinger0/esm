@@ -61,8 +61,8 @@ click.rich_click.COMMAND_GROUPS = {
                 "tool-shareddata-server",
                 "tool-haimster-connector",
                 "tool-export-chatlog",
-                "eah-restart"
-                "tool-effectiveconfig",
+                "eah-restart",
+                "tool-effectiveconfig"
             ],
         },
         {
