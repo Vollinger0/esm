@@ -4,14 +4,12 @@
 
 ## later
 - [ ] find out how to trigger the *regeneration* of whole systems? maybe even as a tool
-- [ ] new bash script: that executes the esm commands in a list and deletes them (or renames as "done") afterwards. Great for automating one-shot stuff, like wipes, player fixes, exports, etc.
-  - bash script would be more versatile
-  - for regular tasks, we already have everything in place (and EAH or EWA for scheduling)
 - [ ] SDS: a configurable treshold for change size in MB at what point it makes sense to enable the shareddataurl or keep the old method?
 - [ ] new tool that sets a players position on the database directly, to fix broken players when they get yeeted to 0,0,0
 - [ ] backup additional should support globbing
 - [ ] wipe-tool: find a way to also remove wiped playfields from the player registries to avoid teleportation bugs (since the bug is still not fixed)
 - [ ] fix purge-tools: these need to also delete related data in the database! Probably not difficult to finish implementing, but a PITA to test.
+- [ ] allow admins to whisper to haimster for instructions
 - [ ] integrate haimster as tool, maybe aswell run integrated? => for the rewrite
 - [ ] needs a big rewrite:
       - haimster
@@ -49,6 +47,9 @@
 - [ ] proper python-native connector to the EGS server to not have to use the emprc
 
 ## done
+- [x] new bash script: that executes the esm commands in a list and deletes them (or renames as "done") afterwards. Great for automating one-shot stuff, like wipes, player fixes, exports, etc.
+  - bash script would be more versatile
+  - for regular tasks, we already have everything in place (and EAH or EWA for scheduling)
 - [x] BUG: when shareddata is being downloaded, the tool will NOT shutdown automatically (!) - can lead to issues when EGS shuts down in the meantime.
 - [x] haimster-connector, if an answer is longer than x, send two messages! => no more obvious bot messages
 - [x] a scenario update should validate all yamls for galaxy generation, since errors here lead to broken savegames! especially the playfield yamls

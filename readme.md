@@ -36,6 +36,7 @@ Its meant to run fully automated, so you only need to configure it once, then se
 - fully integrated to be used with EAH
 - supports a direct starting mode (without launcher), when you're running several instances of the game on one machine.
 - various tools to manage the galaxy
+- esm-taskprocessor.bat - a batchfile that will execute arbitrary commands from a file, so you can schedule non-repeating maintenance tasks and fully automate them
 
 ### Other 
 - hAImster integration
