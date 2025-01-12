@@ -28,8 +28,8 @@ Alternatively, you can enable the virtual environment, like below, or create one
   - check the computed requirements, clean up as necessary. In doubt, start with a fresh venv to check if all is there.
 - create a distribution once: `pyinstaller esm.spec --noconfirm`, to make sure it works properly, this will also generate the default config
 - make sure all changes are in the main branch in github
-- create a tag with the version number, e.g. "v0.4.0" and push it
-- the github action "release worklow" will start automatically and create a release with **the same name as the tag**
+- create a tag with the version number, e.g. "0.4.0" and push it
+- the github action "release worklow" will start automatically and create a release with a "v" prefixed, so it ends up as "v0.4.0"
 - edit the release and add documentation about what changed. *especially* required changes in configuration files!
 - profit!
 
