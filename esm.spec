@@ -25,6 +25,7 @@ datafiles = [
         ('emprc/EmpyrionPrime.RemoteClient.Console.exe', None),
         ('data/callesm-async.example.bat', None),
         ('data/callesm-sync.example.bat', None),
+        ('data/esm-taskprocessor.example.bat', None),
         ('data/esm-starter-for-eah.example.cmd', None),
         ('readme.md', None),
         ('data/readme_install.md', None),
@@ -42,7 +43,7 @@ datafiles = [
         ]
 
 def copyDataFiles():
-    # since the datafile-functinality of pyinstaller is sub-optimal, lets copy our datafiles to the dist folder ourselves.
+    # since the datafile-functionality of pyinstaller is sub-optimal, lets copy our datafiles to the dist folder ourselves.
     print("Manually copying datafiles to distfolder")
     workspaceDir = Path(".").resolve()
     print(f"working directory is: {workspaceDir}")
