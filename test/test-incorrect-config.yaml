@@ -36,7 +36,7 @@ paths:
   install: D:\Servers\Empyrion                                                        # the games main installation location
   osfmount: D:\Servers\Tools\OSFMount\osfmount.com                                    # path to osfmount executable needed to mount the ram drive
   peazip: "D:\\Servers\\Tools\\PeaZip\res\bin\az\az.exe"                              # path to peazip used for the static backups
-  epmremoteclient: D:\Servers\Tools\esm\emprc\EmpyrionPrime.RemoteClient.Console.exe  # path to emprc, used to send commands to the server
+  empremoteclient: D:\Servers\Tools\esm\emprc\EmpyrionPrime.RemoteClient.Console.exe  # path to emprc, used to send commands to the server
   eah: D:\Servers\Empyrion\DedicatedServer\EmpyrionAdminHelper                        # path to EAH, for backing up its data
   steamcmd: D:\Servers\Tools\steamcmd.exe                                             # path to steamcmd for installs and updates of the game server
 foldernames:   # names of different folders, you probably do not need to change any of these

@@ -1,10 +1,10 @@
 import importlib
 import logging
-from pathlib import Path
 import random
 import signal
 import rich_click as click
 import sys
+from pathlib import Path
 from esm.EsmLogger import EsmLogger
 from esm.exceptions import EsmException, ExitCodes, WrongParameterError
 from esm.DataTypes import Territory, WipeType
@@ -51,12 +51,25 @@ click.rich_click.COMMAND_GROUPS = {
             "commands": ["game-install", "game-update", "scenario-update", "delete-all"],
         },
         {
-            "name": "Tools commands",
-            "commands": ["tool-wipe", "tool-cleanup-removed-entities", "tool-cleanup-shared", "tool-clear-discovered", "tool-shareddata-server"],
+            "name": "Tool commands",
+            "commands": [
+                "tool-wipe", 
+                "tool-cleanup-removed-entities", 
+                "tool-cleanup-shared", 
+                "tool-clear-discovered", 
+                "tool-shareddata-server",
+                "tool-haimster-connector",
+                "tool-export-chatlog",
+                "tool-effectiveconfig",
+                "eah-restart"
+            ],
         },
         {
             "name": "Experimental - use with caution!",
-            "commands": ["tool-purge-wiped-playfields", "tool-purge-empty-playfields"]
+            "commands": [
+                "tool-purge-wiped-playfields", 
+                "tool-purge-empty-playfields"
+            ]
         }
     ]
 } 
@@ -98,7 +111,7 @@ def showVersion():
     log.info(f"Version is {version}")
 
 
-@cli.command(name="ramdisk-install", short_help="prepares the file system for ramdisk setup")
+@cli.command(name="ramdisk-install", short_help="prepares the file system for ramdisk setup, creates a new savegame if necessary")
 def ramdiskInstall():
     """Prepares the file structure to be used with a ramdisk by moving the savegame to the gamesmirror folder. This will also help you create a new savegame if none exists."""
     with LogContext():
@@ -107,7 +120,7 @@ def ramdiskInstall():
         esm.ramdiskInstall()
 
 
-@cli.command(name="ramdisk-setup", short_help="sets up the ramdisk by mounting the ramdisk and copying the savegame to it")
+@cli.command(name="ramdisk-setup", short_help="sets up the ramdisk by mounting the ramdisk and copying the existing savegame to it")
 def ramdiskSetup():
     """Sets up the ramdisk - this will actually mount it and copy the savegame mirror to it. Use this after a server reboot before starting the server.\n
     \n
@@ -119,7 +132,7 @@ def ramdiskSetup():
         esm.ramdiskSetup()
 
 
-@cli.command(name="ramdisk-remount", short_help="unmounts the ramdisk and calls ramdisk-setup again to mount it")
+@cli.command(name="ramdisk-remount", short_help="unmounts the ramdisk and calls ramdisk-setup to mount it again")
 def ramdiskRemount():
     """Unmounts the ramdisk and sets it up again. This can be useful if you changed the ramdisk size in the configuration and want to apply those changes.\n
     \n
@@ -131,7 +144,7 @@ def ramdiskRemount():
         esm.ramdiskRemount()
 
 
-@cli.command(name="ramdisk-uninstall", short_help="reverts the changes done by ramdisk-install.")
+@cli.command(name="ramdisk-uninstall", short_help="reverts the changes done by ramdisk-install")
 @click.option("--force", is_flag=True, default=False, help="force uninstall even if the configuration says to use a ramdisk")
 def ramdiskUninstall(force):
     """Reverts the changes done by ramdisk-install, moving the savegame back to its original location. Use this if you don't want to run the game on a ramdisk any more.\n
@@ -144,9 +157,15 @@ def ramdiskUninstall(force):
         esm.ramdiskUninstall(force=force)
 
 
-@cli.command(name="server-start", short_help="starts the server (and the synchronizer, if needed). Returns when the server shuts down")
+@cli.command(name="server-start", short_help="starts the server (included the configured helpers). Returns when the server shuts down")
 def startServer():
-    """Starts up the server. If ramdisk usage is enabled, this will automatically start the ram2mirror synchronizer thread too. The script will return when the server shut down.\n
+    """Starts up the server along with all configured esm helpers, like ram synchronizer, haimsterconnector, etc.\n
+    \n
+    If ramdisk usage is enabled, this will automatically start the ram2mirror synchronizer thread. The script will return when the server shut down.\n
+    \n
+    If haimster connector is enabled, this will automatically start the haimster connector thread.\n
+    \n
+    If the shared data tool server is enabled, this will automatically start this aswell\n
     \n
     Stopping this script with CTRL+C will *NOT* shut down the server. If you want to do that do that either via other means or use the server-stop command in a new console.\n
     """
@@ -171,9 +190,9 @@ def stopServer():
             log.error(f"Could not stop server. Is it running at all? {ex}")
 
 
-@cli.command(name="server-resume", short_help="resumes execution of the script if the gameserver is still running. Will start the synchronizer if required.")
+@cli.command(name="server-resume", short_help="resumes execution of esm if the gameserver is still running. Will start the additional helpers if required, as described in server-start")
 def resumeServer():
-    """Looks for a running server and restarts inner processes accordingly (e.g. the ram synchronizer). Will end when the server shuts down, just like server-start."""
+    """Looks for a running server and restarts inner helpers accordingly (e.g. the ram synchronizer). Will end when the server shuts down, just like server-start."""
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)
         esm.checkAndWaitForOtherInstances()
@@ -186,17 +205,17 @@ def resumeServer():
             EsmLogger.console.log("Resume failed")
 
 
-@cli.command(name="backup-create", short_help="creates a fast rolling backup")
+@cli.command(name="backup-create", short_help="creates a fast rolling backup from the savegame mirror")
 def createBackup():
-    """Creates a new rolling mirror backup from the savegame mirror, can be done while the server is running if it is in ramdisk mode."""
+    """Creates a new rolling mirror backup of the savegame mirror, can be done while the server is running if it is in ramdisk mode."""
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)
         esm.createBackup()
 
 
-@cli.command(name="backup-static-create", short_help="creates a static zipped backup")
+@cli.command(name="backup-static-create", short_help="creates a static zipped backup from the latest rolling backup")
 def createStaticBackup():
-    """Creates a new static and zipped backup of the latest rolling backup. Can be done while the server is running if it is in ramdisk mode."""
+    """Creates a new static and zipped backup of the latest rolling backup. Can be done while the server is running whether it is running in ramdisk mode or not."""
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)
         esm.createStaticBackup()
@@ -231,18 +250,23 @@ def updateGame(nosteam, noadditionals):
 @cli.command(name="scenario-update", short_help="updates the configured scenario on the server from the local copy")
 @click.option("--source", metavar="<path>", help="path to the scenario source folder to update the scenario from. Overrides the source path in the configuration")
 @click.option("--nodryrun", is_flag=True, help="If set, will *not* do a dry run of the update.")
-def updateScenario(source, nodryrun):
+@click.option("--novalidation", is_flag=True, help="If set, will *not* validate scenario files. Use with caution, since broken files might lead to a broken galaxy and savegame.")
+def updateScenario(source, nodryrun, novalidation):
     """Updates the scenario on the server using the passed or configured scenario source folder. This will make sure that only files that actually have different content are updated to minimize client downloads.\n
+    This tool will also do a basic validation of the scenario before copying it to avoid broken files breaking your galaxy and/or savegame.\n
     \n
     Since steam does not allow for anonymous downloads, you'll need to get the scenario and copy it to the scenario source folder yourself.\n
     Alternatively, you may define the scenario source path with the --source param\n
+    \n
+    [yellow bold]If you are using the shared data tool, you might want to restart it to recreate the zip after this[/]\n
     \n
     [red bold]The server may not be running for this.[/]\n
     """
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)
         esm.checkAndWaitForOtherInstances()
-        esm.updateScenario(source, not nodryrun)
+        esm.updateScenario(source, not nodryrun, not novalidation)
+
 
 @cli.command(name="delete-all", short_help="deletes everything related to the currently configured savegame interactively")
 @click.option("--doit", is_flag=True, help="must be set to actually do anything.")
@@ -394,12 +418,34 @@ def toolClearDiscovered(dblocation, nodryrun, territory, showterritories, listfi
         esm.clearDiscovered(dblocation=dblocation, dryrun=not nodryrun, territoryName=territory, inputFile=listfile, inputNames=names)
 
 
-@cli.command(name="tool-shareddata-server", short_help="starts a webserver to serve the shared data as a downloadable zip")
+@cli.command(name="tool-export-chatlog", short_help="exports the chatlog of a game to a file")
+@click.option('--dblocation', metavar='<file>', help="location of database file to be used. Defaults to use the current savegames database")
+@click.option('--filename', metavar='<path>', default="chatlog.json", show_default=True, help="the filename to write the chatlog to. The extension will be adjusted according to the file format specified")
+@click.option('--format', default="json", type=click.Choice(["json","text"]), show_default=True, help=f"the format to use for the export")
+@click.option('--excludenames', '-e', multiple=True, type=str, help="a list of sender names to exclude from the chatlog")
+@click.option('--includenames', '-i', multiple=True, type=str, help="a list of sender names to include from the chatlog")
+def toolExportChatlog(dblocation, filename, format, excludenames, includenames):
+    """
+        Exports the chat log for current or given database to a the file system, with the specified filename and format\n
+        \n
+        --includenames and --excludenames mutually exclusive and case sensitive\n
+        You can pass a list of names like this: -e "name1" -e "name2" etc.\n
+        \n
+    """
+    with LogContext():
+        esm = ServiceRegistry.get(EsmMain)
+        if len(excludenames) > 0 and len(includenames) > 0:
+            raise WrongParameterError(f"Either --excludenames or --includenames can be used, but not both at the same time.")
+        esm.exportChatLog(dblocation=dblocation, filename=filename, format=format, excludeNames=list(excludenames), includeNames=list(includenames))
+
+
+@cli.command(name="tool-shareddata-server", short_help="starts a webserver to serve the shared data as a downloadable zip, if you do not want it to start with the main server.")
 @click.option('--resume', is_flag=True, help="if set, just resume the server, do not recreate data or change the configuration.")
-def toolSharedDataServer(resume):
+@click.option('--force-recreate', default=False, is_flag=True, show_default=True, help="if set, will force recreation of the zip files even if esm finds out that it is not necessary")
+def toolSharedDataServer(resume, force_recreate):
     """This will start a webserver to serve the shared data of the configured scenario as a downloadable zip.\n
     \n    
-    The tool will recreate the zip every time it is started, unless you use resume. The server will provide instructions at (/)\n 
+    The tool will check the shared data folder in the scenario and recreate the zip if needed. It will not if you use resume. The server will provide instructions at (/)\n 
     and the download at the configured path.\n
     Make sure to enable the "useSharedDataURLFeature" property in the configuration, if you want to use that feature with it.\n
     This can be started completely separate from the main server and will run in the background until you stop it via CTRL+C.\n
@@ -408,7 +454,32 @@ def toolSharedDataServer(resume):
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)
         esm.setUpLogging(caller="esm-shareddata-server", streamLogLevel=EsmLogger.streamLogLevel, fileLogLevel=EsmLogger.fileLogLevel)
-        esm.startSharedDataServer(resume)
+        with Timer() as timer:
+            with EsmLogger.console.status("Server running...") as status:
+                esm.startSharedDataServer(resume, force_recreate, wait=True)
+            status.stop()
+        log.info(f"Server was running for {timer.elapsedTime} and has stopped now.")
+
+@cli.command(name="tool-haimster-connector", short_help="starts the haimster connector as separate tool")
+def toolHaimsterConnector():
+    """This will start the haimster connector that will connect haimster with the games chat.\n
+    \n
+    Obviously, this tool start ignores the toggle for the haimster integration in the configuration settings.
+    This can be started completely separate from the main server and will run in the background until you stop it via CTRL+C.\n
+    
+    Of course, this requires the server and haimster to be running, so you need to start them first.\n
+
+    Be aware that, if the server shuts down or is otherwise unreachable, the tool will keep trying to communicate and may fail eventually.\n
+    \n
+    """
+    with LogContext():
+        esm = ServiceRegistry.get(EsmMain)
+        esm.setUpLogging(caller="esm-haimster-connector", streamLogLevel=EsmLogger.streamLogLevel, fileLogLevel=EsmLogger.fileLogLevel)
+        with Timer() as timer:
+            with EsmLogger.console.status("Server running...") as status:
+                esm.startHaimsterConnectorAndWait()
+            status.stop()
+        log.info(f"Server was running for {timer.elapsedTime} and has stopped now.")
 
 
 @cli.command(name="terminate-galaxy", short_help="creates a singularity to destroy everything")
@@ -456,7 +527,7 @@ def terminateGalaxy(i_am_darkestwarrior, i_am_vollinger, i_am_kreliz, who_is_kr0
                     status.stop()
                     log.warning("Destruction of the galaxy ended prematurely. Please contact an expert.")
         except:
-            log.error("Looks like someone else is already destroying the world already!")
+            log.error("Looks like someone else is already destroying the world!")
 
 
 @cli.command(name="check-requirements", short_help="checks various configs and requirements")
@@ -477,10 +548,34 @@ def checkRequirements(nonadmin):
         esm.checkRequirements(not nonadmin)
 
 
+@cli.command(name="tool-effectiveconfig", short_help="saves the effective configuration based on the default config file as a new file")
+@click.option('--configfile', default="esm-effective-config.yaml", metavar='<file>', help="the config file to save the effective config file to")
+@click.option('--overwrite', default=False, is_flag=True, help="if the file already exists, overwrite it")
+def toolEfectiveConfig(configfile, overwrite):
+    """Will save the effective config based on the default config file as a new file.
+    """
+    with LogContext():
+        esm = ServiceRegistry.get(EsmMain)
+        esm.saveEffectiveConfig(configfile, overwrite)
+
+
+@cli.command(name="eah-restart", short_help="restarts (or stops) EAH using its import-commands feature. Will only work if its running, of course.")
+@click.option('--eahpath', metavar='<path>', help="optional path to alternative eah installation, if you are not using the one provided by the game")
+@click.option('--stop', default=False, show_default=True, is_flag=True, help="if set, will stop eah instead of just restarting it. Beware that this tool can not start eah")
+@click.option('--delay', default=60, show_default=True, help="time to wait until triggering the command. This is helpful so EAH has time to finish the call to esm properly.")
+def triggerEahRestart(eahpath, stop, delay):
+    """
+        Restarts or stops EAH using its import-commands feature. Will only work if its running, of course.
+    """
+    with LogContext():
+        esm = ServiceRegistry.get(EsmMain)
+        esm.triggerEahRestart(eahpath, stop, delay)
+
+
 @cli.command(name="tool-wipe", short_help="provides a lot of options to wipe empty playfields, check the help for details", no_args_is_help=True)
 @click.option('--listfile', metavar='<file>', help="if this is given, use the text file as input for the system/playfield names. Syntax: <S:Systemname> for systems, <Playfield> for playfields. The textfile has to be a simple list with one string per line containing either a system or a playfield name with no quotes or special characters.")
 @click.option('--territory', metavar='<territory>', type=str, help=f"territory to wipe, use {Territory.GALAXY} for the whole galaxy or any of the configured ones, use --showterritories to get the list")
-@click.option('--showterritories', is_flag=True, help="show the configured territories")
+@click.option('--showterritories', is_flag=True, help="show the configured territories. This will read them from the scenario GalaxyConfig and add the ones from the esm configuration.")
 
 @click.option('--wipetype', type=str, metavar="<wipetype>", help="what type of wipe to apply to the playfields, use --showtypes to get the list of available types")
 @click.option('--showtypes', is_flag=True, help="show the supported wipetypes the game supports")
@@ -508,8 +603,6 @@ def wipeTool(listfile, territory, showterritories, wipetype, showtypes, nocleard
     """
     with LogContext():
         esm = ServiceRegistry.get(EsmMain)  
-        esm.checkAndWaitForOtherInstances()
-
         if showtypes:
             showWipeTypes()
             return
@@ -544,14 +637,36 @@ def wipeTool(listfile, territory, showterritories, wipetype, showtypes, nocleard
             minage = int(minage)
             if minage < 0:
                 raise WrongParameterError(f"minage must be >= 0")
+        
+        if nodryrun:
+            esm.checkAndWaitForOtherInstances()
 
         esm.wipeTool(inputFilePath=inputFilePath, territoryName=territory, wipetype=WipeType.byName(wipetype), cleardiscoveredby=not nocleardiscoveredby, minage=minage, dbLocation=dblocation, dryrun=not nodryrun)
 
 def showConfiguredTerritories(esm: EsmMain):
-    click.echo("Configured custom territories:\n\n" + "\n".join(f"{ct.name}" for ct in esm.configService.getAvailableTerritories()))
-    click.echo(f"\nUse {Territory.GALAXY} to wipe the whole galaxy.\n")
+    """
+        just print out the configured custom territories as a table
+    """
+    territoryList = []
+    for territory in esm.configService.getAvailableTerritories():
+        name = territory.name
+        centerx = territory.x/100000
+        centery = territory.y/100000
+        centerz = territory.z/100000
+        radius = territory.radius/100000
+        territoryList.append(f"{name:<40}\t{centerx:>10}\t{centery:>10}\t{centerz:>10}\t{radius:>10}")
+
+    click.echo(f"Configured custom territories:\n" + 
+               f"{"Territory name":<40}\t{"center x":>10}\t{"center y":>10}\t{"center z":>10}\t{"radius":>10}\n" +
+               f"----------------------------------------------------------------------------------------------------------\n" +
+               f"\n".join(territoryList))
+    click.echo(f"\nUse the name '{Territory.GALAXY}' to wipe the whole galaxy.\n")
+
 
 def showWipeTypes():
+    """
+        just print out the supported wipe types
+    """
     click.echo("Supported wipe types are:\n\n" + "\n".join(f"{wt.value.name}\t\t-\t{wt.value.description}" for wt in list(WipeType))+"\n")
 
 def checkWipeTypeParameter(wipetype):
@@ -585,7 +700,10 @@ def init(fileLogLevel=logging.DEBUG, streamLogLevel=logging.INFO, waitForPort=Fa
     ServiceRegistry.register(esm)
     
 def forcedExit(*args):
-    log.warning("Script execution interrupted via SIGINT. If the server is still running, you may resume execution via the server-resume command")
+    log.warning("Script execution interrupted via SIGINT. Stopping esm services...")
+    esm = ServiceRegistry.get(EsmMain)
+    esm.stop()
+    log.warning("Script execution interrupted via SIGINT. ESM services stopped, if the server is still running, you may resume execution via the server-resume command")
     sys.exit(ExitCodes.SCRIPT_INTERRUPTED)
 
 # main cli entry point.

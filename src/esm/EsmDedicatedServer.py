@@ -8,9 +8,9 @@ from functools import cached_property
 from pathlib import Path, PurePath
 from datetime import datetime
 from esm.ConfigModels import MainConfig
-from esm.exceptions import AdminRequiredException, SafetyException
+from esm.exceptions import AdminRequiredException
 from esm.EsmConfigService import EsmConfigService
-from esm.EsmEpmRemoteClientService import EsmEpmRemoteClientService
+from esm.EsmEmpRemoteClientService import EsmEmpRemoteClientService
 from esm.EsmRamdiskManager import EsmRamdiskManager
 from esm.FsTools import FsTools
 from esm.ServiceRegistry import Service, ServiceRegistry
@@ -40,8 +40,8 @@ class EsmDedicatedServer:
         return ServiceRegistry.get(EsmRamdiskManager)
 
     @cached_property
-    def epmClient(self) -> EsmEpmRemoteClientService:
-        return ServiceRegistry.get(EsmEpmRemoteClientService)
+    def emprcClient(self) -> EsmEmpRemoteClientService:
+        return ServiceRegistry.get(EsmEmpRemoteClientService)
     
     def __init__(self):
         self.gfxMode = self.config.server.gfxMode
@@ -78,7 +78,7 @@ class EsmDedicatedServer:
         arguments2String = lambda arguments: " ".join(str(element) if isinstance(element, Path) else element for element in arguments)
         log.info(f"Starting server with: '{arguments2String(arguments)}' in directory '{self.config.paths.install}'")
         if not self.config.general.debugMode:
-            # we do not use subprocess.run here, since we'll need the PID later and only psutil.Popen provides that.            
+            # we do not use subprocess.run here, since we'll need the PID later and only psutil.Popen provides that. <- unless you just keep the process object, since it provides all methods.           
             process = psutil.Popen(args=arguments)
         else:
             log.debug(f"debug mode enabled!")
@@ -242,7 +242,7 @@ class EsmDedicatedServer:
     
     def sendExitRetryAndWait(self, stoptimeout=0, additionalTimeout=120, interval=5):
         """
-        sends a "saveandexit $stoptimeout" to the server via epmremoteclient, then checks every $interval seconds if it actually stopped
+        sends a "saveandexit $stoptimeout" to the server via empremoteclient, then checks every $interval seconds if it actually stopped
         and retries doing until the stoptimeout*60+additionalTimeout is reached, in which case it raises a TimeOutError
         returns True when successful
         """
@@ -256,7 +256,7 @@ class EsmDedicatedServer:
                 if waitedTime > 0:
                     # don't show this the first time
                     log.debug(f"server didn't stop yet, retrying after {waitedTime} seconds")
-                self.epmClient.sendExit(stoptimeout)
+                self.emprcClient.sendExit(stoptimeout)
                 time.sleep(interval)
                 waitedTime = waitedTime + interval
             else:
@@ -329,6 +329,8 @@ class EsmDedicatedServer:
         """
         make sure the shared data url is available, raise an error if not because this will break the game
         """
+        # invalidate configuration, since it might be outdated if the shared data server is running within the same process.
+        del self.config
         url = self.config.dedicatedConfig.GameConfig.SharedDataURL
         if url is not None:
             if not re.match(pattern="_?https?://", string=url):

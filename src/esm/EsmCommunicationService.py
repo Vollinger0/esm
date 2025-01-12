@@ -1,11 +1,12 @@
-from functools import cached_property
 import logging
 import csv
-from pathlib import Path
 import random
+
+from functools import cached_property
+from pathlib import Path
 from esm.ConfigModels import MainConfig
 from esm.EsmConfigService import EsmConfigService
-from esm.EsmEpmRemoteClientService import EsmEpmRemoteClientService
+from esm.EsmEmpRemoteClientService import EsmEmpRemoteClientService
 from esm.ServiceRegistry import Service, ServiceRegistry
 
 log = logging.getLogger(__name__)
@@ -13,15 +14,15 @@ log = logging.getLogger(__name__)
 @Service
 class EsmCommunicationService:
     """
-    provides methods to for server chat communication
+    provides methods for server chat communication
     """
     @cached_property
     def config(self) -> MainConfig:
         return ServiceRegistry.get(EsmConfigService).config
     
     @cached_property
-    def epmClient(self) -> EsmEpmRemoteClientService:
-        return ServiceRegistry.get(EsmEpmRemoteClientService)
+    def emprcClient(self) -> EsmEmpRemoteClientService:
+        return ServiceRegistry.get(EsmEmpRemoteClientService)
 
     @cached_property    
     def syncChatLines(self):
@@ -42,7 +43,7 @@ class EsmCommunicationService:
         startMessage, endMessage = self.getRandomSyncChatLine()
         self.currentSyncLineStart = self.config.communication.synceventmessageprefix + startMessage
         self.currentSyncLineEnd = self.config.communication.synceventmessageprefix + endMessage
-        self.epmClient.sendMessage(senderName=self.config.communication.synceventname, message=self.currentSyncLineStart)
+        self.emprcClient.sendMessage(senderName=self.config.communication.synceventname, message=self.currentSyncLineStart)
 
     def announceSyncEnd(self):
         """used to announce that a sync ended on the server via chat message"""
@@ -50,7 +51,7 @@ class EsmCommunicationService:
             log.warning("for some reason the endsync line is not set, get a random one then")
             startMessage, endMessage = self.getRandomSyncChatLine()
             self.currentSyncLineEnd = self.config.communication.synceventmessageprefix + endMessage
-        self.epmClient.sendMessage(senderName=self.config.communication.synceventname, message=self.currentSyncLineEnd)
+        self.emprcClient.sendMessage(senderName=self.config.communication.synceventname, message=self.currentSyncLineEnd)
         # reset the current sync lines so the don't get reused.
         self.currentSyncLineStart = None
         self.currentSyncLineEnd = None
@@ -81,4 +82,3 @@ class EsmCommunicationService:
                 else:
                     log.warning(f"{syncEventsFilePath} contains an invalid line at line {index} - it contains {len(row)} columns. Will ignore that line.")
         return data
-    

@@ -79,3 +79,31 @@ class test_EsmDatabaseWrapper(unittest.TestCase):
 
         pfIds = db.retrieveNonRemovedEntities()
         self.assertEqual(len(pfIds), 213)
+
+    def test_retrieve_AllPlayerNames(self):
+        dbPath = Path(f"./test/test.db").resolve()
+        db = EsmDatabaseWrapper(dbPath)
+
+        playerEntities = db.retrieveAllPlayerEntities()
+        self.assertEqual(len(playerEntities), 6)
+        self.assertEqual(playerEntities.get(16142), "Vollinger")
+
+    def test_retrieve_PlayerName(self):
+        dbPath = Path(f"./test/test.db").resolve()
+        db = EsmDatabaseWrapper(dbPath)
+        playerName = db.retrievePlayerName(16142)
+        self.assertEqual(playerName, "Vollinger")
+        
+        # close the connection to see if the cache works
+        db.closeDbConnection()
+        playerName = db.retrievePlayerName(16142)
+        self.assertEqual(playerName, "Vollinger")
+
+    def test_export_chatlog(self):
+        dbPath = Path(f"./test/test.db").resolve()
+        db = EsmDatabaseWrapper(dbPath)
+        chatlog = db.retrieveFullChatlog()
+        self.assertEqual(len(chatlog), 15)
+        self.assertEqual(chatlog[10]['timestamp'], 1696971176.048976)
+        self.assertEqual(chatlog[10]['speaker'], "Vollinger")
+        self.assertEqual(chatlog[10]['message'], "cb:restart")

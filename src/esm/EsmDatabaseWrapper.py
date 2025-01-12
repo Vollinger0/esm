@@ -1,20 +1,28 @@
 from datetime import datetime, timedelta
-from functools import cached_property
+from functools import cached_property, lru_cache
 import functools
 import logging
 from pathlib import Path
 import sqlite3
+import sys
 import time
-from typing import List
+from typing import Dict, List
 from esm.ConfigModels import MainConfig
 from esm.DataTypes import Entity, EntityType, Playfield, SolarSystem
 from esm.EsmConfigService import EsmConfigService
+from esm.EsmFileSystem import EsmFileSystem
 from esm.ServiceRegistry import ServiceRegistry
 
 log = logging.getLogger(__name__)
 
 class EsmDatabaseWrapper:
+    """
+        wrapper for the game database, will manage connections, cursors and provide
+        a ton of functions to query the database already
 
+        Make sure to close the db connection after writing to the db, if you date to use the write mode.
+        Also, writing should NEVER be done while something else is writing to it (the game, e.g.)
+    """
     gameDbPath: str
     dbConnectString: str = None
     dbConnection: sqlite3.Connection = None
@@ -26,8 +34,15 @@ class EsmDatabaseWrapper:
     def config(self) -> MainConfig:
         return ServiceRegistry.get(EsmConfigService).config
     
-    def __init__(self, gameDbPath = None, readOnly=True) -> None:
+    @cached_property
+    def fileSystem(self) -> EsmFileSystem:
+        return ServiceRegistry.get(EsmFileSystem)
+    
+    def __init__(self, gameDbPath: Path = None, readOnly=True) -> None:
         self.readOnly = readOnly
+        if gameDbPath is None:
+            # use global db from config
+            gameDbPath = self.fileSystem.getAbsolutePathTo("saves.games.savegame.globaldb")
         self.gameDbPath = gameDbPath
         self.setGameDbPath(gameDbPath)
     
@@ -58,9 +73,8 @@ class EsmDatabaseWrapper:
     
     def getGameDbConnection(self) -> sqlite3.Connection:
         if not self.dbConnection:
-            log.debug(f"Opening game database at '{self.gameDbPath}'")
             dbConnectString = self.getGameDbString()
-            log.debug(f"using database connect string '{dbConnectString}'")
+            log.info(f"Opening game database at '{dbConnectString}'")
             self.dbConnection = sqlite3.connect(dbConnectString, uri=True)
             self.connectTime = time.time()
         return self.dbConnection
@@ -101,7 +115,7 @@ class EsmDatabaseWrapper:
         log.debug(f"discovered playfields for the given solarsystems: {len(discoveredPlayfields)}")
         return discoveredPlayfields
 
-    @functools.lru_cache
+    @lru_cache
     def retrieveSSsAll(self) -> List[SolarSystem]:
         """returns all solar systems, no exceptions"""
         solarsystems = []
@@ -113,7 +127,7 @@ class EsmDatabaseWrapper:
         log.debug(f"solar systems found: {len(solarsystems)}")
         return solarsystems
 
-    @functools.lru_cache
+    @lru_cache
     def retrievePFsWithPlayerStructures(self) -> List[Playfield]:
         log.debug("retrieving playfields containing player structures")
         pfsWithStructures = []
@@ -129,7 +143,7 @@ class EsmDatabaseWrapper:
         log.debug(f"playfields containing player structures: {len(pfsWithStructures)}")
         return pfsWithStructures
 
-    @functools.lru_cache
+    @lru_cache
     def retrievePFsWithPlaceables(self) -> List[Playfield]:
         log.debug("finding playfields containing terrain placeables")
         pfsWithPlaceables = []
@@ -140,7 +154,7 @@ class EsmDatabaseWrapper:
         log.debug(f"playfields containing terrain placeables: {len(pfsWithPlaceables)}")
         return pfsWithPlaceables
 
-    @functools.lru_cache
+    @lru_cache
     def retrievePFsWithPlayers(self) -> List[Playfield]:
         """retrieve all playfields that (should) contain players.
         actually, select all playfields where players have last changed to, since this seems the only way to find out.
@@ -161,7 +175,7 @@ class EsmDatabaseWrapper:
         log.debug(f"playfields containing players: {len(pfsWithPlayers)}")
         return pfsWithPlayers
 
-    @functools.lru_cache
+    @lru_cache
     def retrievePFsAllNonEmpty(self) -> List[Playfield]:
         """this will get all non empty playfields from the db, excluding pfs with structures, placeables or players"""
         pfsWithPlayerStructures = self.retrievePFsWithPlayerStructures()
@@ -235,7 +249,7 @@ class EsmDatabaseWrapper:
         log.debug(f"found {len(playfields)} playfields")
         return playfields
     
-    @functools.lru_cache
+    @lru_cache
     def retrieveLatestGametime(self):
         """
         returns the current gametick and stoptime from the serverstartstop table. 
@@ -324,7 +338,7 @@ class EsmDatabaseWrapper:
         # return the last of the loop (which will be the first sst entry, being the oldest times)
         return startticks, stoptime
     
-    @functools.lru_cache
+    @lru_cache
     def retrievePurgeableRemovedEntities(self) -> List[Entity]:
         """return all entities that are marked as removed from the db
 
@@ -340,7 +354,7 @@ class EsmDatabaseWrapper:
             entities.append(Entity(id=row[0], pfid=row[1], name=row[2], type=EntityType.byNumber(row[3]), isremoved=True))
         return entities
     
-    @functools.lru_cache
+    @lru_cache
     def countDiscoveredPlayfields(self):
         """
         just return the amount of discovered playfields
@@ -350,7 +364,7 @@ class EsmDatabaseWrapper:
         cursor.execute(query)
         return cursor.fetchone()[0]
     
-    @functools.lru_cache
+    @lru_cache
     def retrieveNonRemovedEntities(self) -> List[str]:
         """
         retrieve all entityids of non removed entities
@@ -377,3 +391,183 @@ class EsmDatabaseWrapper:
         olderPlayfields = self.retrievePFsUnvisitedSince(maximumGametick)
         log.debug(f"found {len(olderPlayfields)} playfields unvisited since {stoptime}")
         return olderPlayfields
+    
+    def retrieveAllPlayerEntities(self) -> Dict[int, str]:
+        """
+        Retrieve all entities of type 1 (Players) from the Entities table and return them as an ID-name map.
+        Args:
+            database_path (str): Path to the SQLite database file
+        Returns:
+            Dict[int, str]: Dictionary mapping entity IDs to their names
+        """
+        entity_map = {}
+        try:
+            cursor = self.getGameDbCursor()
+            cursor.execute("SELECT entityId, name FROM Entities WHERE etype = 1")
+            results = cursor.fetchall()
+            entity_map = {entity_id: name for entity_id, name in results}
+        except sqlite3.Error as e:
+            log.error(f"Database error: {e}")
+        except Exception as e:
+            log.error(f"Error: {e}")
+        return entity_map
+    
+    @lru_cache
+    def retrievePlayerName(self, entityId: int) -> str:
+        """
+        Retrieve the entity of type 1 (Players) from the Entities table and return it as an ID-name map.
+        Since entityIds should be unique their name should never change, especially for players (maybe if they rename in steam but who cares)
+        Args:
+            entityId (str): ID of the entity
+        Returns:
+            str: Name of the entity or None if not found 
+        """
+        try:
+            cursor = self.getGameDbCursor()
+            cursor.execute(f"SELECT entityId, name FROM Entities WHERE entityId = {entityId} AND etype = 1")
+            results = cursor.fetchall()
+            if results is None or len(results) < 1:
+                return None
+            if len(results) > 1:
+                log.warning(f"Found more than one player with entityId {entityId}, will return the first hit: {results}")
+            id, name = results[0]
+            return name
+        except sqlite3.Error as e:
+            log.error(f"Database error: {e}")
+        except Exception as e:
+            log.error(f"Error: {e}")
+    
+    def retrieveFullChatlog(self):
+        """
+            create a chatlog from the game's database chat, this should probably only be used when the game is stopped
+            
+            some infos on that chatmessage table:
+            * channel == 0: global chat, the rest is not important for the public chatlog :)
+            * if sendertype == 4 && sendername is set => message from an admin, probably from discord or EAH
+            * if sendertype == 3, server messages and hamster news => can be filtered out!
+            * if sendertype == 2 && sendername is set => message from admin, probably EWA
+            * if sendertype == 1 => normal chat.
+
+            The query is very sophisticated, since it filters out potential duplicate messages from players with different
+            entity ids (and names). Obviously the game messes up and uses the same entities for different players sometimes
+            which lead to a mess in simple joins over the chat table, so we have to filter them out here.
+        """
+        # WITH RankedLogoff AS (
+        # SELECT 
+        #     cm.cmid, 
+        #     cm.gametime, 
+        #     ll.playerid, 
+        #     cm.senderentityid, 
+        #     ll.playername, 
+        #     cm.text, 
+        #     cm.sendertype,
+        #     cm.sendername,
+        #     cm.channel, 
+        #     ROW_NUMBER() OVER (PARTITION BY cm.cmid ORDER BY cm.gametime ASC, ll.playername ASC) AS RowNum
+        # FROM ChatMessages cm
+        # LEFT JOIN Entities e ON cm.senderentityid = e.entityid
+        # LEFT JOIN LoginLogoff ll ON e.entityid = ll.entityid
+        # WHERE cm.channel = 0 
+        # AND (
+        #     (cm.sendertype = 4 AND cm.sendername is not null)
+        #     OR (cm.sendertype = 2 AND cm.sendername is not null)
+        #     OR cm.sendertype = 1
+        #     )
+        # )
+        # SELECT 
+        #     cmid, gametime, playerid, senderentityid, playername, text, sendertype, sendername, channel
+        # FROM RankedLogoff
+        # WHERE RowNum = 1
+        # ORDER BY gametime ASC;
+        cursor = self.getGameDbCursor()
+
+        # this will get all the chat messages, with the player names and gametimes added
+        cursor.execute("""
+            WITH RankedLogoff AS (
+            SELECT 
+                cm.cmid, 
+                cm.gametime, 
+                ll.playerid, 
+                cm.senderentityid, 
+                ll.playername, 
+                cm.text, 
+                cm.sendertype,
+                cm.sendername,
+                cm.channel, 
+                ROW_NUMBER() OVER (PARTITION BY cm.cmid ORDER BY cm.gametime ASC, ll.playername ASC) AS RowNum
+            FROM ChatMessages cm
+            LEFT JOIN Entities e ON cm.senderentityid = e.entityid
+            LEFT JOIN LoginLogoff ll ON e.entityid = ll.entityid
+            WHERE cm.channel = 0 
+            AND (
+                (cm.sendertype = 4 AND cm.sendername is not null)
+                OR (cm.sendertype = 2 AND cm.sendername is not null)
+                OR cm.sendertype = 1
+                )
+            )
+            SELECT 
+                cmid, gametime, playerid, senderentityid, playername, text, sendertype, sendername, channel
+            FROM RankedLogoff
+            WHERE RowNum = 1
+            ORDER BY gametime ASC;
+        """)
+        rows = cursor.fetchall()
+        chatLog = []
+        for cmid, gametime, playerid, senderentityid, playername, text, sendertype, sendername, channel in rows:
+            # need to calculate the timestamps out of the gameticks
+            timestamp = self.getTimeStampFromGameTick(gametime)
+            # if ll.playername is not set, use cm.sendername
+            speaker = playername if playername is not None else sendername if sendername is not None else "(unknown)"
+            message = text
+            line = {"timestamp": timestamp, "speaker": speaker, "message": message}
+            chatLog.append(line)
+        return chatLog
+    
+    
+    def getTimeStampFromGameTick(self, gametick: int) -> float:
+        """
+            returns the timestamp that corresponds to a given gametick
+            this will check the entries in the ServerStartStop table, calculate
+            the average gametick per time slice and then use that to calculate the timestamp
+        """
+        # get time slices from the ServerStartStop table
+        serverStartStopSlices = self.getServerStartStopSlices()
+        # find the slice that contains the given gametick
+        for slice in serverStartStopSlices:
+            if gametick >= slice["startticks"] and gametick <= slice["stopticks"]:
+                # calculate the average seconds per gametick
+                secondsPerGameTick = (slice["stoptime"] - slice["starttime"]).total_seconds() / (slice["stopticks"] - slice["startticks"])
+                # calculate the timestamp
+                timestamp = slice["starttime"] + timedelta(seconds=(gametick - slice["startticks"]) * secondsPerGameTick)
+                return timestamp.timestamp()
+    
+    @functools.lru_cache    
+    def getServerStartStopSlices(self):
+        """
+            return the server start stop slices
+        """
+        cursor = self.getGameDbCursor()
+        cursor.execute("""
+                       select sid, startticks, stopticks, starttime, stoptime
+                       from ServerStartStop
+                       order by sid asc
+                       """)
+        rows = cursor.fetchall()
+        serverStartStopSlices = []
+        index = -1
+        for sid, startticks, stopticks, starttime, stoptime in rows:
+            index += 1
+            if stoptime is None:
+                # this probably means the server crashed, and stopticks and stoptime are null. We'll have to copy the values from the next entry (if there is one), assuming this kinda when the server stopped.
+                if index < len(rows) - 1:
+                    nextSid, nextStartticks, nextStopticks, nextStarttime, nextStoptime = rows[index + 1]
+                    stopticks = nextStartticks
+                    stoptime = nextStarttime
+                else:
+                    # if there is no next entry, we'll just use the current time and max integer for the stopticks
+                    stopticks = sys.maxsize
+                    stoptime = datetime.now().strftime('%Y-%m-%d %H:%M:%S') # we could use the file last modification date ... but its getting too complicated now ;)
+            startdatetime = datetime.strptime(starttime, '%Y-%m-%d %H:%M:%S')
+            stopdatetime = datetime.strptime(stoptime, '%Y-%m-%d %H:%M:%S')
+            serverStartStopSlices.append({"sid": sid, "startticks": int(startticks), "stopticks": int(stopticks), "starttime": startdatetime, "stoptime": stopdatetime})
+        return serverStartStopSlices

@@ -326,18 +326,18 @@ class test_FsTools(unittest.TestCase):
 
         userentries = [
             f"{parentDir}/requirements.txt",
-            f"{parentDir}/h*.csv",
-            "../*esm*/esm*.example.yaml",
-            "../*esm*/esm*.example.cmd",
+            f"{parentDir}/data/h*.csv",
+            "../*esm*/data/esm*.example.yaml",
+            "../*esm*/data/esm*.example.cmd",
             "../*esm/*.toml",
             "./emprc/*"
             ]
         expected = [
-            f"{parentDir}\\esm-custom-config.example.yaml",
-            f"{parentDir}\\esm-dedicated.example.yaml",
-            f"{parentDir}\\esm-default-config.example.yaml",
-            f"{parentDir}\\esm-starter-for-eah.example.cmd",
-            f"{parentDir}\\hamster_sync_lines.csv",
+            f"{parentDir}\\data\\esm-custom-config.example.yaml",
+            f"{parentDir}\\data\\esm-dedicated.example.yaml",
+            f"{parentDir}\\data\\esm-default-config.example.yaml",
+            f"{parentDir}\\data\\esm-starter-for-eah.example.cmd",
+            f"{parentDir}\\data\\hamster_sync_lines.csv",
             f"{parentDir}\\pyproject.toml",
             f"{parentDir}\\requirements.txt",
             f"{parentDir}\\emprc\\EmpyrionPrime.RemoteClient.Console.exe"

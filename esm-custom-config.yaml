@@ -2,7 +2,7 @@ paths:
   install: 'D:\Servers\Empyrion\'
   osfmount: 'D:\Servers\Tools\OSFMount\osfmount.com'
   peazip: 'D:\Servers\Tools\PeaZip\res\bin\7z\7z.exe'
-  epmremoteclient: 'D:\Servers\Tools\esm\emprc\EmpyrionPrime.RemoteClient.Console.exe'
+  empremoteclient: 'D:\Servers\Tools\esm\emprc\EmpyrionPrime.RemoteClient.Console.exe'
   eah: 'D:\Servers\Empyrion\DedicatedServer\EmpyrionAdminHelper'
   steamcmd: 'D:\Servers\Tools\steamcmd\steamcmd.exe'
 
@@ -17,6 +17,12 @@ ramdisk:
 
 communication:
   announceSyncProbability: 0.1
+
+  haimsterEnabled: True                  # enables haimster integration, which requires a running haimster server
+  haimsterHost: http://192.168.1.102:8000     # the url to the haimster server
+  playerNameCacheTime: 300                # time in seconds to cache player names for, since they need to be retrieved from the database
+  incomingMessageHostIp: 0.0.0.0          # the host url to bind our http server to to receive messages from haimster. This ip and port must be configured on haimster side aswell.
+  incomingMessageHostPort: 9000           # the port to bind to to receive messages from haimster. This ip and port must be configured on haimster side aswell.
   
 backups:
   additionalBackupPaths: # list of full paths to source files or directories to backup additionally. Those will all end up in the folder "Additional" in the backup.
@@ -24,7 +30,7 @@ backups:
     - 'D:/Servers/Tools/esm/esm-custom-config.yaml' # our own configuration
 
 updates: 
-  scenariosource: 'D:/Servers/Scenarios/ProjectA' # source directory with the scenario files that will be copied to the servers scenario folder.
+  scenariosource: 'D:/Servers/Scenarios' # source directory with the scenario files that will be copied to the servers scenario folder.
   additional: # additional stuff to copy when calling the esm game-update command
     # If a path is relative, it will be assumed to be relative to the installation path.
     # source path globs (wildcards) are supported
@@ -33,7 +39,7 @@ updates:
     # existing files/directories in the target will be overwritten!
     #
     # copy all item icons from the scenario to EAH
-    - {src: 'D:/Servers/Scenarios/ProjectA/SharedData/Content/Bundles/ItemIcons/*.*', dst: 'D:/Servers/Empyrion/DedicatedServer/EmpyrionAdminHelper/Items/'}
+    - {src: 'D:/Servers/Scenarios/Project_A_Season10/SharedData/Content/Bundles/ItemIcons/*.*', dst: 'D:/Servers/Empyrion/DedicatedServer/EmpyrionAdminHelper/Items/'}
     # copy custom sqlqueries to the game config
     - {src: 'D:/Servers/Misc/server_rankings/SqlQueries_disabled.txt', dst: 'D:/Servers/Empyrion/Content/Configuration/SqlQueries.txt'}
 
@@ -43,91 +49,15 @@ deletes:
     # if a path is relative, it will be assumed to be relative to the installation path.
     - 'Content/Mods/EncryptoidModPack/Mods/AdminTetherport/Database'
     
-downloadtool:
-  useSharedDataURLFeature: True
-  #customExternalHostNameAndPort: 'https://my-server.com:12345'
-  #customSharedDataURL: 'https://my-server.com:54321/SharedData.zip'
-  #autoEditDedicatedYaml: False
-
 galaxy:
-  territories: #faction Territory Definitions (look up their definitions in the file "$scenario/Content/Configuration/GalaxyConfig.ecf" of your scenario)
-    - faction: "blade"
-      center-x: 155
-      center-y: 10
-      center-z: -360
-      radius: 35
-    - faction: "zirax"
-      center-x: 10
-      center-y: 0
-      center-z: 45
-      radius: 145
-    - faction: "polaris"
-      center-x: 135
-      center-y: 0
-      center-z: 295
-      radius: 90
-    - faction: "farr"
-      center-x: 138
-      center-y: 0
-      center-z: 415
-      radius: 40
-    - faction: "trader"
-      center-x: 310
-      center-y: 4
-      center-z: -126
-      radius: 70
-    - faction: "colonists"
-      center-x: -200
-      center-y: 0
-      center-z: 350
-      radius: 125
-    - faction: "pirates"
-      center-x: 375
-      center-y: 0
-      center-z: 60
-      radius: 75
-    - faction: "kriel"
-      center-x: -750
-      center-y: 100
-      center-z: 0
-      radius: 75
-    - faction: "wastelanders"
-      center-x: -100
-      center-y: 0
-      center-z: -350
-      radius: 160
-    - faction: "drone"
-      center-x: -625
-      center-y: -25
-      center-z: 625
-      radius: 275
-    - faction: "tesch"
-      center-x: -290
-      center-y: 23
-      center-z: -40
-      radius: 50
-    - faction: "legacy"
-      center-x: 360
-      center-y: 50
-      center-z: -1150
-      radius: 250
-    - faction: "zirax-2"
-      center-x: 200
-      center-y: 20
-      center-z: -860
-      radius: 100
-    - faction: "solitude"
-      center-x: -418
-      center-y: 0
-      center-z: -258
-      radius: 125
-    - faction: "progenitor"
-      center-x: 1010
-      center-y: 290
-      center-z: 0
-      radius: 150
-    - faction: "anvil"
-      center-x: 210
-      center-y: 10
-      center-z: -360
-      radius: 35
+  territories: # custom faction territory definitions, esm will read out the galaxy config dynamically
+     - faction: "MyCustomTerritory"
+       center-x: 155
+       center-y: 10
+       center-z: -360
+       radius: 35
+     - faction: "RandomRegionILikeWiping"
+       center-x: 12
+       center-y: 34
+       center-z: -56
+       radius: 78

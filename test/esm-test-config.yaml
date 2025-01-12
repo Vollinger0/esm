@@ -56,7 +56,7 @@ paths:
   # the following are only used to call, so we can use the real ones.
   osfmount: 'D:\Servers\Tools\OSFMount\osfmount.com'
   peazip: 'D:\Servers\Tools\PeaZip\res\bin\7z\7z.exe'
-  epmremoteclient: 'D:\Servers\Tools\\EmpyrionPrime.RemoteClient.Console.exe'
+  empremoteclient: 'D:\Servers\Tools\\EmpyrionPrime.RemoteClient.Console.exe'
   steamcmd: 'D:\Servers\Tools\steamcmd\steamcmd.exe'
 
 foldernames:
@@ -82,7 +82,7 @@ communication:
   announceSyncEvents: True # True|False, if true, sync events (syncStart, syncEnd) will be announced in the chat
   announceSyncProbability: 1.0 # probability factor that a sync will be announced at all, this is to avoid it being too spammy. something between 0.0 and 1.0
   synceventname: 'Hamster-AI' # the name to be used when announcing a sync on the server, may contain bb-code for colors and such
-  synceventsfile: 'hamster_sync_lines.csv' #should contain a csv file with two columns, each containing the first and second sentence. The first will be used when starting a sync, the secnd when its finished.
+  synceventsfile: 'data/hamster_sync_lines.csv' #should contain a csv file with two columns, each containing the first and second sentence. The first will be used when starting a sync, the secnd when its finished.
 
 robocopy:
   encoding: 'ansi' #depending on the shell used, it may be necessary to change this to ansi, utf-8, cp1252 or something. This will be passed to subprocess.run(...encoding=...)

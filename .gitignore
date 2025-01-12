@@ -20,3 +20,9 @@ temp
 wwwroot/*.zip
 wwwroot/index.html
 esm-custom-config_test.yaml
+/.pytest_cache
+/chatlog.json
+/chatlog.text
+/esm-effective-config.yaml
+/private.md
+/wwwroot/shareddata.md5

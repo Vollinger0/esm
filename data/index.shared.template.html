@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="styles.css">
+    <title>Shared Data Instructions</title>
+</head>
+<body>
+    <header>
+        <h3>Extract the zip file content into your <pre>%Empyrion%\Saves\Cache\$CACHEFOLDERNAME</pre> folder and copy the zip file to <pre>_SharedDataZips</pre</h3>
+    </header>
+    <section>
+        <ol>
+            <li>Download the zip file: <a href="$SHAREDDATAAUTOZIPFILE" download>$SHAREDDATAAUTOZIPFILE</a></li>
+            <li>Create the folder <pre>%Empyrion%\Saves\Cache\$CACHEFOLDERNAME</pre></li>
+            <li>Locate the downloaded zip file in File Explorer.</li>
+            <li>Right-click on the zip file and select "Extract All..."</li>
+            <li>As destination, navigate to your Empyrion installation, then select the "Saves" folder, then the "Cache" and the created folder</li>
+            <li>Make sure zip file's content including all folders ends up in there properly.</li>
+            <li>You should now have a folder like this:<pre>%Empyrion%\Saves\Cache\$CACHEFOLDERNAME\SharedData</pre></li>
+            <li>Copy/move the downloaded file to the folder <pre>%Empyrion%\Saves\Cache\_SharedDataZips</pre></li>
+            <li>Please ask other players or an admin about the filename that the zipfile has to be. If anyone is on the server already, they should check their folder and look for the newest zip file.</li>
+            <li>Rename the latter to <pre>XXXXXXXXXXXXX.zip</pre>XXXXXXXXXXXXX being the file name you found out in the step above which consists of a ton of numbers only.</li>
+        </ol>
+    </section>
+    <footer>
+        <p><div style="display: inline;" onclick="window.location.href='/chatlog';">&copy;</div> 2024 Vollinger</p>
+    </footer>
+</body>
+</html>

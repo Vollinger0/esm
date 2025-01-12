@@ -1,11 +1,14 @@
 from functools import cached_property
-import logging
 from pathlib import Path
+from typing import List
+import logging
 import socket
+import threading
 import time
 import sys
-from typing import List
 from esm import Tools
+from esm.EsmGameChatService import EsmGameChatService
+from esm.EsmHaimsterConnector import EsmHaimsterConnector
 from esm.EsmSharedDataServer import EsmSharedDataServer
 from esm.exceptions import AdminRequiredException, ExitCodes, RequirementsNotFulfilledError, ServerNeedsToBeStopped, UserAbortedException, WrongParameterError
 from esm.ConfigModels import MainConfig
@@ -13,7 +16,7 @@ from esm.DataTypes import Territory, WipeType
 from esm.EsmLogger import EsmLogger
 from esm.FsTools import FsTools
 from esm.Tools import Timer, askUser, mergeDicts, monkeyPatchAllFSFunctionsForDebugMode
-from esm.EsmEpmRemoteClientService import EsmEpmRemoteClientService
+from esm.EsmEmpRemoteClientService import EsmEmpRemoteClientService
 from esm.EsmConfigService import EsmConfigService
 from esm.EsmBackupService import EsmBackupService
 from esm.EsmDeleteService import EsmDeleteService
@@ -66,8 +69,16 @@ class EsmMain:
         return ServiceRegistry.get(EsmSharedDataServer)
     
     @cached_property
+    def haimsterConnector(self) -> EsmHaimsterConnector:
+        return ServiceRegistry.get(EsmHaimsterConnector)
+    
+    @cached_property
     def configService(self) -> EsmConfigService:
         return ServiceRegistry.get(EsmConfigService)
+    
+    @cached_property
+    def gameChatService(self) -> EsmGameChatService:
+        return ServiceRegistry.get(EsmGameChatService)
     
     @cached_property
     def config(self) -> MainConfig:
@@ -138,14 +149,22 @@ class EsmMain:
         Will start the server (and the ramdisk synchronizer, if ramdisk is enabled). Function returns once the server has been started.
         """
         if self.dedicatedServer.isRunning():
-            log.warning("A server is already running!")
+            log.warning("A server is already running! You may want to use the server resume operation to connect back to it.")
             raise ServerNeedsToBeStopped("A server is already running!")
-
-        self.startSynchronizer()
+        
+        self.onStartUp(haimster=False)
         
         # start the server
         log.info(f"Starting the dedicated server")
-        return self.dedicatedServer.startServer()
+        serverProcess = self.dedicatedServer.startServer()
+
+        # start the haimster connector after the server has started. this is to make sure that the server has started before
+        def startHaimsterConnectorDelayed():
+            time.sleep(self.config.communication.haimsterStartupDelay)
+            self.startHaimsterConnector()
+        threading.Thread(target=startHaimsterConnectorDelayed, daemon=True).start()
+
+        return serverProcess
 
     def startSynchronizer(self):
         """
@@ -164,11 +183,41 @@ class EsmMain:
         """
         while self.dedicatedServer.isRunning():
             time.sleep(checkInterval)
+
+    def onStartUp(self, haimster: bool=True):
+        """
+        Will start the synchronizer and the shared data server if needed
+        """
+        if self.config.downloadtool.startWithMainServer:
+            self.startSharedDataServer(wait=False)
+
+        self.startSynchronizer()
+        if haimster:
+            self.startHaimsterConnector()
+
+    def stop(self):
+        """
+            will stop esm and all related services, but not the game server
+        """
+        if self.config.communication.haimsterEnabled:
+            self.haimsterConnector.shutdown()
+
+        if self.config.general.useRamdisk:
+            # stop synchronizer
+            log.info(f"Stopping synchronizer thread")
+            self.ramdiskManager.stopSynchronizer()
+            log.info(f"Synchronizer thread stopped")
+
+        if self.config.downloadtool.startWithMainServer:
+            self.sharedDataServer.stop()
     
     def onShutdown(self):
         """
-        Will stop the synchronizer, then stop the server and do a last sync from ram 2 mirror
+            Will stop the synchronizer, then stop the server and do a last sync from ram 2 mirror
         """
+        if self.config.communication.haimsterEnabled:
+            self.haimsterConnector.shutdown()
+
         if self.config.general.useRamdisk:
             # stop synchronizer
             log.info(f"Stopping synchronizer thread")
@@ -181,6 +230,9 @@ class EsmMain:
             log.info(f"Sending server the saveandexit command.")
             self.dedicatedServer.sendExitRetryAndWait(interval=self.config.server.sendExitInterval, additionalTimeout=self.config.server.sendExitTimeout)
             log.info(f"Server shut down")
+
+        if self.config.downloadtool.startWithMainServer:
+            self.sharedDataServer.stop()
 
         if self.config.general.useRamdisk:
             # sync ram to mirror
@@ -219,15 +271,15 @@ class EsmMain:
         if not self.dedicatedServer.isRunning():
             log.warning("No running gameserver found.")
             return
-        # we found a server, then start synchronizer if enabled
-        self.startSynchronizer()
-        
-        log.info(f"Running server found. Waiting until it shut down or stopped existing.")
+        log.info(f"Running server found")
+        # we found a server, then start stuff
+        self.onStartUp()
+
+        log.info(f"Waiting until game server shut down or stopped existing.")
         self.waitForEnd()
 
-        log.info(f"Server shut down. Executing shutdown tasks.")
+        log.info(f"Game server shut down. Executing shutdown tasks.")
         self.onShutdown()
-
 
     def createBackup(self):
         """
@@ -258,14 +310,11 @@ class EsmMain:
         """
         return self.steamService.updateGame(steam, additionals)
     
-    def updateScenario(self, sourcePathParameter: str = None, dryrun: bool=True):
+    def updateScenario(self, sourcePathParameter: str = None, dryrun: bool=True, validate: bool=True):
         """
         synchronizes the source scenario folder with the games scenario folder.
         only new files or files whose size or content differ are copied, deleted files in the destination are removed.
         """
-        if self.dedicatedServer.isRunning():
-            raise ServerNeedsToBeStopped("Can not update scenario while the server is running. Please stop it first.")
-
         scenarioName = self.config.dedicatedConfig.GameConfig.CustomScenario
 
         if sourcePathParameter is not None:
@@ -277,17 +326,23 @@ class EsmMain:
         if not sourcePath.exists():
             raise AdminRequiredException(f"Path to scenario source not properly configured, '{sourcePath}' does not exist.")
 
-        destinationPath = Path(f"{self.config.paths.install}/Content/Scenarios/{scenarioName}").resolve()
-        if not destinationPath.exists():
-            log.warning(f"Path to game scenarios folder '{destinationPath}' does not exist. Will create the directory assuming the configuration is correct.")
-            destinationPath.mkdir(parents=False, exist_ok=False)
+        if validate:
+            Tools.validateScenario(sourcePath)
 
+        destinationPath = Path(f"{self.config.paths.install}/Content/Scenarios/{scenarioName}").resolve()
+        
         if dryrun:
             log.info(f"Would synchronize scenario from '{sourcePath}' to '{destinationPath}'. If you want to actually run it, use --nodryrun.")
         else:
+            if self.dedicatedServer.isRunning():
+                raise ServerNeedsToBeStopped("Can not update scenario while the server is running. Please stop it first.")
+
+            if not destinationPath.exists():
+                log.warning(f"Path to game scenarios folder '{destinationPath}' does not exist. Will create the directory assuming the configuration is correct.")
+                destinationPath.mkdir(parents=False, exist_ok=False)
+
             log.info(f"Synchronizing scenario from '{sourcePath}' to '{destinationPath}'")
             return self.fileSystem.synchronize(sourcePath, destinationPath)
-
     
     def deleteAll(self):
         """
@@ -471,7 +526,9 @@ class EsmMain:
         resolves the given system- and playfieldnames from the file or the names array and clears the discovered by info for these completely
         The game saves an entry for every player, even if it was discovered before, so this tool will delete them all so it goes back to "Undiscovered".
         """
-        dbLocationPath = self.getDBLocationPath(dblocation)
+        isCurrentDbSelected, dbLocationPath = self.getDBLocationPath(dblocation)
+        if dryrun and self.dedicatedServer.isRunning() and isCurrentDbSelected:
+            log.warning(f"Executing a dryrun on the current game's database while the server is running might affect the games performance.")
 
         territory = None
         systemAndPlayfieldNames = None
@@ -488,16 +545,25 @@ class EsmMain:
         
         self.wipeService.clearDiscoveredByInfo(dbLocationPath=dbLocationPath, territory=territory, systemAndPlayfieldNames=systemAndPlayfieldNames, dryrun=dryrun)
 
-    def getDBLocationPath(self, dbLocation):
+    def getDBLocationPath(self, dbLocation) -> tuple[bool, Path]:
         """
         resolves the given dbLocation and returns the absolute path or uses the global db if dbLocation is None
+
+        returns 
+            isCurrentGameDb - boolean indicating if the returned location is the current game's DB or not
+            dbLocation - Path to the database
         """
+        currentGameDBPath = self.fileSystem.getAbsolutePathTo("saves.games.savegame.globaldb")
         if dbLocation is None:
-            return self.fileSystem.getAbsolutePathTo("saves.games.savegame.globaldb")
+            return True, currentGameDBPath
         else:
             dbLocationPath = Path(dbLocation).resolve()
             if dbLocationPath.exists():
-                return dbLocationPath
+                if dbLocationPath.samefile(currentGameDBPath):
+                    log.warning("The given database location is the current game's database. Make sure you know what you are doing.")
+                    return True, dbLocationPath
+                else:
+                    return False, dbLocationPath
             else:
                 raise WrongParameterError(f"DbLocation '{dbLocation}' is not a valid database location path.")
 
@@ -639,17 +705,18 @@ class EsmMain:
         while timeLeft >= 0:
             try:
                 self.serverSocket.bind(('localhost', port))
+                log.debug(f"Bound application instance to port {port}")
                 return
             except OSError as ex:
                 if timeLeft > 1:
-                    log.warning(f"Port {port} probably already bound, is the script already running? Will wait {interval} seconds to retry. Time left for tries: {timeLeft}")
+                    log.warning(f"Port {port} probably already bound, is esm already running? Will wait {interval} seconds to retry. Time left for tries: {timeLeft}")
                     time.sleep(interval)
                     timeLeft = timeLeft - interval
                 elif timeLeft == 0:
-                    log.error(f"Giving up on waiting. You will have to check yourself why there is another script running.")
+                    log.error(f"Giving up on waiting. You will have to check yourself why there is another esm instance running.")
                     timeLeft = -1
                     if raiseException:
-                        raise AdminRequiredException(f"Giving up on waiting. You will have to check yourself why there is another script running.")
+                        raise AdminRequiredException(f"Giving up on waiting. You will have to check yourself why there is another esm instance running.")
                     sys.exit(ExitCodes.INSTANCE_RUNNING_GAVE_UP)
                 else:
                     log.debug(f"If you need to use another port for this application, set it in the config.")
@@ -692,9 +759,9 @@ class EsmMain:
         except RequirementsNotFulfilledError as ex:
             log.error(f"{ex}")
 
-        erc = ServiceRegistry.get(EsmEpmRemoteClientService)
+        emprc = ServiceRegistry.get(EsmEmpRemoteClientService)
         try:
-            path = erc.checkAndGetEpmRemoteClientPath()
+            path = emprc.checkAndGetEmpRemoteClientPath()
             log.info(f"'{path}' found")
         except RequirementsNotFulfilledError as ex:
             log.error(f"{ex}")
@@ -761,12 +828,12 @@ class EsmMain:
         """
         the mighty wipe tool
         """
-        #log.debug(f"{__name__}.{sys._getframe().f_code.co_name} called with params: {locals()}")
-
         if not dryrun and self.dedicatedServer.isRunning():
             raise ServerNeedsToBeStopped("Can not execute tool-wipe with --nodryrun if the server is running. Please stop it first.")
 
-        dbLocationPath = self.getDBLocationPath(dbLocation)
+        isCurrentDbSelected, dbLocationPath = self.getDBLocationPath(dbLocation)
+        if dryrun and self.dedicatedServer.isRunning() and isCurrentDbSelected:
+            log.warning(f"Executing a dryrun on the current game's database while the server is running might affect the games performance.")
 
         systemAndPlayfieldNames = None
         territory = None
@@ -782,11 +849,76 @@ class EsmMain:
 
         self.wipeService.wipeTool(systemAndPlayfieldNames, territory, wipetype, cleardiscoveredby, minage, dbLocationPath, dryrun)
 
-    def startSharedDataServer(self, resume=False):
+    def startSharedDataServer(self, resume=False, forceRecreate=False, wait=False):
         """
-        starts the shared data server
+            starts the shared data server
+            if you use wait = False, you'll need to stop it afterwards
         """
         if resume:
-            self.sharedDataServer.resume()
+            self.sharedDataServer.resume(wait)
         else:
-            self.sharedDataServer.start()
+            self.sharedDataServer.start(wait, forceRecreate)
+
+    def startHaimsterConnector(self):
+        """
+            starts the haimster connector (in a separate thread) and returns immediately
+        """
+        if self.config.communication.haimsterEnabled:
+            self.openSocket(port=self.config.communication.incomingMessageHostPort, interval=5, tries=10, raiseException=True)
+            return self.haimsterConnector.initialize()
+
+    def startHaimsterConnectorAndWait(self):
+        """
+            Starts the haimster connector (in a separate thread) and waits for it to exit, ignoring the configuration flag
+            It will shut down the connector on exit
+            This can be used if you want to start the haimster connector in a separate process with a tool call
+        """
+        self.openSocket(port=self.config.communication.incomingMessageHostPort, interval=5, tries=10, raiseException=True)
+        shouldExit = self.haimsterConnector.initialize()
+        while not shouldExit.is_set():
+            time.sleep(1)
+        self.haimsterConnector.shutdown()
+
+    def exportChatLog(self, dblocation: str=None, filename: str="chatlog.json", format: str="json", excludeNames: List[str] = [], includeNames: List[str] = []):
+        """
+            exports the chat log from given database to filename with given format.
+        """
+        isCurrentDbSelected, dbLocationPath = self.getDBLocationPath(dblocation)
+        if self.dedicatedServer.isRunning() and isCurrentDbSelected:
+            log.warning(f"Executing the export on thecurrent game's database while the server is running might affect the games performance.")
+
+        self.gameChatService.exportChatLog(dbLocationPath, filename, format, excludeNames, includeNames)
+
+    def saveEffectiveConfig(self, filePath: str, overwrite: bool = False):
+        """
+            saves the effective config to the given filePath
+        """
+        self.configService.saveConfig(Path(filePath), overwrite)
+
+    def triggerEahRestart(self, eahPath: str = None, stop: bool = False, delay: int = 60):
+        """
+            Restarts or stops EAH using its import-commands feature. Will only work if its running, of course.
+
+            Rather undocumented feature of EAH, found it on some buried thread of the past.
+        """
+        if eahPath is None:
+            eahPath = self.config.paths.eah
+        pathToEah = Path(eahPath).resolve()
+        if not pathToEah.exists():
+            raise WrongParameterError(f"path to EAH at '{eahPath}' does not exist.")
+        importCommandsPath = pathToEah.joinpath("Import Commands").absolute()
+        if not importCommandsPath.exists():
+            raise AdminRequiredException(f"'Import Commands' folder at '{eahPath}' does not exist but should, is the game installed correctly? Or is EAH not provided with it any more?")
+
+        log.info(f"Waiting {delay} seconds before triggering EAH")
+        time.sleep(delay)
+        if stop:
+            commandFileName = "TOOL_STOP.txt"
+        else:
+            commandFileName = "TOOL_RESTART.txt"
+        commandFilePath = importCommandsPath.joinpath(commandFileName).absolute()
+        commandFilePath.touch()
+        # for some reason, eah doesn't always pick up that we created the file the first time, but it works way more reliable if we do twice.
+        time.sleep(5)
+        commandFilePath.touch()
+        log.info(f"Created file that should stop EAH - this can take a few seconds to trigger though. File '{commandFilePath}'")

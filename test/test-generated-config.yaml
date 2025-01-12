@@ -1,6 +1,6 @@
 general:
   useRamdisk: true                  # if True, use a ramdisk for the savegame. Requires the user to call ramdisk-install and ramdisk-setup to work. Will completely solve your server performance issues.
-  externalizeTemplates: true        # if True, will 'externalize' the savegame templates, meaning that they will be symlinked back to the hdd when using the ramdisk. This saves aboit 40% of space on the ramdisk!
+  externalizeTemplates: true        # if True, will 'externalize' the savegame templates, meaning that they will be symlinked back to the hdd when using the ramdisk. This saves about 40% of space on the ramdisk!
   bindingPort: 6969                 # default port to bind this application to, just used to make sure only one instance can run with one config at a time.
   multipleInstanceWaitInterval: 10  # interval in seconds for checking if there is another script running at script start
   multipleInstanceWaitTries: 180    # amount of times of checking if there is another script running at script start
@@ -36,9 +36,40 @@ paths:
   install: R:\doodoo                                                                  # the games main installation location
   osfmount: D:/Servers/Tools/OSFMount/osfmount.com                                    # path to osfmount executable needed to mount the ram drive
   peazip: D:/Servers/Tools/PeaZip/res/bin/7z/7z.exe                                   # path to peazip used for the static backups
-  epmremoteclient: D:/Servers/Tools/esm/emprc/EmpyrionPrime.RemoteClient.Console.exe  # path to emprc, used to send commands to the server
+  empremoteclient: D:/Servers/Tools/esm/emprc/EmpyrionPrime.RemoteClient.Console.exe  # path to emprc, used to send commands to the server
   eah: D:/Servers/Empyrion/DedicatedServer/EmpyrionAdminHelper                        # path to EAH, for backing up its data
   steamcmd: D:/Servers/Tools/steamcmd/steamcmd.exe                                    # path to steamcmd for installs and updates of the game server
+downloadtool:   # configuration for the shared data download tool
+  serverPort: 27440                                           # port of the webserver to listen to. Make sure this port is reachable from outside
+  maxGlobalBandwith: 50000000                                 # max bandwith to use for the downloads globally in bytes, e.g. 50 MB/s
+  maxClientBandwith: 30000000                                 # max bandwith to use for the download per client in bytes, e.g. 30 MB/s
+  rateLimit: 10 per minute                                    # rate limit of max allowed requests per ip address per time unit, e.g. '10 per minute' or '10 per hour'
+  customExternalHostNameAndPort: ''                           # if set, this will be used as the host instead of the automatically generated host-part of the url. must be something like: 'https://my-server.com:12345'. The path/name of the files will be appended.
+  useSharedDataURLFeature: true                               # if true, a zip for the SharedDataURL feature will be created, served and the dedicated yaml will be automatically edited.
+  autoEditDedicatedYaml: true                                 # set to false if you do not want the dedicated yaml to be edited automatically
+  customSharedDataURL: ''                                     # if set, this will be used as the shared data url instead of the automatically generated one. Make sure it is correct!
+  autoZipName: SharedData.zip                                 # The filename of the zip file for the auto download of the SharedDataURL feature postfixed with _yyyymmdd_hhmmss so the client recognizes this as a new file on recreation.
+  useCustomCacheFolderName: false                             # if true, the custom folder name will be used, if false, the folder name will be generated with following pattern '{gamename}_{serverip}_{uniquegameid}'
+  customCacheFolderName: DediGame_127.0.0.1_123456789         # name of the folder included in the zip file, which will look something like 'DediGame_127.0.0.1_12346789', depending on gamename, server ip and unique game id
+  manualZipName: copy_shareddata_to_empyrion_saves_cache.zip  # The filename of the zip file that will be provided as manual download
+  timeToAddToModificationTimestamps: 43200                    # how much time should be added to the modification timestamps of the files in the cache folder, so the game recognizes them as up to date. Should be 12 hours (default) or more.
+  wwwroot: wwwroot                                            # folder to use as wwwroot, where the download will be served from
+  tempFolder: temp                                            # temporary folder for creating the downloadable zip
+  startWithMainServer: true                                   # if true, the download tool will be started with the main server for a fully automated shared data file handling.
+communication:  # configuration for the in-game communication
+  announceSyncEvents: true                # if true, sync events (syncStart, syncEnd) will be announced in the chat
+  announceSyncProbability: 0.3            # probability factor that a sync will be announced at all, this is to avoid it being too spammy. something between 0.0 and 1.0
+  synceventname: '[0fa336]Hamster-News'   # the name to be used when announcing a sync on the server, may contain bb-code for colors and such
+  synceventmessageprefix: '[aaaaaa]'      # this string will be prepended to all sync event messages, you can use this to set a bb-color code
+  synceventsfile: hamster_sync_lines.csv  # should contain the path to a csv file with two columns, each containing the first and second sentence. The first will be used when starting a sync, the second when its finished.
+  haimsterEnabled: false                  # enables haimster integration, which requires a running haimster server
+  haimsterHost: http://localhost:8000     # the url to the haimster server
+  haimsterStartupDelay: 60                # how many seconds to wait after a server start before starting the haimster connector, since it needs a running server
+  incomingMessageHostIp: 0.0.0.0          # the host url to bind our http server to to receive messages from haimster. This ip and port must be configured on haimster side aswell.
+  incomingMessageHostPort: 9000           # the port to bind to to receive messages from haimster. This ip and port must be configured on haimster side aswell.
+  chatlogViewerEnabled: true              # enables the chatlog viewer in the shared data tool server. This is just a convenience feature to see the chatlog in a browser
+  chatlogViewerPathSegment: /chatlog      # the path to the chatlog viewer in the url.
+  chatlogPath: /chatlog                   # the url path to the chatlog served by the haimster server.
 foldernames:    # names of different folders, you probably do not need to change any of these
   games: Games
   backup: Backup
@@ -53,34 +84,13 @@ foldernames:    # names of different folders, you probably do not need to change
   savegametemplatepostfix: _Templates
   esmtests: esm-tests   # this folder will be used to conduct a few tests on the filesystem below the installation dir
 filenames:      # names of different files, you probably do not need to change any of these
-  globaldb: global.db
-  buildNumber: BuildNumber.txt
-  dedicatedExe: EmpyrionDedicated.exe
-  launcherExe: EmpyrionLauncher.exe
-communication:  # configuration for the in-game communication
-  announceSyncEvents: true                # if true, sync events (syncStart, syncEnd) will be announced in the chat
-  announceSyncProbability: 0.3            # probability factor that a sync will be announced at all, this is to avoid it being too spammy. something between 0.0 and 1.0
-  synceventname: '[0fa336]Hamster-News'   # the name to be used when announcing a sync on the server, may contain bb-code for colors and such
-  synceventmessageprefix: '[aaaaaa]'      # this string will be prepended to all sync event messages, you can use this to set a bb-color code
-  synceventsfile: hamster_sync_lines.csv  # should contain the path to a csv file with two columns, each containing the first and second sentence. The first will be used when starting a sync, the second when its finished.
+  globaldb: global.db                                   # the name of the global db file
+  buildNumber: BuildNumber.txt                          # the name of the build number file
+  dedicatedExe: EmpyrionDedicated.exe                   # the name of the dedicated exe
+  launcherExe: EmpyrionLauncher.exe                     # the name of the launcher exe
+  galaxyConfig: Content/Configuration/GalaxyConfig.ecf  # the path to the galaxy config file, relative to the installation dir
 robocopy:
   encoding: ansi   # depending on the shell used, it may be necessary to change this to ansi, utf-8, cp1252 or something. This will be passed to subprocess.run(...encoding=...)
   options:         # options for the different robocopy operations
     move: /MOVE /E /np /ns /nc /nfl /ndl /mt /r:10 /w:10 /unicode
     copy: /MIR  /np /ns /nc /nfl /ndl /mt /r:10 /w:10 /unicode
-downloadtool:   # configuration for the shared data download tool
-  serverPort: 27440                                           # port of the webserver to listen to. Make sure this port is reachable from outside
-  maxGlobalBandwith: 50000000                                 # max bandwith to use for the downloads globally in bytes, e.g. 50 MB/s
-  maxClientBandwith: 30000000                                 # max bandwith to use for the download per client in bytes, e.g. 30 MB/s
-  rateLimit: 10 per minute                                    # rate limit of max allowed requests per ip address per time unit, e.g. '10 per minute' or '10 per hour'
-  customExternalHostNameAndPort: ''                           # if set, this will be used as the host instead of the automatically generated host-part of the url. must be something like: 'https://my-server.com:12345'. The path/name of the files will be appended.
-  useSharedDataURLFeature: false                              # if true, a zip for the SharedDataURL feature will be created, served and the dedicated yaml will be automatically edited.
-  autoEditDedicatedYaml: true                                 # set to false if you do not want the dedicated yaml to be edited automatically
-  customSharedDataURL: ''                                     # if set, this will be used as the shared data url instead of the automatically generated one. Make sure it is correct!
-  autoZipName: SharedData.zip                                 # The filename of the zip file for the auto download of the SharedDataURL feature postfixed with _yyyymmdd_hhmmss so the client recognizes this as a new file on recreation.
-  useCustomCacheFolderName: false                             # if true, the custom folder name will be used, if false, the folder name will be generated with following pattern '{gamename}_{serverip}_{uniquegameid}'
-  customCacheFolderName: DediGame_127.0.0.1_123456789         # name of the folder included in the zip file, which will look something like 'DediGame_127.0.0.1_12346789', depending on gamename, server ip and unique game id
-  manualZipName: copy_shareddata_to_empyrion_saves_cache.zip  # The filename of the zip file that will be provided as manual download
-  timeToAddToModificationTimestamps: 43200                    # how much time should be added to the modification timestamps of the files in the cache folder, so the game recognizes them as up to date. Should be 12 hours (default) or more.
-  wwwroot: wwwroot                                            # folder to use as wwwroot, where the download will be served from
-  tempFolder: temp                                            # temporary folder for creating the downloadable zip

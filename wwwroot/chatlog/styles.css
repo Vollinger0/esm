@@ -1,0 +1,134 @@
+body {
+    background-color: #282c34;
+    color: #abb2bf;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.container {
+    background-color: #3e4451;
+    border-radius: 15px;
+    padding: 20px;
+    width: 90%;
+    max-width: 1000px;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+    overflow-y: auto;
+    flex-grow: 1;  /* Allow container to fill available space */
+    margin: 20px auto;  /* Add margin for spacing and center horizontally */
+}
+
+.settings {
+    background-color: #333741;
+    padding: 10px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    position: fixed; /* Fixed position at the bottom */
+    bottom: 0;
+    left: 0;
+}
+
+.settings label {
+    font-size: 0.9em;
+    margin-right: 10px;
+}
+
+.settings input[type="number"] {
+    width: 80px;
+    padding: 6px;
+    border: 1px solid #5c6370;
+    border-radius: 6px;
+    background-color: #4b5263;
+    color: #dcdfe4;
+    font-size: 0.9em;
+    transition: border-color 0.3s ease;
+    margin-right: 10px;  /* Add some space before the button */
+}
+
+.settings input[type="number"]:focus {
+    border-color: #61afef;
+    outline: none;
+}
+
+.settings button {
+    background-color: #61afef;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-size: 0.9em;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    margin-right: 10px;
+}
+
+.settings button:hover {
+    background-color: #528bff;
+}
+
+.chatlog {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.chat-entry {
+    background-color: #4b5263;
+    border-radius: 10px;
+    padding: 10px 15px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    display: grid;
+    grid-template-columns: auto auto 1fr;
+    align-items: end;
+    gap: 5px; /* Small gap between elements */
+}
+
+.chat-entry-meta {
+    display: flex;
+    flex-direction: column;
+    white-space: nowrap; /* Prevent timestamp from wrapping */
+}
+
+.chat-entry-timestamp {
+    color: #79a4c3;
+    font-size: 0.8em;
+     align-items: flex-start; /* Align to the top */
+}
+
+.chat-entry-speaker {
+    color: #c5a07d;
+    font-weight: bold;
+    text-align: right;
+    align-items: flex-start; /* Align to the top */
+}
+
+.chat-entry-message {
+    color: #abb2bf;
+    word-break: break-word; /* Allow long words to break and wrap */
+    overflow: hidden; /* Hide overflowing content */
+    white-space: normal;
+    align-items: flex-start; /* Align to the top */
+}
+
+/* Scrollbar styling (for WebKit browsers) */
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+::-webkit-scrollbar-track {
+    background: #3e4451;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 5px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}

@@ -1,0 +1,9 @@
+@esmendpoint = http://127.0.0.1:9000/outgoingmessage
+
+POST {{esmendpoint}}
+
+{
+    "timestamp": "123123123",
+    "speaker": "tester",
+    "message": "ello from the other side!"
+}

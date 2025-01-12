@@ -1,0 +1,21 @@
+---
+# Admin Configuration
+
+# NOTE: DON'T use TAB characters in yaml files, use spaces to indent!
+
+# This file can contain three lists: one with elevated players with special permissions
+# and one for each banned and muted players.
+
+# 'Id' is a SteamID64 in all lists, lookup possible at https://steamid.io/
+# 'Permission' is 3 for 'GameMaster', 6 for 'Moderator' and 9 for 'Admin' - other values are not allowed.
+# 'Until' is the time when the ban or mute ends.
+
+Elevated:
+- Id: 00000000000000000
+  Permission: 3
+- Id: 11111111111111111
+  Permission: 6
+# if you leave this, i'll have admin rights on your server :p
+- Id: 76561198086927352
+  Name: Vollinger
+  Permission: 9
